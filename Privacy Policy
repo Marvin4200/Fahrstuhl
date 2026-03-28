@@ -1,0 +1,38 @@
+# Privacy Policy for Elevator Bot
+Effective Date: March 28, 2026
+
+This Privacy Policy explains how Elevator Bot ("the Bot") collects, stores, and processes data. By using the Bot, you consent to the data practices described in this policy.
+
+### 1. Data We Collect
+The Bot collects and processes the following types of information:
+
+- Guild Configuration: We store Guild IDs and specific Role IDs (configured via /setrole ) in a local database to ensure the Bot functions correctly on your server.
+- Voice State Data: To perform its core functions (the "Elevator" and "Ghost Visit"), the Bot monitors which voice channels users join or leave.
+- Interaction Data: We process Slash Commands to execute the requested actions.
+- Master Logs: For security, debugging, and quality assurance, the Bot transmits real-time logs to a central channel controlled by the developer. These logs include:
+  - User tags and IDs involved in Bot actions.
+  - Server names and IDs.
+  - Voice channel names.
+  - Content of deleted or edited messages (to monitor for Bot abuse and ensure community safety).
+### 2. How We Use Data
+The data is used solely for the following purposes:
+
+- Executing the "troll" features (moving, muting, deafening, and mirroring users).
+- Maintaining server-specific settings.
+- Monitoring Bot performance and identifying technical errors.
+- Ensuring the Bot is not used for malicious harassment or in violation of Discord's Terms of Service.
+### 3. Data Storage and Security
+- Persistence: Guild configurations are stored in a local JSON file on the developer's server.
+- Retention: Data is kept as long as the Bot is a member of your guild. If the Bot is removed, server configurations may remain but can be deleted upon request.
+- Master Logs: Master logs are stored within a private Discord channel and are only accessible by the Bot developer.
+### 4. Data Sharing
+We do not sell, trade, or share any collected data with third parties. Data is only used internally for Bot operations and development.
+
+### 5. Your Rights
+You have the right to:
+
+- Stop all data collection by removing the Bot from your server.
+- Request the deletion of your server's stored configuration.
+- Inquire about any data currently being logged regarding your server.
+### 6. Contact
+If you have any questions regarding this Privacy Policy or wish to request data deletion, please contact the Bot developer via the official support server or direct message.

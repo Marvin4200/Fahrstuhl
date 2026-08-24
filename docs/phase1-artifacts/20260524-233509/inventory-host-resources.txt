@@ -1,0 +1,43 @@
+# command: bash -lc uname -a; echo; uptime; echo; free -h; echo; df -h; echo; lsblk
+
+Linux laptop 6.8.0-117-generic #117-Ubuntu SMP PREEMPT_DYNAMIC Tue May  5 19:26:24 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+
+ 23:35:11 up 18 min,  1 user,  load average: 0.63, 0.63, 0.68
+
+               total        used        free      shared  buff/cache   available
+Mem:           3.8Gi       1.7Gi       1.1Gi       7.9Mi       1.2Gi       2.1Gi
+Swap:          3.8Gi          0B       3.8Gi
+
+Filesystem      Size  Used Avail Use% Mounted on
+tmpfs           386M  3.1M  383M   1% /run
+efivarfs         64K   34K   26K  57% /sys/firmware/efi/efivars
+/dev/mmcblk1p2   56G   43G   11G  80% /
+tmpfs           1.9G     0  1.9G   0% /dev/shm
+tmpfs           5.0M     0  5.0M   0% /run/lock
+/dev/mmcblk1p1  1.1G  6.2M  1.1G   1% /boot/efi
+overlay          56G   43G   11G  80% /var/lib/docker/rootfs/overlayfs/8509192f74a2bcf57a3606964523b1c02d9aec9719ee621fdae5fd14a5741ef3
+overlay          56G   43G   11G  80% /var/lib/docker/rootfs/overlayfs/b0fe63d79537a9577b756f6d2868e4d77adc5e1637c903354be8e544f811f681
+overlay          56G   43G   11G  80% /var/lib/docker/rootfs/overlayfs/d8389185cbe82174ed63d0592e9912c657c4be0e92ad1c919ac6ed3ccc2c087b
+overlay          56G   43G   11G  80% /var/lib/docker/rootfs/overlayfs/3f251dec576944954083938aa0a949484cf8cb38847faf6476516ecc5f7d121e
+overlay          56G   43G   11G  80% /var/lib/docker/rootfs/overlayfs/285d1882290f301974959cb7127bef7cee1bdf86e5f540c84afd3497b594b0d1
+overlay          56G   43G   11G  80% /var/lib/docker/rootfs/overlayfs/a27a09b614be5fe772c8f16cf24a8e4adcd7d174ec6b220463e9b933ac7e891c
+overlay          56G   43G   11G  80% /var/lib/docker/rootfs/overlayfs/2608b88066d3a083ecb1ecc4af0d1849db6add0c5538b6951aa9ec5db8f725ed
+overlay          56G   43G   11G  80% /var/lib/docker/rootfs/overlayfs/2fee51b6960e733be29ae4e466c8f4b045ae82c56cdaba2b14943c1b920661d8
+overlay          56G   43G   11G  80% /var/lib/docker/rootfs/overlayfs/c7808dac885a1f941ba174f31db0d1a02d7bbc4ede1806289c2cada43d25e332
+overlay          56G   43G   11G  80% /var/lib/docker/rootfs/overlayfs/38818e3982bf485230a4d6c1c81d674e42d83917da42af4c31b392dad312b8ba
+overlay          56G   43G   11G  80% /var/lib/docker/rootfs/overlayfs/9356a763d6844af68eade9131453acc3f21b2e6223c9abb258ecea03edfffce7
+overlay          56G   43G   11G  80% /var/lib/docker/rootfs/overlayfs/d58ced0269795783dc2a7c3bb71a6b00bba358abd4ca2a3f741add9c89cf1d50
+overlay          56G   43G   11G  80% /var/lib/docker/rootfs/overlayfs/4fdcba502c0d7c4b004c8fcda2a35c0adca5b9d5b093f5dcd73b30332b47156b
+overlay          56G   43G   11G  80% /var/lib/docker/rootfs/overlayfs/51ea9b880107da314616c07f9e5e0d95ad8db40ad07ed921937a5aa4ff2dfe2c
+tmpfs           386M   16K  386M   1% /run/user/0
+overlay          56G   43G   11G  80% /var/lib/docker/rootfs/overlayfs/de02b84eb8f92e9e7233d7bd91abe94eeaccc0d6dcd37c456242ba5712a1cb02
+overlay          56G   43G   11G  80% /var/lib/docker/rootfs/overlayfs/2e8c03b5fd02cbaa68cd5c82c3da40851f958899c170a61eb181bb3fcebc4d16
+overlay          56G   43G   11G  80% /var/lib/docker/rootfs/overlayfs/04786e304cd1afdfdc96731624ec708e48ec41db1cc52204bf5ac8a36a086523
+overlay          56G   43G   11G  80% /var/lib/docker/rootfs/overlayfs/6a451ae66222421dc801386c6ed876db6b194c8d27f206c621dac05c1869a67a
+
+NAME         MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+mmcblk1      179:0    0 58.2G  0 disk 
+├─mmcblk1p1  179:1    0    1G  0 part /boot/efi
+└─mmcblk1p2  179:2    0 57.2G  0 part /
+mmcblk1boot0 179:8    0    4M  1 disk 
+mmcblk1boot1 179:16   0    4M  1 disk 

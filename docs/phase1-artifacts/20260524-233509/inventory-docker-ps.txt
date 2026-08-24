@@ -1,0 +1,20 @@
+# command: docker compose ps
+
+NAME                        IMAGE                                     COMMAND                  SERVICE                     CREATED         STATUS                    PORTS
+autodeploy-phase1           marvin-phase1-autodeploy                  "docker-entrypoint.s…"   autodeploy                  26 hours ago    Up 17 minutes             127.0.0.1:9111->9011/tcp
+backup-worker-phase1        marvin-phase1-backup-worker               "docker-entrypoint.s…"   backup-worker               26 hours ago    Up 17 minutes             
+dashboard-php-phase1        marvin-phase1-dashboard-php               "docker-php-entrypoi…"   dashboard-php               26 hours ago    Up 17 minutes             127.0.0.1:3181->8081/tcp
+deploy-webhook-phase1       marvin-phase1-deploy-webhook              "docker-entrypoint.s…"   deploy-webhook              26 hours ago    Up 17 minutes             127.0.0.1:9100->9000/tcp
+esel-phase1                 marvin-phase1-esel                        "docker-entrypoint.s…"   esel                        26 hours ago    Up 17 minutes (healthy)   127.0.0.1:3115->3015/tcp
+eseltokens-phase1           marvin-phase1-eseltokens-docker           "docker-entrypoint.s…"   eseltokens-docker           7 minutes ago   Up 6 minutes (healthy)    127.0.0.1:3100->3000/tcp
+eseltokens-webhook-phase1   marvin-phase1-eseltokens-webhook-docker   "docker-entrypoint.s…"   eseltokens-webhook-docker   26 hours ago    Up 17 minutes             127.0.0.1:9101->9001/tcp
+fahrstuhl-phase1            marvin-phase1-fahrstuhl-docker            "docker-entrypoint.s…"   fahrstuhl-docker            6 minutes ago   Up 6 minutes (healthy)    127.0.0.1:3102->3002/tcp
+filehoster-phase1           marvin-phase1-filehoster                  "docker-entrypoint.s…"   filehoster                  26 hours ago    Up 17 minutes (healthy)   127.0.0.1:3111->3011/tcp
+freegamesapi-phase1         marvin-phase1-freegamesapi                "docker-entrypoint.s…"   freegamesapi                13 hours ago    Up 17 minutes (healthy)   127.0.0.1:3116->3016/tcp
+lavalink-docker-phase1      fredboat/lavalink:4                       "java -jar Lavalink.…"   lavalink-docker             7 minutes ago   Up 6 minutes (healthy)    127.0.0.1:3233->2333/tcp
+linkshortener-phase1        marvin-phase1-linkshortener               "docker-entrypoint.s…"   linkshortener               26 hours ago    Up 17 minutes (healthy)   127.0.0.1:3110->3010/tcp
+musikbot-docker-phase1      marvin-phase1-musikbot-docker             "docker-entrypoint.s…"   musikbot-docker             7 minutes ago   Up 6 minutes (healthy)    
+redis-phase1                redis:7-alpine                            "docker-entrypoint.s…"   redis                       34 hours ago    Up 17 minutes (healthy)   6379/tcp
+statuspage-phase1           marvin-phase1-statuspage                  "docker-entrypoint.s…"   statuspage                  26 hours ago    Up 17 minutes (healthy)   127.0.0.1:3112->3012/tcp
+team-phase1                 marvin-phase1-team                        "docker-entrypoint.s…"   team                        26 hours ago    Up 17 minutes (healthy)   127.0.0.1:3114->3014/tcp
+zitatboard-phase1           marvin-phase1-zitatboard                  "docker-entrypoint.s…"   zitatboard                  26 hours ago    Up 17 minutes (healthy)   127.0.0.1:3113->3013/tcp

@@ -1,0 +1,8 @@
+# command: node scripts/backup-all.js
+
+Backup snapshot created: 20260524-233512
+OK: true; copied=22; missing=3
+Missing items (non-fatal):
+- /home/marvin/zitat-board/data/quotes.db -> zitatboard/quotes.db (missing)
+- /var/lib/redis/appendonly.aof -> redis/appendonly.aof (missing)
+- /root/.pm2/dump.pm2 -> pm2/dump.pm2 (missing)

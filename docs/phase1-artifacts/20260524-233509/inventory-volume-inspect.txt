@@ -1,0 +1,123 @@
+# docker volume inspect (top-level)
+
+## marvin-phase1_filehoster_data
+[
+    {
+        "CreatedAt": "2026-05-08T22:22:20+02:00",
+        "Driver": "local",
+        "Labels": {
+            "com.docker.compose.config-hash": "83517a9cb8842f8f24e3e904c537b866f169374160d09f72779369369776ac33",
+            "com.docker.compose.project": "marvin-phase1",
+            "com.docker.compose.version": "2.40.3",
+            "com.docker.compose.volume": "filehoster_data"
+        },
+        "Mountpoint": "/var/lib/docker/volumes/marvin-phase1_filehoster_data/_data",
+        "Name": "marvin-phase1_filehoster_data",
+        "Options": null,
+        "Scope": "local"
+    }
+]
+
+## marvin-phase1_filehoster_uploads
+[
+    {
+        "CreatedAt": "2026-05-08T22:22:20+02:00",
+        "Driver": "local",
+        "Labels": {
+            "com.docker.compose.config-hash": "ac52aeab4bd440ecbead8f08893b8edceb929fb1797921cb82d7a05b7dfb1b1c",
+            "com.docker.compose.project": "marvin-phase1",
+            "com.docker.compose.version": "2.40.3",
+            "com.docker.compose.volume": "filehoster_uploads"
+        },
+        "Mountpoint": "/var/lib/docker/volumes/marvin-phase1_filehoster_uploads/_data",
+        "Name": "marvin-phase1_filehoster_uploads",
+        "Options": null,
+        "Scope": "local"
+    }
+]
+
+## marvin-phase1_linkshortener_data
+[
+    {
+        "CreatedAt": "2026-05-08T22:16:47+02:00",
+        "Driver": "local",
+        "Labels": {
+            "com.docker.compose.config-hash": "7b7b0a26834855d41082067ee87332cfeb5c824ee4aac505728e429cb78e6400",
+            "com.docker.compose.project": "marvin-phase1",
+            "com.docker.compose.version": "2.40.3",
+            "com.docker.compose.volume": "linkshortener_data"
+        },
+        "Mountpoint": "/var/lib/docker/volumes/marvin-phase1_linkshortener_data/_data",
+        "Name": "marvin-phase1_linkshortener_data",
+        "Options": null,
+        "Scope": "local"
+    }
+]
+
+## marvin-phase1_redis_data
+[
+    {
+        "CreatedAt": "2026-05-08T22:13:47+02:00",
+        "Driver": "local",
+        "Labels": {
+            "com.docker.compose.config-hash": "a88c9b85a73a03cc7c9ba3490b0d1a4b6867ed245b801c0c3cd755003e1e58ef",
+            "com.docker.compose.project": "marvin-phase1",
+            "com.docker.compose.version": "2.40.3",
+            "com.docker.compose.volume": "redis_data"
+        },
+        "Mountpoint": "/var/lib/docker/volumes/marvin-phase1_redis_data/_data",
+        "Name": "marvin-phase1_redis_data",
+        "Options": null,
+        "Scope": "local"
+    }
+]
+
+## marvin-phase1_statuspage_data
+[
+    {
+        "CreatedAt": "2026-05-08T21:52:59+02:00",
+        "Driver": "local",
+        "Labels": {
+            "com.docker.compose.config-hash": "d119936d2cad973727cca1867d0b0a801ad595b7e80c5ebec7cb3d26187cae87",
+            "com.docker.compose.project": "marvin-phase1",
+            "com.docker.compose.version": "2.40.3",
+            "com.docker.compose.volume": "statuspage_data"
+        },
+        "Mountpoint": "/var/lib/docker/volumes/marvin-phase1_statuspage_data/_data",
+        "Name": "marvin-phase1_statuspage_data",
+        "Options": null,
+        "Scope": "local"
+    }
+]
+
+## marvin-phase1_zitatboard_data
+[
+    {
+        "CreatedAt": "2026-05-08T22:00:37+02:00",
+        "Driver": "local",
+        "Labels": {
+            "com.docker.compose.config-hash": "720942b27f4f6ac24e1eb134c3806bb506da864dd92e8e599b99ef603c021fd6",
+            "com.docker.compose.project": "marvin-phase1",
+            "com.docker.compose.version": "2.40.3",
+            "com.docker.compose.volume": "zitatboard_data"
+        },
+        "Mountpoint": "/var/lib/docker/volumes/marvin-phase1_zitatboard_data/_data",
+        "Name": "marvin-phase1_zitatboard_data",
+        "Options": null,
+        "Scope": "local"
+    }
+]
+
+## portainer_data
+[
+    {
+        "CreatedAt": "2026-05-09T10:37:42+02:00",
+        "Driver": "local",
+        "Labels": null,
+        "Mountpoint": "/var/lib/docker/volumes/portainer_data/_data",
+        "Name": "portainer_data",
+        "Options": null,
+        "Scope": "local"
+    }
+]
+

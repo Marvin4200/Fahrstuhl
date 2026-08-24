@@ -1,0 +1,11 @@
+# command: node scripts/restore-test.js
+
+{
+  "snapshot": "20260524-233512",
+  "source": "/home/marvin/backups/20260524-233512",
+  "restoredTo": "/tmp/restore-test-20260524-233512",
+  "ok": true,
+  "total": 27,
+  "failed": 0,
+  "failedChecks": []
+}

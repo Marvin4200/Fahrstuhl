@@ -1,0 +1,41 @@
+{
+  "totalTrolls": 36,
+  "totalMoves": 137,
+  "commands": {
+    "elevator": 183,
+    "globalstop": 10,
+    "shield": 12,
+    "mod": 38,
+    "ghost": 77,
+    "ticket": 5,
+    "synccommands": 6,
+    "claim": 14,
+    "setup": 4,
+    "serverinfo": 1,
+    "deafen": 28,
+    "settrollrole": 23,
+    "preset": 49,
+    "dashboard": 3,
+    "mirror": 65,
+    "help": 11,
+    "voice": 7,
+    "testsetupdm": 2,
+    "serverbackup": 1,
+    "leaderboard": 4,
+    "rank": 2,
+    "freegames": 4,
+    "setrole": 11,
+    "settrollmessage": 2,
+    "mute": 17,
+    "addshield": 8,
+    "presetstop": 4,
+    "checkshield": 2
+  },
+  "totalExecutions": 593,
+  "lastUpdated": "2026-08-23T15:44:00.133Z",
+  "errors": {
+    "freegames": 1,
+    "mod": 5
+  },
+  "totalErrors": 6
+}

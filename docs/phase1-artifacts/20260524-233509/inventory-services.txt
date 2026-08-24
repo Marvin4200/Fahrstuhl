@@ -1,0 +1,19 @@
+# command: docker compose config --services
+
+deploy-webhook
+esel
+eseltokens-docker
+eseltokens-webhook-docker
+redis
+freegamesapi
+lavalink-docker
+musikbot-docker
+fahrstuhl-docker
+team
+backup-worker
+dashboard-php
+statuspage
+filehoster
+linkshortener
+zitatboard
+autodeploy

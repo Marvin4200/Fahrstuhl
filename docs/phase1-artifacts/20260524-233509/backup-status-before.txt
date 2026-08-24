@@ -1,0 +1,319 @@
+# command: node scripts/backup-all.js --status
+
+{
+  "lastRunAt": "2026-05-24T20:44:59.513Z",
+  "startedAt": "2026-05-24T20:44:55.540Z",
+  "finishedAt": "2026-05-24T20:44:59.513Z",
+  "snapshot": "20260524-204455",
+  "snapshotDir": "/home/marvin/backups/20260524-204455",
+  "ok": true,
+  "mysqlDump": {
+    "ok": false,
+    "skipped": true,
+    "reason": "mysqldump: Got error: 2005: \"Unknown server host 'host.docker.internal' (-2)\" when trying to connect",
+    "target": "fahrstuhl/fahrstuhl-mysql-20260524-204455.sql"
+  },
+  "copied": 21,
+  "missing": [
+    {
+      "source": "/home/marvin/zitat-board/data/quotes.db",
+      "target": "zitatboard/quotes.db",
+      "reason": "missing",
+      "required": false
+    },
+    {
+      "source": "/var/lib/redis/dump.rdb",
+      "target": "redis/dump.rdb",
+      "reason": "missing",
+      "required": false
+    },
+    {
+      "source": "/var/lib/redis/appendonly.aof",
+      "target": "redis/appendonly.aof",
+      "reason": "missing",
+      "required": false
+    },
+    {
+      "source": "/root/.pm2/dump.pm2",
+      "target": "pm2/dump.pm2",
+      "reason": "missing",
+      "required": false
+    }
+  ],
+  "missingCritical": [],
+  "missingOptional": [
+    {
+      "source": "/home/marvin/zitat-board/data/quotes.db",
+      "target": "zitatboard/quotes.db",
+      "reason": "missing",
+      "required": false
+    },
+    {
+      "source": "/var/lib/redis/dump.rdb",
+      "target": "redis/dump.rdb",
+      "reason": "missing",
+      "required": false
+    },
+    {
+      "source": "/var/lib/redis/appendonly.aof",
+      "target": "redis/appendonly.aof",
+      "reason": "missing",
+      "required": false
+    },
+    {
+      "source": "/root/.pm2/dump.pm2",
+      "target": "pm2/dump.pm2",
+      "reason": "missing",
+      "required": false
+    }
+  ],
+  "verification": {
+    "ok": true,
+    "checks": [
+      {
+        "source": "/home/marvin/fahrstuhl/data",
+        "target": "fahrstuhl/data",
+        "kind": "dir",
+        "required": true,
+        "ok": true,
+        "size": null
+      },
+      {
+        "source": "/home/marvin/fahrstuhl/globalStats.json",
+        "target": "fahrstuhl/globalStats.json",
+        "kind": "file",
+        "required": true,
+        "ok": true,
+        "size": 707
+      },
+      {
+        "source": "/home/marvin/fahrstuhl/userStats.json",
+        "target": "fahrstuhl/userStats.json",
+        "kind": "file",
+        "required": true,
+        "ok": true,
+        "size": 267
+      },
+      {
+        "source": "/home/marvin/fahrstuhl/guildConfigs.json",
+        "target": "fahrstuhl/guildConfigs.json",
+        "kind": "file",
+        "required": true,
+        "ok": true,
+        "size": 293
+      },
+      {
+        "source": "/home/marvin/fahrstuhl/userPrefs.json",
+        "target": "fahrstuhl/userPrefs.json",
+        "kind": "file",
+        "required": true,
+        "ok": true,
+        "size": 193
+      },
+      {
+        "source": "/home/marvin/eseltokens/eseltokens.db",
+        "target": "eseltokens/eseltokens.db",
+        "kind": "file",
+        "required": true,
+        "ok": true,
+        "size": 606208
+      },
+      {
+        "source": "/home/marvin/eseltokens/eseltokens.db-wal",
+        "target": "eseltokens/eseltokens.db-wal",
+        "kind": "file",
+        "required": false,
+        "ok": true,
+        "size": 4157112
+      },
+      {
+        "source": "/home/marvin/eseltokens/eseltokens.db-shm",
+        "target": "eseltokens/eseltokens.db-shm",
+        "kind": "file",
+        "required": false,
+        "ok": true,
+        "size": 32768
+      },
+      {
+        "source": "/home/marvin/filehoster/uploads",
+        "target": "filehoster/uploads",
+        "kind": "dir",
+        "required": false,
+        "ok": true,
+        "size": null
+      },
+      {
+        "source": "/home/marvin/filehoster/data/files.db",
+        "target": "filehoster/files.db",
+        "kind": "file",
+        "required": false,
+        "ok": true,
+        "size": 32768
+      },
+      {
+        "source": "/home/marvin/linkshortener/data/links.db",
+        "target": "linkshortener/links.db",
+        "kind": "file",
+        "required": false,
+        "ok": true,
+        "size": 32768
+      },
+      {
+        "source": "/home/marvin/zitat-board/data/quotes.db",
+        "target": "zitatboard/quotes.db",
+        "kind": "file",
+        "required": false,
+        "ok": true,
+        "size": null
+      },
+      {
+        "source": "/home/marvin/statuspage/data/status.db",
+        "target": "statuspage/status.db",
+        "kind": "file",
+        "required": false,
+        "ok": true,
+        "size": 405504
+      },
+      {
+        "source": "/var/lib/redis/dump.rdb",
+        "target": "redis/dump.rdb",
+        "kind": "file",
+        "required": false,
+        "ok": true,
+        "size": null
+      },
+      {
+        "source": "/var/lib/redis/appendonly.aof",
+        "target": "redis/appendonly.aof",
+        "kind": "file",
+        "required": false,
+        "ok": true,
+        "size": null
+      },
+      {
+        "source": "/root/.pm2/dump.pm2",
+        "target": "pm2/dump.pm2",
+        "kind": "file",
+        "required": false,
+        "ok": true,
+        "size": null
+      },
+      {
+        "source": "/home/marvin/fahrstuhl/ecosystem.config.js",
+        "target": "pm2/fahrstuhl-ecosystem.config.js",
+        "kind": "file",
+        "required": true,
+        "ok": true,
+        "size": 3571
+      },
+      {
+        "source": "/home/marvin/musikbot/ecosystem.config.js",
+        "target": "pm2/musikbot-ecosystem.config.js",
+        "kind": "file",
+        "required": false,
+        "ok": true,
+        "size": 346
+      },
+      {
+        "source": "/home/marvin/fahrstuhl/.env",
+        "target": "env/fahrstuhl.env",
+        "kind": "secret-file",
+        "required": false,
+        "ok": true,
+        "size": 2259
+      },
+      {
+        "source": "/home/marvin/fahrstuhl/dashboard/.env",
+        "target": "env/fahrstuhl-dashboard.env",
+        "kind": "secret-file",
+        "required": false,
+        "ok": true,
+        "size": 2259
+      },
+      {
+        "source": "/home/marvin/eseltokens/.env.local",
+        "target": "env/eseltokens.env.local",
+        "kind": "secret-file",
+        "required": false,
+        "ok": true,
+        "size": 1005
+      },
+      {
+        "source": "/home/marvin/filehoster/.env",
+        "target": "env/filehoster.env",
+        "kind": "secret-file",
+        "required": false,
+        "ok": true,
+        "size": 233
+      },
+      {
+        "source": "/home/marvin/linkshortener/.env",
+        "target": "env/linkshortener.env",
+        "kind": "secret-file",
+        "required": false,
+        "ok": true,
+        "size": 230
+      },
+      {
+        "source": "/home/marvin/zitat-board/.env",
+        "target": "env/zitat-board.env",
+        "kind": "secret-file",
+        "required": false,
+        "ok": true,
+        "size": 33
+      },
+      {
+        "source": "/home/marvin/statuspage/.env",
+        "target": "env/statuspage.env",
+        "kind": "secret-file",
+        "required": false,
+        "ok": true,
+        "size": 341
+      }
+    ]
+  },
+  "retention": {
+    "kept": [
+      "20260524-204455",
+      "20260524-194455",
+      "20260524-184455",
+      "20260524-174455",
+      "20260524-164454",
+      "20260524-154454",
+      "20260524-145156",
+      "20260524-134352",
+      "20260524-124352",
+      "20260524-114352",
+      "20260524-104351",
+      "20260524-094351",
+      "20260524-084351",
+      "20260524-070626",
+      "20260524-060126",
+      "20260524-050126",
+      "20260524-040126",
+      "20260524-030126",
+      "20260524-020126",
+      "20260524-010126",
+      "20260524-000126",
+      "20260523-230126",
+      "20260523-220125",
+      "20260523-210125",
+      "20260523-192933",
+      "20260522-231753",
+      "20260521-231750",
+      "20260520-231748",
+      "20260519-231746",
+      "20260518-231744",
+      "20260517-231742",
+      "20260516-231740",
+      "20260515-231738",
+      "20260514-231736",
+      "20260513-231733",
+      "20260512-231731",
+      "20260511-231729",
+      "20260510-231727",
+      "20260509-231520"
+    ],
+    "removed": []
+  }
+}

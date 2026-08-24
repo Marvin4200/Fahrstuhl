@@ -1,0 +1,9 @@
+/home/marvin/fahrstuhl/.env
+/home/marvin/fahrstuhl/.env-dashboard
+/home/marvin/eseltokens/.env.local
+/home/marvin/webhooks/.env
+/home/marvin/team/.env
+/home/marvin/filehoster/.env
+/home/marvin/linkshortener/.env
+/home/marvin/zitatboard/.env
+/home/marvin/musikbot/.env

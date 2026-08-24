@@ -1,0 +1,23 @@
+# command: docker images
+
+WARNING: This output is designed for human readability. For machine-readable output, please use --format.
+IMAGE                                            ID             DISK USAGE   CONTENT SIZE   EXTRA
+fredboat/lavalink:4                              87ae53e60dc1        573MB          189MB   U    
+mariadb:11.4                                     3b4dfcc32247        462MB          110MB   U    
+marvin-phase1-autodeploy:latest                  bde3eb87956f        330MB         80.5MB   U    
+marvin-phase1-backup-worker:latest               d019db93fe03       1.37GB          331MB   U    
+marvin-phase1-dashboard-php:latest               dab684114de1        763MB          190MB   U    
+marvin-phase1-deploy-webhook:latest              5b39af55a12d       1.37GB          331MB   U    
+marvin-phase1-esel:latest                        7adf9144ec38        340MB         82.4MB   U    
+marvin-phase1-eseltokens-docker:latest           f65d1f88e48d       2.91GB          944MB   U    
+marvin-phase1-eseltokens-webhook-docker:latest   547486902260       1.37GB          331MB   U    
+marvin-phase1-fahrstuhl-docker:latest            b702eeb493ba       1.37GB          331MB   U    
+marvin-phase1-filehoster:latest                  bff368eef3c1        329MB         81.2MB   U    
+marvin-phase1-freegamesapi:latest                78444b40bdf7        257MB         62.3MB   U    
+marvin-phase1-linkshortener:latest               821a9b557600        329MB         81.1MB   U    
+marvin-phase1-musikbot-docker:latest             01f9494c2e08       1.09GB          317MB   U    
+marvin-phase1-statuspage:latest                  5d910ff22c58        326MB         80.7MB   U    
+marvin-phase1-team:latest                        4ccac1ce726b        299MB           73MB   U    
+marvin-phase1-zitatboard:latest                  c9ecbeb8d562        329MB         81.1MB   U    
+portainer/portainer-ce:latest                    8d2f5c9fbc5b        242MB         59.7MB   U    
+redis:7-alpine                                   9de71018be84       57.8MB         16.8MB   U    

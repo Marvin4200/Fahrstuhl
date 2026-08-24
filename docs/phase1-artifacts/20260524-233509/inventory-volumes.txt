@@ -1,0 +1,10 @@
+# command: docker volume ls
+
+DRIVER    VOLUME NAME
+local     marvin-phase1_filehoster_data
+local     marvin-phase1_filehoster_uploads
+local     marvin-phase1_linkshortener_data
+local     marvin-phase1_redis_data
+local     marvin-phase1_statuspage_data
+local     marvin-phase1_zitatboard_data
+local     portainer_data

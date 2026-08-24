@@ -1419,11 +1419,26 @@ async function handleInteraction(interaction, dependencies) {
                 const presetTrollKey = getTrollKey(interaction.guild.id, freshMember.id);
 
                 if (presetType === "full") {
-                    startAutoMove(freshMember, true);
-                    if (!activeGhosts.has(presetTrollKey))     startGhostVisit(freshMember, timedDurationMs);
-                    if (!activeSilentPost.has(presetTrollKey)) startSilentPost(freshMember, timedDurationMs);
-                    if (!activeMirror.has(presetTrollKey))     startMirror(freshMember, timedDurationMs);
-                    if (!activeDeafTroll.has(presetTrollKey))  startDeafTroll(freshMember, timedDurationMs);
+                    // Await + catch each effect individually (like the "random" branch below) so a
+                    // rejected promise doesn't become an unhandled rejection, and so the reported
+                    // "Active Effects" reflects what actually started instead of always claiming success.
+                    const fullResults = [];
+                    const runFullTroll = async (name, alreadyActive, fn) => {
+                        if (alreadyActive) { fullResults.push(`${EMOJIS.SUCCESS} ${name} (already active)`); return; }
+                        try {
+                            await fn();
+                            fullResults.push(`${EMOJIS.SUCCESS} ${name}`);
+                        } catch (trollErr) {
+                            console.error(`Preset full troll error (${name}):`, trollErr);
+                            fullResults.push(`${EMOJIS.ERROR} ${name}`);
+                        }
+                    };
+
+                    await runFullTroll('🚀 Elevator', false, () => startAutoMove(freshMember, true));
+                    await runFullTroll('👻 Ghost', activeGhosts.has(presetTrollKey), () => startGhostVisit(freshMember, timedDurationMs));
+                    await runFullTroll('🔇 Silent Post', activeSilentPost.has(presetTrollKey), () => startSilentPost(freshMember, timedDurationMs));
+                    await runFullTroll('🪞 Mirror', activeMirror.has(presetTrollKey), () => startMirror(freshMember, timedDurationMs));
+                    await runFullTroll('📞 Tote Leitung', activeDeafTroll.has(presetTrollKey), () => startDeafTroll(freshMember, timedDurationMs));
 
                     const fullEmbed = new EmbedBuilder()
                         .setColor(COLORS.TROLL)
@@ -1433,7 +1448,7 @@ async function handleInteraction(interaction, dependencies) {
                             { name: 'Target', value: freshMember.user.username, inline: true },
                             { name: 'Intensity', value: '🔴 MAXIMUM', inline: true },
                             { name: 'Timed Effects', value: timedDurationLabel, inline: true },
-                            { name: 'Active Effects', value: '🚀 Elevator\n👻 Ghost\n🔇 Silent Post\n🪞 Mirror\n📞 Tote Leitung', inline: false }
+                            { name: 'Active Effects', value: fullResults.join('\n'), inline: false }
                         )
                         .setThumbnail(freshMember.user.displayAvatarURL())
                         .setFooter({ text: FOOTERS.TROLL })
@@ -2887,6 +2902,17 @@ async function handleInteraction(interaction, dependencies) {
                     return safeReply(interaction, { content: "❌ Der Owner ist noch im Channel. Du kannst ihn nicht claimen.", flags: [MessageFlags.Ephemeral] });
                 }
                 tempVoiceChannels.set(voiceChannel.id, { ...tvData, ownerId: interaction.user.id });
+                try {
+                    const { getPool } = require("../utils/db");
+                    await getPool().query(
+                        "UPDATE temp_voice_channels SET owner_id = ? WHERE channel_id = ?",
+                        [interaction.user.id, voiceChannel.id]
+                    );
+                } catch (dbErr) {
+                    // In-memory ownership already updated above; DB is best-effort so a restart
+                    // before the next natural update won't revert this claim silently.
+                    console.warn(`⚠️ Failed to persist temp voice claim for ${voiceChannel.id}: ${dbErr.message}`);
+                }
                 return safeReply(interaction, { content: `✅ Du bist jetzt Owner von **${voiceChannel.name}**.`, flags: [MessageFlags.Ephemeral] });
             }
 

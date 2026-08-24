@@ -871,12 +871,14 @@ async function applyAutoModPunishment(message, automod, strikes) {
         let action = automod.punishmentAction;
         let timeoutMinutes = automod.timeoutMinutes;
 
-        // Escalate Mode Logic
+        // Escalate Mode Logic — ramp is relative to the configured strike threshold,
+        // not to the absolute strike count, so it still works when autoPunishStrikes != 2.
         if (automod.punishmentMode === "escalate") {
-            if (strikes <= 1) return false; // Handled by normal warn logic
-            if (strikes === 2) { action = "timeout"; timeoutMinutes = 10; }
-            else if (strikes === 3) { action = "timeout"; timeoutMinutes = 120; }
-            else if (strikes === 4) { action = "timeout"; timeoutMinutes = 720; }
+            const escalateLevel = strikes - automod.autoPunishStrikes + 1;
+            if (escalateLevel <= 0) return false; // Handled by normal warn logic
+            if (escalateLevel === 1) { action = "timeout"; timeoutMinutes = 10; }
+            else if (escalateLevel === 2) { action = "timeout"; timeoutMinutes = 120; }
+            else if (escalateLevel === 3) { action = "timeout"; timeoutMinutes = 720; }
             else { action = "kick"; }
         }
 
@@ -1248,6 +1250,35 @@ client.once(Events.ClientReady, async () => {
         gracefulDegradation.cleanupStale();
     }, 3600000); // Every hour
     activeIntervals.push(gracefulDegradationCleanup);
+
+    // Cleanup stale AutoMod strike/message tracking (prevents unbounded Map growth —
+    // entries used to persist forever for every user who ever triggered/sent a message)
+    const autoModMapsCleanup = setInterval(() => {
+        let removedUsers = 0;
+        let removedGuilds = 0;
+        const strikeCutoff = Date.now() - 24 * 60 * 60 * 1000; // matches the 24h strike window
+        for (const [guildId, userMap] of autoModStrikeMap) {
+            for (const [userId, timestamps] of userMap) {
+                const fresh = timestamps.filter(ts => ts > strikeCutoff);
+                if (fresh.length === 0) { userMap.delete(userId); removedUsers++; }
+                else if (fresh.length !== timestamps.length) userMap.set(userId, fresh);
+            }
+            if (userMap.size === 0) { autoModStrikeMap.delete(guildId); removedGuilds++; }
+        }
+        const messageCutoff = Date.now() - 60 * 60 * 1000; // recent-message tracking only needs ~1h at most
+        for (const [guildId, userMap] of autoModMessageMap) {
+            for (const [userId, items] of userMap) {
+                const fresh = items.filter(item => item.createdAt > messageCutoff);
+                if (fresh.length === 0) { userMap.delete(userId); removedUsers++; }
+                else if (fresh.length !== items.length) userMap.set(userId, fresh);
+            }
+            if (userMap.size === 0) { autoModMessageMap.delete(guildId); removedGuilds++; }
+        }
+        if (removedUsers > 0 || removedGuilds > 0) {
+            console.log(`🧹 AutoMod maps cleanup: removed ${removedUsers} stale user entries, ${removedGuilds} empty guild maps`);
+        }
+    }, 1800000); // Every 30 minutes
+    activeIntervals.push(autoModMapsCleanup);
 
     const scheduledDiscordBackups = setInterval(async () => {
         try {

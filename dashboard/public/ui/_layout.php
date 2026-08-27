@@ -76,7 +76,7 @@ function ui_head($current, $title, $meta = '') {
             <?php endforeach;
         endforeach; ?>
         <div class="rail-group">Konto</div>
-        <a class="rail-item" href="<?= BASE_URL ?>/pages/portal.php?view_mode=user"><span class="rail-icon" aria-hidden="true">↩</span> Normal View</a>
+        <a class="rail-item" href="<?= BASE_URL ?>/pages/portal.php?view_mode=user"><span class="rail-icon" aria-hidden="true">↩</span> <?= t('nav.normal_view') ?></a>
         <a class="rail-item" href="<?= BASE_URL ?>/logout.php"><span class="rail-icon" aria-hidden="true">⏻</span> Abmelden</a>
     </nav>
 </aside>

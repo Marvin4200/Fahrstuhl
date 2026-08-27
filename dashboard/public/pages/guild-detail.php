@@ -4,7 +4,7 @@ require_once __DIR__ . '/../includes/config.php';
 requireLogin();
 
 $guildId = trim($_GET['id'] ?? '');
-if ($guildId === '') { header('Location: ' . BASE_URL . '/pages/guilds.php'); exit(); }
+if ($guildId === '') { header('Location: ' . BASE_URL . (isAdmin() ? '/ui/servers.php' : '/pages/portal.php')); exit(); }
 
 // The Node API independently re-checks access on /guilds/:guildId and its
 // sub-routes, so this isn't currently exploitable — but add the same
@@ -19,7 +19,7 @@ $_SESSION['selected_guild_id'] = $guildId;
 
 $raw = getAPI('/guilds/' . urlencode($guildId));
 $g = $raw['data'] ?? null;
-if (!$g) { header('Location: ' . BASE_URL . '/pages/guilds.php'); exit(); }
+if (!$g) { header('Location: ' . BASE_URL . (isAdmin() ? '/ui/servers.php' : '/pages/portal.php')); exit(); }
 
 $analytics = $g['analytics'] ?? [];
 $permissions = $g['permissions'] ?? [];
@@ -87,7 +87,7 @@ $moduleLinks = [
 </style>
 
 <div class="server-shell">
-    <a class="server-back" href="<?php echo BASE_URL; ?>/pages/guilds.php">← Back to servers</a>
+    <a class="server-back" href="<?php echo BASE_URL . (isAdmin() ? '/ui/servers.php' : '/pages/portal.php'); ?>">← Back to servers</a>
 
     <div class="server-hero">
         <div class="server-hero-main">

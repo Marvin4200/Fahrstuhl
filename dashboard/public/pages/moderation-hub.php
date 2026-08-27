@@ -41,19 +41,7 @@ if (isAdmin()) {
         <p>Warns, Mod Notes, Timeouts und User-History verwalten.</p>
     </a>
     <?php if (isAdmin()): ?>
-    <a class="hub-card" href="<?php echo BASE_URL; ?>/pages/security.php">
-        <h3>🔐 Permission Check</h3>
-        <p>Find missing bot permissions and concrete fixes per server.</p>
-    </a>
-    <a class="hub-card" href="<?php echo BASE_URL; ?>/pages/blacklist.php">
-        <h3>🚫 Blacklist</h3>
-        <p>Block abusive users or servers from bot features.</p>
-    </a>
-    <a class="hub-card" href="<?php echo BASE_URL; ?>/pages/audit.php">
-        <h3>🧾 Audit Log</h3>
-        <p>Review dashboard actions, deploys and admin changes.</p>
-    </a>
-    <a class="hub-card" href="<?php echo BASE_URL; ?>/pages/logs.php">
+    <a class="hub-card" href="<?php echo BASE_URL; ?>/ui/logs.php">
         <h3>📋 Runtime Logs</h3>
         <p>Live bot logs for debugging moderation and permission issues.</p>
     </a>

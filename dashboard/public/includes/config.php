@@ -169,7 +169,7 @@ function requireAdmin() {
 if (isset($_GET['view_mode']) && isOwner()) {
     $mode = $_GET['view_mode'] === 'user' ? 'user' : 'admin';
     $_SESSION['dashboard_view_mode'] = $mode;
-    $target = $mode === 'admin' ? BASE_URL . '/pages/cockpit.php' : BASE_URL . '/pages/portal.php';
+    $target = $mode === 'admin' ? BASE_URL . '/ui/' : BASE_URL . '/pages/portal.php';
     header('Location: ' . $target);
     exit();
 }

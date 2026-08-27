@@ -57,7 +57,6 @@ if (substr($uri, -1) === '/') {
 
 // Clean-URL-Aliases → interne PHP-Datei (ohne Präfix-Stripping, da bereits erledigt)
 $_clean_aliases = [
-    '/eselmusic' => '/pages/eselmusic.php',
 ];
 if (isset($_clean_aliases[$uri])) {
     $uri = $_clean_aliases[$uri];

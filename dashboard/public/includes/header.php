@@ -95,7 +95,7 @@ $styleVersion = file_exists($stylePath) ? filemtime($stylePath) : time();
                 <?php if (isAdmin()): ?>
                     <a href="<?= BASE_URL ?>/pages/portal.php?view_mode=user" class="btn-view-mode">Normal View</a>
                 <?php else: ?>
-                    <a href="<?= BASE_URL ?>/pages/cockpit.php?view_mode=admin" class="btn-view-mode">Admin Mode</a>
+                    <a href="<?= BASE_URL ?>/ui/?view_mode=admin" class="btn-view-mode">Admin Mode</a>
                 <?php endif; ?>
             <?php endif; ?>
             <a href="?setlang=<?= esc(t('nav.lang_next')) ?>" class="btn-lang" title="<?= esc(t('nav.lang_title')) ?>"><?= t('nav.lang_label') ?></a>

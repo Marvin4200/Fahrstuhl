@@ -349,10 +349,6 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="wlc-action-row">
-                    <button type="button" class="btn-icon" id="wlcTestJoinBtn"><span class="i">🧪</span> Test Join</button>
-                    <div id="wlcTestJoinResult" class="wlc-action-result"></div>
-                </div>
                 </div><!-- /aiWelcomeBody -->
             </div>
 
@@ -366,6 +362,10 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                     </label>
                 </div>
                 <div id="welcomeBody" <?php if (empty($settings['welcomeEnabled'])) echo 'style="display:none"'; ?>>
+                <div class="wlc-action-row" style="margin-bottom:.9rem;">
+                    <button type="button" class="btn-icon" id="wlcTestJoinBtn"><span class="i">🧪</span> Test Join</button>
+                    <div id="wlcTestJoinResult" class="wlc-action-result"></div>
+                </div>
                 <div class="wlc-field">
                     <label>Kanal</label>
                     <select name="welcomeChannelId">
@@ -630,15 +630,9 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                             <label>Embed Nachricht</label>
                             <textarea name="verificationMessage" maxlength="2000"><?php echo esc($settings['verificationMessage'] ?? "Um diesen Server zu betreten und alle Kanäle zu sehen, musst du zuerst beweisen, dass du ein Mensch bist.\n\nKlicke auf den Button unten, um zu starten."); ?></textarea>
                         </div>
-                        <div class="wlc-row2">
-                            <div class="wlc-field">
-                                <label>Embed Footer</label>
-                                <input type="text" name="verificationFooter" maxlength="2048" value="<?php echo esc($settings['verificationFooter'] ?? ''); ?>">
-                            </div>
-                            <div class="wlc-field">
-                                <label>Embed Farbe</label>
-                                <input type="color" name="verificationEmbedColor" value="<?php echo esc($settings['verificationEmbedColor'] ?? '#3b82f6'); ?>">
-                            </div>
+                        <div class="wlc-field">
+                            <label>Embed Footer</label>
+                            <input type="text" name="verificationFooter" maxlength="2048" value="<?php echo esc($settings['verificationFooter'] ?? ''); ?>">
                         </div>
                     </div>
                     <div>

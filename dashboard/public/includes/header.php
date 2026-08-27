@@ -91,7 +91,13 @@ $styleVersion = file_exists($stylePath) ? filemtime($stylePath) : time();
                 <img src="https://cdn.discordapp.com/avatars/<?= esc($u['id']) ?>/<?= esc($u['avatar']) ?>.png?size=64" class="nav-avatar" alt="Avatar">
             <?php endif; ?>
             <span class="nav-user"><?php echo $u ? esc($u['username']) : 'Guest'; ?></span>
-            <?php /* Umschalter Admin/Normal entfernt � siehe admin-modus-entfernen.js */ ?>
+            <?php if (isOwner()): ?>
+                <?php if (isAdmin()): ?>
+                    <a href="<?= BASE_URL ?>/pages/portal.php?view_mode=user" class="btn-view-mode">Normal View</a>
+                <?php else: ?>
+                    <a href="<?= BASE_URL ?>/pages/cockpit.php?view_mode=admin" class="btn-view-mode">Admin Mode</a>
+                <?php endif; ?>
+            <?php endif; ?>
             <a href="?setlang=<?= esc(t('nav.lang_next')) ?>" class="btn-lang" title="<?= esc(t('nav.lang_title')) ?>"><?= t('nav.lang_label') ?></a>
             <a href="<?= BASE_URL ?>/?logout=1" class="btn-logout"><?= t('nav.logout') ?></a>
         </div>

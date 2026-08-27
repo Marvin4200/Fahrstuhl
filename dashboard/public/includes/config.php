@@ -157,10 +157,8 @@ function dashboardViewMode() {
     return $_SESSION['dashboard_view_mode'] ?? 'admin';
 }
 
-// Admin-Modus entfernt � das Dashboard verh�lt sich f�r jedes Konto gleich.
-// Wiederherstellen mit:  node admin-modus-entfernen.js --zurueck
 function isAdmin() {
-    return false;
+    return isOwner() && dashboardViewMode() === 'admin';
 }
 
 function requireAdmin() {

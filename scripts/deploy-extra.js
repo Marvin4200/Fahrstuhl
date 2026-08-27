@@ -40,6 +40,24 @@ const TARGETS = {
     branch: 'main',
     build: false,
   },
+  esel: {
+    name: 'esel',
+    secret: process.env.SECRET_ESEL || '',
+    repoDir: '/home/marvin/esel',
+    branch: 'master',
+    build: true,
+    composeService: 'esel',
+    healthUrl: 'http://esel:3015/health',
+    healthRetries: 10,
+    healthDelayMs: 3000,
+  },
+  '404': {
+    name: '404',
+    secret: process.env.SECRET_404 || '',
+    repoDir: '/home/marvin/404',
+    branch: 'master',
+    build: false,
+  },
 };
 
 for (const t of Object.values(TARGETS)) {

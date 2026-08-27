@@ -309,7 +309,22 @@ $legalItems = [
 
         <section class="sidebar-section">
             <p class="sidebar-section-title"><?php echo isAdmin() ? t('sidebar.nav_admin') : t('sidebar.nav_user'); ?></p>
-            <?php sidebar_render_groups(isAdmin() ? $adminGroups : $userGroups, $p); ?>
+            <?php
+                // Ohne Bot auf dem gewaehlten Server gibt es nichts zu
+                // konfigurieren - dann nur der Weg zum Einladen, statt einer
+                // Leiste voller Seiten, die alle ins Leere laufen.
+                $_navGroups = isAdmin() ? $adminGroups : $userGroups;
+                if (!isAdmin() && $_sw_id !== '' && function_exists('guildHasBot') && !guildHasBot($_sw_id)) {
+                    $_navGroups = [[
+                        'title' => 'Erste Schritte',
+                        'description' => 'Bot fehlt noch',
+                        'items' => [
+                            ['page' => 'invite', 'icon' => '🚀', 'label' => 'Bot einladen', 'description' => 'Fahrstuhl auf diesen Server holen'],
+                        ],
+                    ]];
+                }
+                sidebar_render_groups($_navGroups, $p);
+            ?>
         </section>
 
         <details class="nav-group nav-advanced">

@@ -383,3 +383,76 @@ function currentPage() {
     $p = basename($_SERVER['PHP_SELF'], '.php');
     return $p === 'index' ? 'analytics' : $p;
 }
+
+// ── Ist der Bot auf diesem Server? ───────────────────────────────────────────
+// Der Server-Umschalter listet alle Discord-Server, auf denen die Person
+// Adminrechte hat — auch solche ohne den Bot. Dort ist jede Feature-Seite
+// sinnlos: es gibt nichts zu konfigurieren, und die API liefert Leeres.
+//
+// /voice/guilds laeuft ueber die Guild-Cache des Bots, listet also genau die
+// Server, auf denen er wirklich ist. Ergebnis kurz in der Session halten,
+// damit nicht jeder Seitenaufruf den Bot fragt.
+define('BOT_GUILD_CACHE_TTL', 120);
+
+function botGuildIds() {
+    $cache = $_SESSION['bot_guild_ids'] ?? null;
+    if (is_array($cache) && (time() - ($cache['at'] ?? 0)) < BOT_GUILD_CACHE_TTL) {
+        return $cache['ids'];
+    }
+
+    $ids = [];
+    $raw = getAPI('/voice/guilds', 6);
+    foreach (($raw['data']['guilds'] ?? []) as $g) {
+        if (!empty($g['id'])) $ids[] = (string)$g['id'];
+    }
+
+    // Bei einem API-Aussetzer lieber den letzten bekannten Stand behalten, als
+    // faelschlich zu behaupten, der Bot sei nirgends.
+    if (!$ids && is_array($cache) && !empty($cache['ids'])) {
+        return $cache['ids'];
+    }
+
+    $_SESSION['bot_guild_ids'] = ['at' => time(), 'ids' => $ids];
+    return $ids;
+}
+
+function guildHasBot($guildId) {
+    $guildId = trim((string)$guildId);
+    if ($guildId === '') return true; // ohne Auswahl nichts blockieren
+    return in_array($guildId, botGuildIds(), true);
+}
+
+// Seiten, die ohne Bot auf dem Server nichts anzeigen koennen.
+$GLOBALS['BOT_REQUIRED_PAGES'] = [
+    'portal', 'serverconfig', 'modules', 'command-center', 'setup',
+    'welcome', 'reaction-roles', 'tickets', 'logging', 'temp-voice', 'social',
+    'leveling', 'moderation', 'moderation-hub', 'automod', 'voice-time',
+    'server-backup', 'freegames', 'guild-detail',
+];
+
+/**
+ * Schickt auf die Einladeseite, wenn der gewaehlte Server den Bot nicht hat.
+ * Fuer Admins uebersprungen: deren Umschalter zeigt ohnehin nur Bot-Server.
+ */
+function requireBotOnGuild() {
+    if (isAdmin()) return;
+    if (!isLoggedIn()) return;
+
+    $page = currentPage();
+    if (!in_array($page, $GLOBALS['BOT_REQUIRED_PAGES'], true)) return;
+
+    $guildId = trim($_GET['guildId'] ?? ($_GET['id'] ?? ($_SESSION['selected_guild_id'] ?? '')));
+    if ($guildId === '') return;
+    if (guildHasBot($guildId)) return;
+
+    // Auswahl merken, damit die Einladeseite weiss, um welchen Server es geht.
+    $_SESSION['selected_guild_id'] = $guildId;
+    if (!headers_sent()) {
+        header('Location: ' . BASE_URL . '/pages/invite.php?guildId=' . urlencode($guildId));
+        exit();
+    }
+}
+
+// Muss ganz am Ende stehen: alle oben definierten Helfer werden gebraucht,
+// und die Weiterleitung soll greifen, bevor die Seite Inhalt ausgibt.
+requireBotOnGuild();

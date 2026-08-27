@@ -16,7 +16,7 @@ function ticketsPageAccessCheck($guildId, $moduleKey = 'tickets') {
 }
 
 function ticketsPageAccessMessage($reason) {
-    if ($reason === 'missing_module_role') return 'Dir fehlt eine freigegebene Dashboard-Rolle fÃ¼r dieses Modul.';
+    if ($reason === 'missing_module_role') return 'Dir fehlt eine freigegebene Dashboard-Rolle für dieses Modul.';
     if ($reason === 'admin_role_not_configured') return 'Es ist noch keine Dashboard-Admin-Rolle gesetzt.';
     if ($reason === 'not_guild_admin') return 'Du bist kein Server-Owner/Admin und hast keine freigegebene Dashboard-Rolle.';
     return 'Du hast aktuell keinen Zugriff auf Tickets.';
@@ -113,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
             if (($result['data']['code'] ?? '') === 'LIMIT_REACHED') {
                 $limit = $result['data']['limit'] ?? '?';
                 $current = $result['data']['current'] ?? '?';
-                $panelMessage = 'Limit erreicht: ' . $current . ' / ' . $limit . '. Upgrade fÃ¼r mehr Ticket-Panels.';
+                $panelMessage = 'Limit erreicht: ' . $current . ' / ' . $limit . '. Upgrade für mehr Ticket-Panels.';
             } else {
                 $panelMessage = $result['data']['message'] ?? 'Failed to send ticket panel.';
             }

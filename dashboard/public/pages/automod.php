@@ -16,7 +16,7 @@ function automodPageAccessCheck($guildId, $moduleKey = 'automod') {
 }
 
 function automodPageAccessMessage($reason) {
-    if ($reason === 'missing_module_role') return 'Dir fehlt eine freigegebene Dashboard-Rolle fÃ¼r dieses Modul.';
+    if ($reason === 'missing_module_role') return 'Dir fehlt eine freigegebene Dashboard-Rolle für dieses Modul.';
     if ($reason === 'admin_role_not_configured') return 'Es ist noch keine Dashboard-Admin-Rolle gesetzt.';
     if ($reason === 'not_guild_admin') return 'Du bist kein Server-Owner/Admin und hast keine freigegebene Dashboard-Rolle.';
     return 'Du hast aktuell keinen Zugriff auf AutoMod.';
@@ -36,7 +36,7 @@ if ($guildId && empty($moduleAccess['allowed'])) {
     <div class="empty-state" style="max-width:780px; margin:1rem auto; text-align:left;">
         <strong>Kein Zugriff auf <?= esc($denyLabel) ?></strong>
         <p><?= esc($denyMessage) ?></p>
-        <p style="color:var(--text-secondary); font-size:.82rem;">Bitte lasse dir in den Server-Einstellungen eine Modul-Rolle fÃ¼r AutoMod zuweisen.</p>
+        <p style="color:var(--text-secondary); font-size:.82rem;">Bitte lasse dir in den Server-Einstellungen eine Modul-Rolle für AutoMod zuweisen.</p>
         <a class="btn-icon cta btn-primary-ui" href="portal.php">Zurueck zum Portal</a>
     </div>
     <?php
@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
         if ($operationSuccess) {
             $violations = $result['data']['data']['violations'] ?? [];
             $message = count($violations)
-                ? 'AutoMod hat Treffer fÃ¼r diese Nachricht gefunden.'
+                ? 'AutoMod hat Treffer für diese Nachricht gefunden.'
                 : 'Diese Nachricht wuerde aktuell nicht von AutoMod geblockt.';
         } else {
             $messageType = 'error';

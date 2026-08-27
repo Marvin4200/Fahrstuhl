@@ -346,7 +346,7 @@ $dashboardModuleRoles = $dashboardAccess['moduleRoles'] ?? [];
                     <?php $selectedRoleIds = is_array($dashboardModuleRoles[$moduleKey] ?? null) ? $dashboardModuleRoles[$moduleKey] : []; ?>
                     <div class="dashboard-access-item">
                         <strong><?= esc($moduleLabel) ?></strong>
-                        <small>Optional: ausgewÃ¤hlte Rollen kÃ¶nnen dieses Modul konfigurieren.</small>
+                        <small>Optional: ausgewählte Rollen können dieses Modul konfigurieren.</small>
                         <select name="module_roles[<?= esc($moduleKey) ?>][]" multiple>
                             <?php foreach ($roles as $role): ?>
                             <option value="<?= esc($role['id']) ?>" <?= in_array($role['id'], $selectedRoleIds, true) ? 'selected' : '' ?>><?= esc($role['name']) ?></option>

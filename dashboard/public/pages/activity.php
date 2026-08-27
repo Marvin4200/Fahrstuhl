@@ -70,7 +70,7 @@ function activityRelativeTime($iso) {
     return date('d.m. H:i', $timestamp);
 }
 
-function activityRenderTimeline($items, $emptyTitle = 'Noch keine AktivitÃ¤t', $emptyText = 'Sobald etwas passiert, landet es hier.') {
+function activityRenderTimeline($items, $emptyTitle = 'Noch keine Aktivität', $emptyText = 'Sobald etwas passiert, landet es hier.') {
     ob_start();
     if (empty($items)) {
         ?>
@@ -176,7 +176,7 @@ if ($guildId !== '') {
         $activityItems = $activityResponse['data']['items'] ?? [];
         $pagination = $activityResponse['data']['pagination'] ?? $pagination;
     } else {
-        $activityError = $activityResponse['error'] ?? 'AktivitÃ¤t konnte nicht geladen werden.';
+        $activityError = $activityResponse['error'] ?? 'Aktivität konnte nicht geladen werden.';
     }
 }
 
@@ -184,8 +184,8 @@ if ($isAjaxRequest) {
     if ($guildId === '') {
         activitySendJson([
             'success' => false,
-            'message' => 'Kein Server ausgewÃ¤hlt.',
-            'html' => activityRenderTimeline([], 'Kein Server aktiv', 'WÃ¤hle zuerst einen Server im Portal aus.'),
+            'message' => 'Kein Server ausgewählt.',
+            'html' => activityRenderTimeline([], 'Kein Server aktiv', 'Wähle zuerst einen Server im Portal aus.'),
             'pagination' => $pagination,
         ], 400);
     }
@@ -193,7 +193,7 @@ if ($isAjaxRequest) {
         activitySendJson([
             'success' => false,
             'message' => $activityError,
-            'html' => activityRenderTimeline([], 'AktivitÃ¤t nicht verfÃ¼gbar', $activityError),
+            'html' => activityRenderTimeline([], 'Aktivität nicht verfügbar', $activityError),
             'pagination' => $pagination,
         ], 400);
     }
@@ -427,9 +427,9 @@ if ($isAjaxRequest) {
 <?php
 $initialHtml = '';
 if ($guildId === '') {
-    $initialHtml = activityRenderTimeline([], 'Kein Server aktiv', 'WÃ¤hle zuerst einen Server im Portal aus.');
+    $initialHtml = activityRenderTimeline([], 'Kein Server aktiv', 'Wähle zuerst einen Server im Portal aus.');
 } elseif ($activityError !== '') {
-    $initialHtml = activityRenderTimeline([], 'AktivitÃ¤t nicht verfÃ¼gbar', $activityError);
+    $initialHtml = activityRenderTimeline([], 'Aktivität nicht verfügbar', $activityError);
 } else {
     $initialHtml = activityRenderTimeline($activityItems);
 }
@@ -459,12 +459,12 @@ $currentTypeMeta = $filters[$filter] ?? $filters['all'];
 
     <section class="activity-hero">
         <div class="activity-banner">
-            <span class="activity-eyebrow">⚡ Letzte AktivitÃ¤t</span>
+            <span class="activity-eyebrow">⚡ Letzte Aktivität</span>
             <h1><?= esc($selectedGuild['name'] ?? 'Server Feed') ?></h1>
             <p>Ein zentraler Blick auf Moderation, AutoMod, Tickets, Leveling und Voice Events. Die Daten kommen direkt aus bestehenden Guild-Tabellen, ohne neue Storage-Schicht.</p>
         </div>
         <div class="activity-summary">
-            <p>Filtere die Timeline nach Bereich und lade bei Bedarf weitere EintrÃ¤ge nach. Die Seite bleibt leichtgewichtig, weil pro Aufruf nur ein kleiner paginierter Ausschnitt geladen wird.</p>
+            <p>Filtere die Timeline nach Bereich und lade bei Bedarf weitere Einträge nach. Die Seite bleibt leichtgewichtig, weil pro Aufruf nur ein kleiner paginierter Ausschnitt geladen wird.</p>
             <?php if (!$hasLiveActivity): ?>
                 <div class="ctx-upsell-card">
                     <div class="cu-icon">🔒</div>
@@ -478,7 +478,7 @@ $currentTypeMeta = $filters[$filter] ?? $filters['all'];
             <div class="activity-summary-grid">
                 <div class="activity-summary-kpi">
                     <strong id="activity-count"><?= count($activityItems) ?></strong>
-                    <span>EintrÃ¤ge geladen</span>
+                    <span>Einträge geladen</span>
                 </div>
                 <div class="activity-summary-kpi">
                     <strong><?= esc($currentTypeMeta['label']) ?></strong>
@@ -492,7 +492,7 @@ $currentTypeMeta = $filters[$filter] ?? $filters['all'];
         <div class="activity-toolbar">
             <div>
                 <h2 style="margin:0;">Timeline</h2>
-                <p style="margin:.2rem 0 0; color:var(--text-secondary);">Chronologisch zusammengefÃ¼hrte Guild Events.</p>
+                <p style="margin:.2rem 0 0; color:var(--text-secondary);">Chronologisch zusammengeführte Guild Events.</p>
             </div>
             <div class="activity-filter-row" id="activityFilters">
                 <?php foreach ($filters as $key => $filterMeta): ?>
@@ -766,7 +766,7 @@ $currentTypeMeta = $filters[$filter] ?? $filters['all'];
             });
             const payload = await response.json();
             if (!response.ok || !payload.success) {
-                throw new Error(payload.message || 'AktivitÃ¤t konnte nicht geladen werden.');
+                throw new Error(payload.message || 'Aktivität konnte nicht geladen werden.');
             }
 
             if (append) {
@@ -786,7 +786,7 @@ $currentTypeMeta = $filters[$filter] ?? $filters['all'];
             });
             updateButton();
         } catch (error) {
-            feed.innerHTML = `<div class="empty-state activity-empty-state"><strong>Fehler</strong><p>${String(error.message || 'AktivitÃ¤t konnte nicht geladen werden.')}</p></div>`;
+            feed.innerHTML = `<div class="empty-state activity-empty-state"><strong>Fehler</strong><p>${String(error.message || 'Aktivität konnte nicht geladen werden.')}</p></div>`;
             hasMore = false;
             updateButton();
         } finally {

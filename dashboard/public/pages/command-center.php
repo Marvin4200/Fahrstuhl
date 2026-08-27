@@ -38,7 +38,7 @@ foreach ($guilds as $guildRow) {
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && (($_POST['ajax'] ?? '') === '1')) {
     if ($guildId === '') {
-        commandCenterJson(['success' => false, 'message' => 'Kein Server ausgewÃ¤hlt.'], 400);
+        commandCenterJson(['success' => false, 'message' => 'Kein Server ausgewählt.'], 400);
     }
 
     $action = strtolower(trim((string)($_POST['actionType'] ?? '')));
@@ -360,7 +360,7 @@ $streamAuth['signature'] = $hasLiveActivity ? (string)($streamAuth['signature'] 
     <section class="cc-hero">
         <div class="cc-banner">
             <span class="cc-eyebrow">Realtime Ops</span>
-            <h2><?= esc($selectedGuild['name'] ?? 'Kein Server ausgewÃ¤hlt') ?></h2>
+            <h2><?= esc($selectedGuild['name'] ?? 'Kein Server ausgewählt') ?></h2>
             <p>Alle kritischen Aktionen in einem Screen: Live Activity links, Sofortaktionen rechts. Ohne neue Architektur, direkt auf bestehende API-Routen.</p>
         </div>
 
@@ -382,12 +382,12 @@ $streamAuth['signature'] = $hasLiveActivity ? (string)($streamAuth['signature'] 
             <?php if (!$hasLiveActivity): ?>
                 <div class="cc-live-locked">
                     <strong>🔒 Live Feed ist Premium</strong>
-                    <p style="margin:.35rem 0 0;">Du siehst weiterhin den letzten Snapshot. FÃ¼r echte Live-Updates bitte auf Basic oder Pro upgraden.</p>
+                    <p style="margin:.35rem 0 0;">Du siehst weiterhin den letzten Snapshot. Für echte Live-Updates bitte auf Basic oder Pro upgraden.</p>
                 </div>
             <?php endif; ?>
             <div class="cc-feed" id="ccFeed">
                 <?php if (empty($activityItems)): ?>
-                    <div class="empty-state"><strong>Noch keine AktivitÃ¤t</strong><p>Sobald Events eintreffen, erscheinen sie hier.</p></div>
+                    <div class="empty-state"><strong>Noch keine Aktivität</strong><p>Sobald Events eintreffen, erscheinen sie hier.</p></div>
                 <?php else: ?>
                     <?php foreach ($activityItems as $item): ?>
                         <?php $meta = commandCenterTypeMeta($item['type'] ?? ''); ?>
@@ -422,7 +422,7 @@ $streamAuth['signature'] = $hasLiveActivity ? (string)($streamAuth['signature'] 
                     <div class="cc-action-grid">
                         <input name="userId" placeholder="User ID" required>
                         <input name="reason" placeholder="Grund (optional)">
-                        <button type="submit" class="btn-icon btn-secondary-ui cc-row-full"><span class="i">🚪</span> Kick ausfÃ¼hren</button>
+                        <button type="submit" class="btn-icon btn-secondary-ui cc-row-full"><span class="i">🚪</span> Kick ausführen</button>
                     </div>
                 </form>
 
@@ -432,13 +432,13 @@ $streamAuth['signature'] = $hasLiveActivity ? (string)($streamAuth['signature'] 
                     <div class="cc-action-grid">
                         <input name="userId" placeholder="User ID" required>
                         <input name="reason" placeholder="Grund (optional)">
-                        <button type="submit" class="btn-icon btn-secondary-ui cc-row-full"><span class="i">⛔</span> Ban ausfÃ¼hren</button>
+                        <button type="submit" class="btn-icon btn-secondary-ui cc-row-full"><span class="i">⛔</span> Ban ausführen</button>
                     </div>
                 </form>
 
                 <form class="cc-action" data-action="testticket">
                     <h4>🎫 Ticket Test</h4>
-                    <p>Erzeugt ein Test-Ticket fÃ¼r den Dashboard User.</p>
+                    <p>Erzeugt ein Test-Ticket für den Dashboard User.</p>
                     <div class="cc-action-grid">
                         <select name="priority">
                             <option value="normal">Normal</option>
@@ -454,7 +454,7 @@ $streamAuth['signature'] = $hasLiveActivity ? (string)($streamAuth['signature'] 
                     <h4>🚨 AutoMod Test</h4>
                     <p>Testet Regeln ohne echte Moderationsaktion.</p>
                     <div class="cc-action-grid">
-                        <textarea class="cc-row-full" name="content" placeholder="Nachricht fÃ¼r den Regeltest" required></textarea>
+                        <textarea class="cc-row-full" name="content" placeholder="Nachricht für den Regeltest" required></textarea>
                         <input name="mentionCount" type="number" min="0" max="30" value="0" placeholder="Mentions">
                         <button type="submit" class="btn-icon btn-secondary-ui"><span class="i">🧪</span> AutoMod pruefen</button>
                     </div>

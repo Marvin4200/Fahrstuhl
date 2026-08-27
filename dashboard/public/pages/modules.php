@@ -31,7 +31,7 @@ function modulesPageAccessCheck($guildId, $moduleKey = 'stats') {
 }
 
 function modulesPageAccessMessage($reason) {
-    if ($reason === 'missing_module_role') return 'Dir fehlt eine freigegebene Dashboard-Rolle fÃ¼r dieses Modul.';
+    if ($reason === 'missing_module_role') return 'Dir fehlt eine freigegebene Dashboard-Rolle für dieses Modul.';
     if ($reason === 'admin_role_not_configured') return 'Es ist noch keine Dashboard-Admin-Rolle gesetzt.';
     if ($reason === 'not_guild_admin') return 'Du bist kein Server-Owner/Admin und hast keine freigegebene Dashboard-Rolle.';
     if ($reason === 'missing_actor') return 'Dein Dashboard-Login konnte nicht korrekt verifiziert werden.';
@@ -410,7 +410,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         <div class="dashboard-page-copy">
             <span class="dashboard-page-eyebrow">Server Tools</span>
             <h1>Modules</h1>
-            <p>Aktiviere zuerst Core-Bausteine und Ã¶ffne danach nur die Bereiche, die dein Server wirklich nutzt.</p>
+            <p>Aktiviere zuerst Core-Bausteine und öffne danach nur die Bereiche, die dein Server wirklich nutzt.</p>
             <div class="dashboard-page-meta">
                 <span class="status-badge <?php echo $activeCount > 0 ? 'active' : 'inactive'; ?>"><?php echo $activeCount > 0 ? $activeCount . ' aktiv' : 'Noch nichts aktiv'; ?></span>
                 <span class="status-badge <?php echo $coreActiveCount === count($coreKeys) ? 'active' : 'warning'; ?>">Core <?php echo $coreActiveCount; ?>/<?php echo count($coreKeys); ?></span>
@@ -433,8 +433,8 @@ input:checked + .slider:before { transform: translateX(20px); }
 
     <?php if (!$guildId): ?>
         <div class="empty-state">
-            <strong>Kein Server ausgewÃ¤hlt</strong>
-            <p>WÃ¤hle oben einen Server aus, um Module zu aktivieren und zu konfigurieren.</p>
+            <strong>Kein Server ausgewählt</strong>
+            <p>Wähle oben einen Server aus, um Module zu aktivieren und zu konfigurieren.</p>
             <a href="portal.php" class="btn-icon cta btn-secondary-ui">Zum Portal</a>
         </div>
     <?php else: ?>
@@ -457,7 +457,7 @@ input:checked + .slider:before { transform: translateX(20px); }
             <div class="md-value-strip">
                 <div>
                     <strong>Mehr aus deinem Setup holen</strong>
-                    <p>Premium schaltet mehr Ticket-/Reaction-Role-Panels und Live Activity frei. Pro erweitert Insights fÃ¼r tiefere Entscheidungen.</p>
+                    <p>Premium schaltet mehr Ticket-/Reaction-Role-Panels und Live Activity frei. Pro erweitert Insights für tiefere Entscheidungen.</p>
                 </div>
                 <a href="<?php echo esc(dashboardPageUrl('server-plans')); ?>" class="btn-icon btn-secondary-ui">Upgrade ansehen</a>
             </div>
@@ -467,7 +467,7 @@ input:checked + .slider:before { transform: translateX(20px); }
             <div class="md-onboard">
                 <div>
                     <div class="md-onboard-title">🧭 Core Setup zuerst</div>
-                    <div class="md-onboard-copy">Ein Klick aktiviert Welcome, Logging und Tickets. Danach ist die Basis fÃ¼r Start, Nachvollziehbarkeit und Support gesetzt.</div>
+                    <div class="md-onboard-copy">Ein Klick aktiviert Welcome, Logging und Tickets. Danach ist die Basis für Start, Nachvollziehbarkeit und Support gesetzt.</div>
                 </div>
                 <form method="POST" id="coreSetupForm">
                     <input type="hidden" name="action" value="enable_core">
@@ -511,7 +511,7 @@ input:checked + .slider:before { transform: translateX(20px); }
                         $gateInfo = $gateLabels[$gate] ?? $gateLabels['free'];
                         $gateLevel = $gateTierLevel[$gate] ?? 0;
                         $lockedByPlan = $gate !== 'free' && $currentTierLevel < $gateLevel;
-                        $actionLabel = $lockedByPlan ? 'Plan' : ($healthHint ? 'Setup' : ($enabled ? 'Ãffnen' : 'Aktivieren'));
+                        $actionLabel = $lockedByPlan ? 'Plan' : ($healthHint ? 'Setup' : ($enabled ? 'Öffnen' : 'Aktivieren'));
                     ?>
                     <?php if ($healthHint): ?>
                     <div class="status-badge setup" title="<?php echo esc($healthHint); ?>" style="position:absolute;top:0.6rem;right:0.6rem;cursor:help;">Setup noetig</div>
@@ -588,7 +588,7 @@ function escapeHtml(str) {
         const text = String(message || '');
         const lower = text.toLowerCase();
         if (lower.includes('limit reached') || lower.includes('feature limit')) {
-            return 'Du hast dein Limit erreicht. Upgrade fÃ¼r mehr.';
+            return 'Du hast dein Limit erreicht. Upgrade für mehr.';
         }
         return text;
     }

@@ -34,7 +34,7 @@ if ($guildId && empty($moduleAccess['allowed'])) {
     include '../includes/sidebar.php';
     ?>
     <div class="empty-state" style="max-width:780px; margin:1rem auto; text-align:left;">
-        <strong>Kein Zugriff auf <?= esc($denyLabel) ?></strong>
+        <strong><?= t('am.no_access') ?><?= esc($denyLabel) ?></strong>
         <p><?= esc($denyMessage) ?></p>
         <p style="color:var(--text-secondary); font-size:.82rem;">Bitte lasse dir in den Server-Einstellungen eine Modul-Rolle für AutoMod zuweisen.</p>
         <a class="btn-icon cta btn-primary-ui" href="portal.php">Zurueck zum Portal</a>
@@ -220,7 +220,7 @@ $atTermsLimit  = $maxTerms >= 0 && $currentTerms >= $maxTerms;
 
 <section class="dashboard-page-header">
     <div class="dashboard-page-copy">
-        <span class="dashboard-page-eyebrow">Moderation Module</span>
+        <span class="dashboard-page-eyebrow"><?= t('am.eyebrow') ?></span>
         <h1>AutoMod</h1>
         <p>Regeln, Schwellen und Aktionen in einem konsistenten Setup-Flow.</p>
         <div class="dashboard-page-meta">
@@ -242,7 +242,7 @@ $atTermsLimit  = $maxTerms >= 0 && $currentTerms >= $maxTerms;
 
 <?php if (!$automodEnabled): ?>
     <div class="empty-state">
-        <strong>AutoMod ist deaktiviert</strong>
+        <strong><?= t('am.disabled_title') ?></strong>
         <p>Aktiviere das Modul und richte danach Presets, Regelaktionen und Filter ein.</p>
         <a class="btn-icon cta btn-primary-ui" href="modules.php?guildId=<?php echo urlencode($guildId); ?>">Modul aktivieren</a>
     </div>
@@ -250,10 +250,10 @@ $atTermsLimit  = $maxTerms >= 0 && $currentTerms >= $maxTerms;
 
     <!-- PRESETS BAR -->
     <div class="am-card" style="margin-bottom:1rem; flex-direction:row; align-items:center; gap:1rem; flex-wrap:wrap;">
-        <span style="font-size:.8rem; font-weight:800; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em; white-space:nowrap;">⚡ Quick Preset</span>
-        <button type="button" class="btn-icon" onclick="applyAutomodPreset('relaxed')" style="background:rgba(81,207,102,.15); border-color:rgba(81,207,102,.4); color:#51cf66;">🟢 Relaxed</button>
-        <button type="button" class="btn-icon" onclick="applyAutomodPreset('balanced')" style="background:rgba(255,212,59,.12); border-color:rgba(255,212,59,.4); color:#ffd43b;">🟡 Balanced</button>
-        <button type="button" class="btn-icon" onclick="applyAutomodPreset('strict')" style="background:rgba(242,63,67,.12); border-color:rgba(242,63,67,.4); color:#ff9b9d;">🔴 Strict</button>
+        <span style="font-size:.8rem; font-weight:800; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em; white-space:nowrap;">⚡ <?= t('am.quick_preset') ?></span>
+        <button type="button" class="btn-icon" onclick="applyAutomodPreset('relaxed')" style="background:rgba(81,207,102,.15); border-color:rgba(81,207,102,.4); color:#51cf66;">🟢 <?= t('am.p_relaxed') ?></button>
+        <button type="button" class="btn-icon" onclick="applyAutomodPreset('balanced')" style="background:rgba(255,212,59,.12); border-color:rgba(255,212,59,.4); color:#ffd43b;">🟡 <?= t('am.p_balanced') ?></button>
+        <button type="button" class="btn-icon" onclick="applyAutomodPreset('strict')" style="background:rgba(242,63,67,.12); border-color:rgba(242,63,67,.4); color:#ff9b9d;">🔴 <?= t('am.p_strict') ?></button>
         <small style="color:var(--text-secondary);">Presets füllen die Felder vor – danach noch Speichern klicken.</small>
     </div>
 
@@ -262,163 +262,163 @@ $atTermsLimit  = $maxTerms >= 0 && $currentTerms >= $maxTerms;
         
         <!-- COLUMN 1: RULES & PUNISHMENT -->
         <div class="am-card">
-            <h2><span class="i">🛡️</span> Security Rules</h2>
+            <h2><span class="i">🛡️</span> <?= t('am.rules') ?></h2>
 
             <div class="am-grid-3">
-                <div class="am-stat"><strong><?php echo number_format((int)($stats['hits24h'] ?? 0)); ?></strong><span>24h Hits</span></div>
-                <div class="am-stat"><strong><?php echo number_format((int)($stats['uniqueUsers24h'] ?? 0)); ?></strong><span>Users</span></div>
-                <div class="am-stat"><strong><?php echo number_format((int)($stats['totalHits'] ?? 0)); ?></strong><span>Total</span></div>
+                <div class="am-stat"><strong><?php echo number_format((int)($stats['hits24h'] ?? 0)); ?></strong><span><?= t('am.hits24') ?></span></div>
+                <div class="am-stat"><strong><?php echo number_format((int)($stats['uniqueUsers24h'] ?? 0)); ?></strong><span><?= t('am.users') ?></span></div>
+                <div class="am-stat"><strong><?php echo number_format((int)($stats['totalHits'] ?? 0)); ?></strong><span><?= t('am.total') ?></span></div>
             </div>
             
             <div class="am-note" style="margin-bottom:0.4rem;">
-                Aktiviere Regeln links und lege rechts pro Regel fest, welche Aktion laufen soll. Mit <strong>Use Global</strong> gelten deine globalen Delete/Warn/Punishment-Einstellungen.
+                Aktiviere Regeln links und lege rechts pro Regel fest, welche Aktion laufen soll. Mit <strong><?= t('am.a_global') ?></strong> gelten deine globalen Einstellungen für Löschen, Verwarnen und Bestrafung.
             </div>
 
             <div class="am-rule-row">
-                <div class="am-rule-info"><strong>Invites</strong><small>Blocks Discord invite links and vanity invite URLs.</small></div>
+                <div class="am-rule-info"><strong><?= t('am.r_invites') ?></strong><small><?= t('am.r_invites_sub') ?></small></div>
                 <div style="display:flex; align-items:center; gap:0.5rem;">
                     <input type="checkbox" name="blockInvites" <?php echo !empty($settings['blockInvites']) ? 'checked' : ''; ?>>
                     <select class="am-rule-action" name="ruleActions[invite]">
                         <?php $v = $settings['ruleActions']['invite'] ?? 'fallback'; ?>
-                        <option value="fallback" <?php echo $v === 'fallback' ? 'selected' : ''; ?>>Use Global</option>
-                        <option value="none" <?php echo $v === 'none' ? 'selected' : ''; ?>>None</option>
-                        <option value="delete" <?php echo $v === 'delete' ? 'selected' : ''; ?>>Delete</option>
-                        <option value="warn" <?php echo $v === 'warn' ? 'selected' : ''; ?>>Warn</option>
-                        <option value="timeout" <?php echo $v === 'timeout' ? 'selected' : ''; ?>>Timeout</option>
-                        <option value="kick" <?php echo $v === 'kick' ? 'selected' : ''; ?>>Kick</option>
-                        <option value="ban" <?php echo $v === 'ban' ? 'selected' : ''; ?>>Ban</option>
+                        <option value="fallback" <?php echo $v === 'fallback' ? 'selected' : ''; ?>><?= t('am.a_global') ?></option>
+                        <option value="none" <?php echo $v === 'none' ? 'selected' : ''; ?>><?= t('am.a_none') ?></option>
+                        <option value="delete" <?php echo $v === 'delete' ? 'selected' : ''; ?>><?= t('am.a_delete') ?></option>
+                        <option value="warn" <?php echo $v === 'warn' ? 'selected' : ''; ?>><?= t('am.a_warn') ?></option>
+                        <option value="timeout" <?php echo $v === 'timeout' ? 'selected' : ''; ?>><?= t('am.a_timeout') ?></option>
+                        <option value="kick" <?php echo $v === 'kick' ? 'selected' : ''; ?>><?= t('am.a_kick') ?></option>
+                        <option value="ban" <?php echo $v === 'ban' ? 'selected' : ''; ?>><?= t('am.a_ban') ?></option>
                     </select>
                 </div>
             </div>
             <div class="am-rule-row">
-                <div class="am-rule-info"><strong>Links</strong><small>Blocks non-whitelisted external links.</small></div>
+                <div class="am-rule-info"><strong><?= t('am.r_links') ?></strong><small><?= t('am.r_links_sub') ?></small></div>
                 <div style="display:flex; align-items:center; gap:0.5rem;">
                     <input type="checkbox" name="blockLinks" <?php echo !empty($settings['blockLinks']) ? 'checked' : ''; ?>>
                     <select class="am-rule-action" name="ruleActions[link]">
                         <?php $v = $settings['ruleActions']['link'] ?? 'fallback'; ?>
-                        <option value="fallback" <?php echo $v === 'fallback' ? 'selected' : ''; ?>>Use Global</option>
-                        <option value="none" <?php echo $v === 'none' ? 'selected' : ''; ?>>None</option>
-                        <option value="delete" <?php echo $v === 'delete' ? 'selected' : ''; ?>>Delete</option>
-                        <option value="warn" <?php echo $v === 'warn' ? 'selected' : ''; ?>>Warn</option>
-                        <option value="timeout" <?php echo $v === 'timeout' ? 'selected' : ''; ?>>Timeout</option>
-                        <option value="kick" <?php echo $v === 'kick' ? 'selected' : ''; ?>>Kick</option>
-                        <option value="ban" <?php echo $v === 'ban' ? 'selected' : ''; ?>>Ban</option>
+                        <option value="fallback" <?php echo $v === 'fallback' ? 'selected' : ''; ?>><?= t('am.a_global') ?></option>
+                        <option value="none" <?php echo $v === 'none' ? 'selected' : ''; ?>><?= t('am.a_none') ?></option>
+                        <option value="delete" <?php echo $v === 'delete' ? 'selected' : ''; ?>><?= t('am.a_delete') ?></option>
+                        <option value="warn" <?php echo $v === 'warn' ? 'selected' : ''; ?>><?= t('am.a_warn') ?></option>
+                        <option value="timeout" <?php echo $v === 'timeout' ? 'selected' : ''; ?>><?= t('am.a_timeout') ?></option>
+                        <option value="kick" <?php echo $v === 'kick' ? 'selected' : ''; ?>><?= t('am.a_kick') ?></option>
+                        <option value="ban" <?php echo $v === 'ban' ? 'selected' : ''; ?>><?= t('am.a_ban') ?></option>
                     </select>
                 </div>
             </div>
             <div class="am-rule-row">
-                <div class="am-rule-info"><strong>Spam</strong><small>Detects message floods in a short time window.</small></div>
+                <div class="am-rule-info"><strong><?= t('am.r_spam') ?></strong><small><?= t('am.r_spam_sub') ?></small></div>
                 <div style="display:flex; align-items:center; gap:0.5rem;">
                     <input type="checkbox" name="blockSpam" <?php echo !empty($settings['blockSpam']) ? 'checked' : ''; ?>>
                     <select class="am-rule-action" name="ruleActions[message_spam]">
                         <?php $v = $settings['ruleActions']['message_spam'] ?? 'fallback'; ?>
-                        <option value="fallback" <?php echo $v === 'fallback' ? 'selected' : ''; ?>>Use Global</option>
-                        <option value="none" <?php echo $v === 'none' ? 'selected' : ''; ?>>None</option>
-                        <option value="delete" <?php echo $v === 'delete' ? 'selected' : ''; ?>>Delete</option>
-                        <option value="warn" <?php echo $v === 'warn' ? 'selected' : ''; ?>>Warn</option>
-                        <option value="timeout" <?php echo $v === 'timeout' ? 'selected' : ''; ?>>Timeout</option>
-                        <option value="kick" <?php echo $v === 'kick' ? 'selected' : ''; ?>>Kick</option>
-                        <option value="ban" <?php echo $v === 'ban' ? 'selected' : ''; ?>>Ban</option>
+                        <option value="fallback" <?php echo $v === 'fallback' ? 'selected' : ''; ?>><?= t('am.a_global') ?></option>
+                        <option value="none" <?php echo $v === 'none' ? 'selected' : ''; ?>><?= t('am.a_none') ?></option>
+                        <option value="delete" <?php echo $v === 'delete' ? 'selected' : ''; ?>><?= t('am.a_delete') ?></option>
+                        <option value="warn" <?php echo $v === 'warn' ? 'selected' : ''; ?>><?= t('am.a_warn') ?></option>
+                        <option value="timeout" <?php echo $v === 'timeout' ? 'selected' : ''; ?>><?= t('am.a_timeout') ?></option>
+                        <option value="kick" <?php echo $v === 'kick' ? 'selected' : ''; ?>><?= t('am.a_kick') ?></option>
+                        <option value="ban" <?php echo $v === 'ban' ? 'selected' : ''; ?>><?= t('am.a_ban') ?></option>
                     </select>
                 </div>
             </div>
             <div class="am-rule-row">
-                <div class="am-rule-info"><strong>Repeated Text</strong><small>Blocks repeated copy-paste spam chunks.</small></div>
+                <div class="am-rule-info"><strong><?= t('am.r_repeat') ?></strong><small><?= t('am.r_repeat_sub') ?></small></div>
                 <div style="display:flex; align-items:center; gap:0.5rem;">
                     <input type="checkbox" name="blockRepeatedText" <?php echo !empty($settings['blockRepeatedText']) ? 'checked' : ''; ?>>
                     <select class="am-rule-action" name="ruleActions[repeated_text]">
                         <?php $v = $settings['ruleActions']['repeated_text'] ?? 'fallback'; ?>
-                        <option value="fallback" <?php echo $v === 'fallback' ? 'selected' : ''; ?>>Use Global</option>
-                        <option value="none" <?php echo $v === 'none' ? 'selected' : ''; ?>>None</option>
-                        <option value="delete" <?php echo $v === 'delete' ? 'selected' : ''; ?>>Delete</option>
-                        <option value="warn" <?php echo $v === 'warn' ? 'selected' : ''; ?>>Warn</option>
-                        <option value="timeout" <?php echo $v === 'timeout' ? 'selected' : ''; ?>>Timeout</option>
-                        <option value="kick" <?php echo $v === 'kick' ? 'selected' : ''; ?>>Kick</option>
-                        <option value="ban" <?php echo $v === 'ban' ? 'selected' : ''; ?>>Ban</option>
+                        <option value="fallback" <?php echo $v === 'fallback' ? 'selected' : ''; ?>><?= t('am.a_global') ?></option>
+                        <option value="none" <?php echo $v === 'none' ? 'selected' : ''; ?>><?= t('am.a_none') ?></option>
+                        <option value="delete" <?php echo $v === 'delete' ? 'selected' : ''; ?>><?= t('am.a_delete') ?></option>
+                        <option value="warn" <?php echo $v === 'warn' ? 'selected' : ''; ?>><?= t('am.a_warn') ?></option>
+                        <option value="timeout" <?php echo $v === 'timeout' ? 'selected' : ''; ?>><?= t('am.a_timeout') ?></option>
+                        <option value="kick" <?php echo $v === 'kick' ? 'selected' : ''; ?>><?= t('am.a_kick') ?></option>
+                        <option value="ban" <?php echo $v === 'ban' ? 'selected' : ''; ?>><?= t('am.a_ban') ?></option>
                     </select>
                 </div>
             </div>
             <div class="am-rule-row">
-                <div class="am-rule-info"><strong>Mass Mentions</strong><small>Stops mention raids and mass pings.</small></div>
+                <div class="am-rule-info"><strong><?= t('am.r_mentions') ?></strong><small><?= t('am.r_mentions_sub') ?></small></div>
                 <div style="display:flex; align-items:center; gap:0.5rem;">
                     <input type="checkbox" name="blockMassMentions" <?php echo !empty($settings['blockMassMentions']) ? 'checked' : ''; ?>>
                     <select class="am-rule-action" name="ruleActions[mass_mentions]">
                         <?php $v = $settings['ruleActions']['mass_mentions'] ?? 'fallback'; ?>
-                        <option value="fallback" <?php echo $v === 'fallback' ? 'selected' : ''; ?>>Use Global</option>
-                        <option value="none" <?php echo $v === 'none' ? 'selected' : ''; ?>>None</option>
-                        <option value="delete" <?php echo $v === 'delete' ? 'selected' : ''; ?>>Delete</option>
-                        <option value="warn" <?php echo $v === 'warn' ? 'selected' : ''; ?>>Warn</option>
-                        <option value="timeout" <?php echo $v === 'timeout' ? 'selected' : ''; ?>>Timeout</option>
-                        <option value="kick" <?php echo $v === 'kick' ? 'selected' : ''; ?>>Kick</option>
-                        <option value="ban" <?php echo $v === 'ban' ? 'selected' : ''; ?>>Ban</option>
+                        <option value="fallback" <?php echo $v === 'fallback' ? 'selected' : ''; ?>><?= t('am.a_global') ?></option>
+                        <option value="none" <?php echo $v === 'none' ? 'selected' : ''; ?>><?= t('am.a_none') ?></option>
+                        <option value="delete" <?php echo $v === 'delete' ? 'selected' : ''; ?>><?= t('am.a_delete') ?></option>
+                        <option value="warn" <?php echo $v === 'warn' ? 'selected' : ''; ?>><?= t('am.a_warn') ?></option>
+                        <option value="timeout" <?php echo $v === 'timeout' ? 'selected' : ''; ?>><?= t('am.a_timeout') ?></option>
+                        <option value="kick" <?php echo $v === 'kick' ? 'selected' : ''; ?>><?= t('am.a_kick') ?></option>
+                        <option value="ban" <?php echo $v === 'ban' ? 'selected' : ''; ?>><?= t('am.a_ban') ?></option>
                     </select>
                 </div>
             </div>
             <div class="am-rule-row">
-                <div class="am-rule-info"><strong>Caps</strong><small>Stops shouting with too many uppercase letters.</small></div>
+                <div class="am-rule-info"><strong><?= t('am.r_caps') ?></strong><small><?= t('am.r_caps_sub') ?></small></div>
                 <div style="display:flex; align-items:center; gap:0.5rem;">
                     <input type="checkbox" name="blockCaps" <?php echo !empty($settings['blockCaps']) ? 'checked' : ''; ?>>
                     <select class="am-rule-action" name="ruleActions[caps]">
                         <?php $v = $settings['ruleActions']['caps'] ?? 'fallback'; ?>
-                        <option value="fallback" <?php echo $v === 'fallback' ? 'selected' : ''; ?>>Use Global</option>
-                        <option value="none" <?php echo $v === 'none' ? 'selected' : ''; ?>>None</option>
-                        <option value="delete" <?php echo $v === 'delete' ? 'selected' : ''; ?>>Delete</option>
-                        <option value="warn" <?php echo $v === 'warn' ? 'selected' : ''; ?>>Warn</option>
-                        <option value="timeout" <?php echo $v === 'timeout' ? 'selected' : ''; ?>>Timeout</option>
-                        <option value="kick" <?php echo $v === 'kick' ? 'selected' : ''; ?>>Kick</option>
-                        <option value="ban" <?php echo $v === 'ban' ? 'selected' : ''; ?>>Ban</option>
+                        <option value="fallback" <?php echo $v === 'fallback' ? 'selected' : ''; ?>><?= t('am.a_global') ?></option>
+                        <option value="none" <?php echo $v === 'none' ? 'selected' : ''; ?>><?= t('am.a_none') ?></option>
+                        <option value="delete" <?php echo $v === 'delete' ? 'selected' : ''; ?>><?= t('am.a_delete') ?></option>
+                        <option value="warn" <?php echo $v === 'warn' ? 'selected' : ''; ?>><?= t('am.a_warn') ?></option>
+                        <option value="timeout" <?php echo $v === 'timeout' ? 'selected' : ''; ?>><?= t('am.a_timeout') ?></option>
+                        <option value="kick" <?php echo $v === 'kick' ? 'selected' : ''; ?>><?= t('am.a_kick') ?></option>
+                        <option value="ban" <?php echo $v === 'ban' ? 'selected' : ''; ?>><?= t('am.a_ban') ?></option>
                     </select>
                 </div>
             </div>
 
-            <div class="am-section-title">Thresholds</div>
+            <div class="am-section-title"><?= t('am.thresholds') ?></div>
             <div class="am-grid-2">
                 <div class="am-field">
-                    <label>Mention Limit</label>
+                    <label><?= t('am.mention_limit') ?></label>
                     <input type="number" name="mentionLimit" value="<?php echo esc($settings['mentionLimit'] ?? 6); ?>" min="2" max="25">
                 </div>
                 <div class="am-field">
-                    <label>Spam Window (s)</label>
+                    <label><?= t('am.spam_window') ?></label>
                     <input type="number" name="duplicateWindowSeconds" value="<?php echo esc($settings['duplicateWindowSeconds'] ?? 20); ?>" min="5" max="300">
                 </div>
                 <div class="am-field">
-                    <label>Duplicate Count</label>
+                    <label><?= t('am.dupe_count') ?></label>
                     <input type="number" name="duplicateThreshold" value="<?php echo esc($settings['duplicateThreshold'] ?? 4); ?>" min="2" max="10">
                 </div>
                 <div class="am-field">
-                    <label>Caps Percent</label>
+                    <label><?= t('am.caps_percent') ?></label>
                     <input type="number" name="capsPercent" value="<?php echo esc($settings['capsPercent'] ?? 70); ?>" min="50" max="100">
                 </div>
             </div>
 
-            <div class="am-section-title">Punishment</div>
+            <div class="am-section-title"><?= t('am.punishment') ?></div>
             <div class="am-field">
-                <label>Mode</label>
+                <label><?= t('am.mode') ?></label>
                 <select name="punishmentMode">
-                    <option value="fixed" <?php echo ($settings['punishmentMode'] ?? '') === 'fixed' ? 'selected' : ''; ?>>Fixed (Always the same)</option>
-                    <option value="escalate" <?php echo ($settings['punishmentMode'] ?? '') === 'escalate' ? 'selected' : ''; ?>>Escalate (Warn -> Timeout -> Kick)</option>
+                    <option value="fixed" <?php echo ($settings['punishmentMode'] ?? '') === 'fixed' ? 'selected' : ''; ?>><?= t('am.mode_fixed') ?></option>
+                    <option value="escalate" <?php echo ($settings['punishmentMode'] ?? '') === 'escalate' ? 'selected' : ''; ?>><?= t('am.mode_escalate') ?></option>
                 </select>
             </div>
             <div class="am-grid-2">
                 <div class="am-field">
-                    <label>Action</label>
+                    <label><?= t('am.action') ?></label>
                     <select name="punishmentAction">
-                        <option value="none" <?php echo ($settings['punishmentAction'] ?? '') === 'none' ? 'selected' : ''; ?>>None</option>
-                        <option value="timeout" <?php echo ($settings['punishmentAction'] ?? '') === 'timeout' ? 'selected' : ''; ?>>Timeout</option>
-                        <option value="kick" <?php echo ($settings['punishmentAction'] ?? '') === 'kick' ? 'selected' : ''; ?>>Kick</option>
-                        <option value="ban" <?php echo ($settings['punishmentAction'] ?? '') === 'ban' ? 'selected' : ''; ?>>Ban</option>
+                        <option value="none" <?php echo ($settings['punishmentAction'] ?? '') === 'none' ? 'selected' : ''; ?>><?= t('am.a_none') ?></option>
+                        <option value="timeout" <?php echo ($settings['punishmentAction'] ?? '') === 'timeout' ? 'selected' : ''; ?>><?= t('am.a_timeout') ?></option>
+                        <option value="kick" <?php echo ($settings['punishmentAction'] ?? '') === 'kick' ? 'selected' : ''; ?>><?= t('am.a_kick') ?></option>
+                        <option value="ban" <?php echo ($settings['punishmentAction'] ?? '') === 'ban' ? 'selected' : ''; ?>><?= t('am.a_ban') ?></option>
                     </select>
                 </div>
                 <div class="am-field">
-                    <label>At Strikes</label>
+                    <label><?= t('am.at_strikes') ?></label>
                     <input type="number" name="autoPunishStrikes" value="<?php echo esc($settings['autoPunishStrikes'] ?? 3); ?>" min="0">
                 </div>
                 <div class="am-field">
-                    <label>Timeout Minutes</label>
+                    <label><?= t('am.timeout_min') ?></label>
                     <input type="number" name="timeoutMinutes" value="<?php echo esc($settings['timeoutMinutes'] ?? 10); ?>" min="1" max="40320">
                 </div>
                 <div class="am-field">
-                    <label>Caps Min Length</label>
+                    <label><?= t('am.caps_minlen') ?></label>
                     <input type="number" name="capsMinLength" value="<?php echo esc($settings['capsMinLength'] ?? 12); ?>" min="8" max="200">
                 </div>
             </div>
@@ -428,19 +428,19 @@ $atTermsLimit  = $maxTerms >= 0 && $currentTerms >= $maxTerms;
 
         <!-- COLUMN 2: FILTERS -->
         <div class="am-card">
-            <h2><span class="i">📝</span> Filter Detail</h2>
+            <h2><span class="i">📝</span> <?= t('am.filter_detail') ?></h2>
 
             <div class="am-rule-row">
-                <div class="am-rule-info"><strong>Delete Message</strong><small>Remove blocked messages automatically</small></div>
+                <div class="am-rule-info"><strong><?= t('am.delete_msg') ?></strong><small><?= t('am.delete_msg_sub') ?></small></div>
                 <input type="checkbox" name="deleteMessage" <?php echo !array_key_exists('deleteMessage', $settings) || !empty($settings['deleteMessage']) ? 'checked' : ''; ?>>
             </div>
             <div class="am-rule-row">
-                <div class="am-rule-info"><strong>Warn User</strong><small>Send a short warning in the channel</small></div>
+                <div class="am-rule-info"><strong><?= t('am.warn_user') ?></strong><small><?= t('am.warn_user_sub') ?></small></div>
                 <input type="checkbox" name="warnUser" <?php echo !array_key_exists('warnUser', $settings) || !empty($settings['warnUser']) ? 'checked' : ''; ?>>
             </div>
             
             <div class="am-field">
-                <label>Blocked Terms (one per line)</label>
+                <label><?= t('am.blocked_terms') ?></label>
                 <textarea name="blockedTerms" style="min-height:80px;"><?php echo esc($blockedTermsText); ?></textarea>
                             <div style="font-size:0.73rem; color:var(--text-secondary); display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-top:0.25rem;">
                                 <span><?php echo $currentTerms; ?> / <?php echo $maxTerms < 0 ? '∞' : $maxTerms; ?> Begriffe genutzt</span>
@@ -448,9 +448,9 @@ $atTermsLimit  = $maxTerms >= 0 && $currentTerms >= $maxTerms;
                             </div>
             </div>
 
-            <div class="am-section-title">Live Test</div>
+            <div class="am-section-title"><?= t('am.live_test') ?></div>
             <div class="am-field">
-                <label>Test Message</label>
+                <label><?= t('am.test_message') ?></label>
                 <textarea id="automodTestMessage" style="min-height:90px;" placeholder="Schreibe hier eine Nachricht, um die aktuellen AutoMod-Regeln zu pruefen."></textarea>
             </div>
             <button type="button" id="automodTestBtn" class="btn-icon" style="justify-content:center; background:rgba(88,101,242,.14); border-color:rgba(88,101,242,.4); color:#c7d2fe;"><span class="i">🧪</span> Nachricht testen</button>
@@ -472,23 +472,23 @@ $atTermsLimit  = $maxTerms >= 0 && $currentTerms >= $maxTerms;
             </div>
 
             <div class="am-rule-row" style="padding-top:0.75rem;">
-                <div class="am-rule-info"><strong>Blocked Terms Action</strong><small>Action used when blocked terms or regex terms match.</small></div>
+                <div class="am-rule-info"><strong><?= t('am.blocked_action') ?></strong><small><?= t('am.blocked_hint') ?></small></div>
                 <select class="am-rule-action" name="ruleActions[blocked_term]">
                     <?php $v = $settings['ruleActions']['blocked_term'] ?? 'fallback'; ?>
-                    <option value="fallback" <?php echo $v === 'fallback' ? 'selected' : ''; ?>>Use Global</option>
-                    <option value="none" <?php echo $v === 'none' ? 'selected' : ''; ?>>None</option>
-                    <option value="delete" <?php echo $v === 'delete' ? 'selected' : ''; ?>>Delete</option>
-                    <option value="warn" <?php echo $v === 'warn' ? 'selected' : ''; ?>>Warn</option>
-                    <option value="timeout" <?php echo $v === 'timeout' ? 'selected' : ''; ?>>Timeout</option>
-                    <option value="kick" <?php echo $v === 'kick' ? 'selected' : ''; ?>>Kick</option>
-                    <option value="ban" <?php echo $v === 'ban' ? 'selected' : ''; ?>>Ban</option>
+                    <option value="fallback" <?php echo $v === 'fallback' ? 'selected' : ''; ?>><?= t('am.a_global') ?></option>
+                    <option value="none" <?php echo $v === 'none' ? 'selected' : ''; ?>><?= t('am.a_none') ?></option>
+                    <option value="delete" <?php echo $v === 'delete' ? 'selected' : ''; ?>><?= t('am.a_delete') ?></option>
+                    <option value="warn" <?php echo $v === 'warn' ? 'selected' : ''; ?>><?= t('am.a_warn') ?></option>
+                    <option value="timeout" <?php echo $v === 'timeout' ? 'selected' : ''; ?>><?= t('am.a_timeout') ?></option>
+                    <option value="kick" <?php echo $v === 'kick' ? 'selected' : ''; ?>><?= t('am.a_kick') ?></option>
+                    <option value="ban" <?php echo $v === 'ban' ? 'selected' : ''; ?>><?= t('am.a_ban') ?></option>
                 </select>
             </div>
 
             <div class="am-field">
-                <label>Link Whitelist (one per line)</label>
+                <label><?= t('am.whitelist') ?></label>
                 <textarea name="allowedLinks" style="min-height:80px;"><?php echo esc($allowedLinksText); ?></textarea>
-                <small>Links containing these words won't be blocked.</small>
+                <small><?= t('am.whitelist_hint') ?></small>
             </div>
 
             <div class="am-section-title">Logging</div>
@@ -497,7 +497,7 @@ $atTermsLimit  = $maxTerms >= 0 && $currentTerms >= $maxTerms;
             </div>
 
             <div class="am-field">
-                <label>Warn Message</label>
+                <label><?= t('am.warn_message') ?></label>
                 <input type="text" name="warnMessage" value="<?php echo esc($settings['warnMessage'] ?? ''); ?>" placeholder="AutoMod blocked your message: {reason}">
             </div>
         </div>
@@ -507,7 +507,7 @@ $atTermsLimit  = $maxTerms >= 0 && $currentTerms >= $maxTerms;
             <h2><span class="i">🏃</span> Advanced · Bypasses</h2>
             
             <div class="am-field">
-                <label>Ignored Roles</label>
+                <label><?= t('am.ignored_roles') ?></label>
                 <div style="max-height:120px; overflow-y:auto; border:1px solid var(--border-light); padding:0.5rem; border-radius:6px; background:var(--bg-tertiary);">
                     <?php foreach ($roles as $role): ?>
                         <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.8rem; cursor:pointer; margin-bottom:0.2rem;">
@@ -519,7 +519,7 @@ $atTermsLimit  = $maxTerms >= 0 && $currentTerms >= $maxTerms;
             </div>
 
             <div class="am-field">
-                <label>Ignored Channels</label>
+                <label><?= t('am.ignored_chans') ?></label>
                 <div style="max-height:120px; overflow-y:auto; border:1px solid var(--border-light); padding:0.5rem; border-radius:6px; background:var(--bg-tertiary);">
                     <?php foreach ($channels as $channel): ?>
                         <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.8rem; cursor:pointer; margin-bottom:0.2rem;">
@@ -531,7 +531,7 @@ $atTermsLimit  = $maxTerms >= 0 && $currentTerms >= $maxTerms;
             </div>
 
             <div class="am-rule-row" style="margin-top:0.5rem; border:none;">
-                <div class="am-rule-info"><strong>Exempt Admins</strong><small>Admins bypass AutoMod</small></div>
+                <div class="am-rule-info"><strong><?= t('am.exempt_admins') ?></strong><small><?= t('am.exempt_sub') ?></small></div>
                 <input type="checkbox" name="exemptAdmins" <?php echo !empty($settings['exemptAdmins']) ? 'checked' : ''; ?>>
             </div>
 
@@ -570,7 +570,7 @@ $atTermsLimit  = $maxTerms >= 0 && $currentTerms >= $maxTerms;
 
         <div class="ux-savebar" id="automodSaveBar">
             <div class="ux-save-info">
-                <strong>Ungespeicherte Aenderungen</strong>
+                <strong>Ungespeicherte Änderungen</strong>
                 <span>Speicher den aktuellen AutoMod-Stand ohne Seiten-Reload.</span>
             </div>
             <div class="ux-save-actions">

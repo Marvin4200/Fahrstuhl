@@ -369,7 +369,7 @@ $panelMessageId = $settings['messageId'] ?? ($settings['lastPanelMessageId'] ?? 
 
             <div class="ux-savebar" id="rrSaveBar">
                 <div class="ux-save-info">
-                    <strong>Ungespeicherte Aenderungen</strong>
+                    <strong>Ungespeicherte Änderungen</strong>
                     <span>Panel-Konfiguration wird ohne Reload gespeichert.</span>
                 </div>
                 <div class="ux-save-actions">

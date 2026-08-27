@@ -185,9 +185,9 @@ $dashboardModuleRoles = $dashboardAccess['moduleRoles'] ?? [];
 
 <section class="dashboard-page-header">
     <div class="dashboard-page-copy">
-        <span class="dashboard-page-eyebrow">Server Tools</span>
+        <span class="dashboard-page-eyebrow"><?= t('sc.eyebrow') ?></span>
         <h1>Server Config · <?= esc($guild['name'] ?? 'Server') ?></h1>
-        <p>Zentrale Server-Einstellungen: Rollen, Dashboard-Zugriff, Health-Checks und direkte Spruenge in die wichtigsten Bereiche.</p>
+        <p><?= t('sc.subtitle') ?></p>
         <div class="dashboard-page-meta">
             <span class="status-badge <?= $setupPercent >= 100 ? 'active' : 'warning' ?>">Setup <?= $setupPercent ?>%</span>
             <span class="status-badge <?= count($enabledModules) > 0 ? 'active' : 'inactive' ?>"><?= count($enabledModules) ?>/<?= $totalModules ?> Module</span>
@@ -233,8 +233,8 @@ $dashboardModuleRoles = $dashboardAccess['moduleRoles'] ?? [];
     <div class="setup-panel">
         <div class="setup-head">
             <div>
-                <h2>Setup Progress</h2>
-                <p style="color:var(--text-secondary);margin:.2rem 0 0;font-size:.86rem;">Core settings needed for a clean server workflow.</p>
+                <h2><?= t('sc.setup_progress') ?></h2>
+                <p style="color:var(--text-secondary);margin:.2rem 0 0;font-size:.86rem;"><?= t('sc.setup_sub') ?></p>
             </div>
             <span class="setup-score"><?= $setupPercent ?>%</span>
         </div>
@@ -258,49 +258,49 @@ $dashboardModuleRoles = $dashboardAccess['moduleRoles'] ?? [];
         <section class="overview-section">
             <div class="section-title">
                 <div>
-                    <h2>Server Roles</h2>
+                    <h2><?= t('sc.server_roles') ?></h2>
                     <p>Diese Einstellungen kommen zuerst, weil sie Dashboard- und Rollen-Zugriffe direkt steuern.</p>
                 </div>
             </div>
             <div class="config-form-grid">
                 <div class="role-card">
-                    <h3>Admin Role</h3>
+                    <h3><?= t('sc.admin_role') ?></h3>
                     <p>Members with this role can open this server dashboard. Server owners always have access.</p>
                     <?php if (!empty($roles)): ?>
                     <form method="POST">
                         <input type="hidden" name="action" value="setadminrole">
                         <div class="form-group">
-                            <label>Select Role</label>
+                            <label><?= t('sc.select_role') ?></label>
                             <select name="role_id">
-                                <option value="">Not set</option>
+                                <option value=""><?= t('sc.not_set') ?></option>
                                 <?php foreach ($roles as $role): ?>
                                 <option value="<?= esc($role['id']) ?>" <?= ($config['adminRoleId'] ?? '') === $role['id'] ? 'selected' : '' ?>><?= esc($role['name']) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <button type="submit" class="btn-save">Save Role</button>
+                        <button type="submit" class="btn-save"><?= t('sc.save_role') ?></button>
                     </form>
                     <?php else: ?>
-                    <p>Role list is not available from the API right now.</p>
+                    <p><?= t('sc.no_roles') ?></p>
                     <?php endif; ?>
                 </div>
 
                 <div class="role-card">
-                    <h3>Troll Role</h3>
+                    <h3><?= t('sc.troll_role') ?></h3>
                     <p>Only members with this role can use troll commands. Leave empty only if that is intentional.</p>
                     <?php if (!empty($roles)): ?>
                     <form method="POST">
                         <input type="hidden" name="action" value="settrollrole">
                         <div class="form-group">
-                            <label>Select Role</label>
+                            <label><?= t('sc.select_role') ?></label>
                             <select name="role_id">
-                                <option value="">No restriction</option>
+                                <option value=""><?= t('sc.no_restriction') ?></option>
                                 <?php foreach ($roles as $role): ?>
                                 <option value="<?= esc($role['id']) ?>" <?= ($config['trollRoleId'] ?? '') === $role['id'] ? 'selected' : '' ?>><?= esc($role['name']) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <button type="submit" class="btn-save">Save Role</button>
+                        <button type="submit" class="btn-save"><?= t('sc.save_role') ?></button>
                     </form>
                     <?php else: ?>
                     <p>Use <code>/settrollrole</code> in Discord if roles cannot be loaded.</p>
@@ -308,13 +308,13 @@ $dashboardModuleRoles = $dashboardAccess['moduleRoles'] ?? [];
                 </div>
 
                 <div class="role-card">
-                    <h3>Auto-Move Role</h3>
+                    <h3><?= t('sc.automove_role') ?></h3>
                     <p>Members with this role are used by the optional automatic voice movement behavior.</p>
                     <?php if (!empty($roles)): ?>
                     <form method="POST">
                         <input type="hidden" name="action" value="setrole">
                         <div class="form-group">
-                            <label>Select Role</label>
+                            <label><?= t('sc.select_role') ?></label>
                             <select name="role_id">
                                 <option value="">None</option>
                                 <?php foreach ($roles as $role): ?>
@@ -322,7 +322,7 @@ $dashboardModuleRoles = $dashboardAccess['moduleRoles'] ?? [];
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <button type="submit" class="btn-save">Save Role</button>
+                        <button type="submit" class="btn-save"><?= t('sc.save_role') ?></button>
                     </form>
                     <?php else: ?>
                     <p>Use <code>/setrole</code> in Discord if roles cannot be loaded.</p>
@@ -334,7 +334,7 @@ $dashboardModuleRoles = $dashboardAccess['moduleRoles'] ?? [];
         <section class="overview-section">
             <div class="section-title">
                 <div>
-                    <h2>Dashboard Zugriff</h2>
+                    <h2><?= t('sc.dash_access') ?></h2>
                     <p>Modulbezogene Dashboard-Rollen. Owner, Discord-Admins und die Dashboard-Admin-Rolle bleiben weiterhin erlaubt.</p>
                 </div>
             </div>
@@ -355,18 +355,18 @@ $dashboardModuleRoles = $dashboardAccess['moduleRoles'] ?? [];
                     </div>
                     <?php endforeach; ?>
                 </div>
-                <button type="submit" class="btn-save" style="margin-top:.85rem;">Dashboard Zugriff speichern</button>
+                <button type="submit" class="btn-save" style="margin-top:.85rem;"><?= t('sc.dash_save') ?></button>
             </form>
             <?php else: ?>
-            <p>Role list is not available from the API right now.</p>
+            <p><?= t('sc.no_roles') ?></p>
             <?php endif; ?>
         </section>
 
         <section class="overview-section">
             <div class="section-title">
                 <div>
-                    <h2>Quick Actions</h2>
-                    <p>Direkte Spruenge in die wichtigsten Konfigurationsseiten.</p>
+                    <h2><?= t('sc.quick_actions') ?></h2>
+                    <p><?= t('sc.quick_sub') ?></p>
                 </div>
             </div>
             <div class="quick-grid">
@@ -406,8 +406,8 @@ $dashboardModuleRoles = $dashboardAccess['moduleRoles'] ?? [];
         <section class="overview-section">
             <div class="section-title">
                 <div>
-                    <h2>Bot Health</h2>
-                    <p>Permission checks for the current server.</p>
+                    <h2><?= t('sc.bot_health') ?></h2>
+                    <p><?= t('sc.bot_health_sub') ?></p>
                 </div>
             </div>
             <div class="permission-list">
@@ -446,22 +446,22 @@ $dashboardModuleRoles = $dashboardAccess['moduleRoles'] ?? [];
             <div class="section-title">
                 <div>
                     <h2>Active Trolls</h2>
-                    <p>Current running troll actions on this server.</p>
+                    <p><?= t('sc.trolls_sub') ?></p>
                 </div>
             </div>
             <?php if ($activeTrolls > 0): ?>
                 <p style="margin:0 0 .55rem;">There are <strong><?= formatNum($activeTrolls) ?></strong> active troll actions.</p>
                 <p style="margin:0;color:var(--text-secondary);font-size:.85rem;">Use <code>/globalstop</code> in Discord to stop them.</p>
             <?php else: ?>
-                <p style="margin:0;color:#51cf66;font-weight:900;">No active troll actions right now.</p>
+                <p style="margin:0;color:#51cf66;font-weight:900;"><?= t('sc.trolls_none') ?></p>
             <?php endif; ?>
         </section>
 
         <section class="overview-section">
             <div class="section-title">
                 <div>
-                    <h2>Server Info</h2>
-                    <p>Basic Discord metadata.</p>
+                    <h2><?= t('sc.server_info') ?></h2>
+                    <p><?= t('sc.server_info_sub') ?></p>
                 </div>
             </div>
             <div class="permission-list">

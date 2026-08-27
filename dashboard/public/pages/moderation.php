@@ -230,10 +230,10 @@ function moderationFilterQuery($guildId, $page, $typeFilter, $userIdFilter, $mod
             <p>Run staff actions, filter cases quickly and keep moderation history transparent for <?php echo esc($selectedGuildName); ?>.</p>
         </div>
         <div class="mod-stats">
-            <div class="mod-stat"><strong><?php echo $totalCases; ?></strong><span>Total cases</span></div>
-            <div class="mod-stat"><strong><?php echo (int)($caseCounts['warn'] ?? 0); ?></strong><span>Warns</span></div>
-            <div class="mod-stat"><strong><?php echo (int)($caseCounts['timeout'] ?? 0); ?></strong><span>Timeouts</span></div>
-            <div class="mod-stat"><strong><?php echo (int)($caseCounts['resolved'] ?? 0); ?></strong><span>Resolved on page</span></div>
+            <div class="mod-stat"><strong><?php echo $totalCases; ?></strong><span><?= t('mo.total_cases') ?></span></div>
+            <div class="mod-stat"><strong><?php echo (int)($caseCounts['warn'] ?? 0); ?></strong><span><?= t('mo.warns') ?></span></div>
+            <div class="mod-stat"><strong><?php echo (int)($caseCounts['timeout'] ?? 0); ?></strong><span><?= t('mo.timeouts') ?></span></div>
+            <div class="mod-stat"><strong><?php echo (int)($caseCounts['resolved'] ?? 0); ?></strong><span><?= t('mo.resolved_page') ?></span></div>
         </div>
     </div>
     <div class="mod-hero-side">
@@ -259,7 +259,7 @@ function moderationFilterQuery($guildId, $page, $typeFilter, $userIdFilter, $mod
 <div class="mod-grid">
     <div class="mod-panel">
         <h2>Action</h2>
-        <p>Apply a case to one Discord user ID. Keep reasons short and factual.</p>
+        <p><?= t('mo.apply_hint') ?></p>
         <form method="POST" class="mod-form">
             <input type="hidden" name="userIdFilter" value="<?php echo esc($userIdFilter); ?>">
             <input type="hidden" name="moderatorIdFilter" value="<?php echo esc($moderatorIdFilter); ?>">
@@ -272,20 +272,20 @@ function moderationFilterQuery($guildId, $page, $typeFilter, $userIdFilter, $mod
             </label>
             <label>Duration for timeout
                 <select name="durationMinutes">
-                    <option value="10">10 minutes</option>
-                    <option value="60">1 hour</option>
-                    <option value="360">6 hours</option>
-                    <option value="1440">1 day</option>
-                    <option value="10080">7 days</option>
-                    <option value="40320">28 days</option>
+                    <option value="10"><?= t('mo.t_10min') ?></option>
+                    <option value="60"><?= t('mo.t_1hour') ?></option>
+                    <option value="360"><?= t('mo.t_6hours') ?></option>
+                    <option value="1440"><?= t('mo.t_1day') ?></option>
+                    <option value="10080"><?= t('mo.t_7days') ?></option>
+                    <option value="40320"><?= t('mo.t_28days') ?></option>
                 </select>
             </label>
             <label>Ban message cleanup
                 <select name="deleteMessageSeconds">
-                    <option value="0">Do not delete messages</option>
-                    <option value="3600">Delete last hour</option>
-                    <option value="86400">Delete last day</option>
-                    <option value="604800">Delete last 7 days</option>
+                    <option value="0"><?= t('mo.d_none') ?></option>
+                    <option value="3600"><?= t('mo.d_hour') ?></option>
+                    <option value="86400"><?= t('mo.d_day') ?></option>
+                    <option value="604800"><?= t('mo.d_week') ?></option>
                 </select>
             </label>
             <label>Reason / Note
@@ -311,23 +311,23 @@ function moderationFilterQuery($guildId, $page, $typeFilter, $userIdFilter, $mod
     <div class="mod-panel">
         <div class="mod-history-top">
             <div>
-                <h2>Case History</h2>
-                <p>Use filters to quickly find the right case and open details for edits.</p>
+                <h2><?= t('mo.case_history') ?></h2>
+                <p><?= t('mo.filter_hint') ?></p>
             </div>
             <form method="GET" class="mod-filter">
                 <input type="hidden" name="guildId" value="<?php echo esc($guildId); ?>">
                 <input name="userId" value="<?php echo esc($userIdFilter); ?>" placeholder="User ID" style="width:140px;">
                 <input name="moderatorId" value="<?php echo esc($moderatorIdFilter); ?>" placeholder="Moderator ID" style="width:140px;">
                 <select name="type" style="padding:.62rem .7rem;border-radius:10px;border:1px solid var(--border-light);background:var(--bg-tertiary);color:var(--text-primary);">
-                    <option value="">All types</option>
+                    <option value=""><?= t('mo.all_types') ?></option>
                     <?php foreach ($validTypes as $t): ?>
                     <option value="<?php echo $t; ?>" <?php echo $typeFilter === $t ? 'selected' : ''; ?>><?php echo ucfirst($t); ?></option>
                     <?php endforeach; ?>
                 </select>
                 <select name="status" style="padding:.62rem .7rem;border-radius:10px;border:1px solid var(--border-light);background:var(--bg-tertiary);color:var(--text-primary);">
-                    <option value="">All status</option>
-                    <option value="open" <?php echo $statusFilter === 'open' ? 'selected' : ''; ?>>Open</option>
-                    <option value="resolved" <?php echo $statusFilter === 'resolved' ? 'selected' : ''; ?>>Resolved</option>
+                    <option value=""><?= t('mo.all_status') ?></option>
+                    <option value="open" <?php echo $statusFilter === 'open' ? 'selected' : ''; ?>><?= t('mo.open') ?></option>
+                    <option value="resolved" <?php echo $statusFilter === 'resolved' ? 'selected' : ''; ?>><?= t('mo.resolved') ?></option>
                 </select>
                 <input name="reason" value="<?php echo esc($reasonFilter); ?>" placeholder="Search reason" style="width:180px;">
                 <button class="btn-icon" type="submit"><span class="i">⌕</span> Filter</button>
@@ -336,7 +336,7 @@ function moderationFilterQuery($guildId, $page, $typeFilter, $userIdFilter, $mod
         </div>
         <div class="table-scroll">
             <table class="table table-compact">
-                <thead><tr><th>Case</th><th>Type</th><th>User</th><th>Moderator</th><th>Reason</th><th>Status</th><th>Time</th><th>Details</th></tr></thead>
+                <thead><tr><th>Case</th><th><?= t('mo.type') ?></th><th><?= t('mo.user') ?></th><th><?= t('mo.moderator') ?></th><th><?= t('mo.reason') ?></th><th><?= t('mo.status') ?></th><th><?= t('mo.time') ?></th><th><?= t('mo.details') ?></th></tr></thead>
                 <tbody>
                 <?php foreach ($cases as $case): ?>
                     <?php
@@ -379,28 +379,28 @@ function moderationFilterQuery($guildId, $page, $typeFilter, $userIdFilter, $mod
 </div>
 
 <div class="mod-panel mod-details">
-    <h2>Case Details</h2>
+    <h2><?= t('mo.case_details') ?></h2>
     <p>Open a case from the table to inspect details, update reason text, or mark it as resolved.</p>
 
     <?php if (!$selectedCase): ?>
-        <p style="color:var(--text-secondary);margin:.25rem 0 0;">No case selected yet. Use the Open button in the case table.</p>
+        <p style="color:var(--text-secondary);margin:.25rem 0 0;"><?= t('mo.none_selected') ?></p>
     <?php else: ?>
         <?php $selectedStatus = moderationStatusLabel($selectedCase); ?>
         <div class="mod-kv" style="margin-bottom:.9rem;">
-            <div class="mod-stat"><span>Case ID</span><strong>#<?php echo (int)($selectedCase['id'] ?? 0); ?></strong></div>
-            <div class="mod-stat"><span>Type</span><strong><?php echo esc($selectedCase['type'] ?? 'unknown'); ?></strong></div>
-            <div class="mod-stat"><span>Status</span><strong><?php echo esc($selectedStatus); ?></strong></div>
-            <div class="mod-stat"><span>User</span><strong><?php echo esc($selectedCase['displayName'] ?? $selectedCase['userId']); ?></strong><small><code><?php echo esc($selectedCase['userId'] ?? ''); ?></code></small></div>
-            <div class="mod-stat"><span>Moderator</span><strong><?php echo esc($selectedCase['moderatorName'] ?? 'dashboard'); ?></strong><small><code><?php echo esc($selectedCase['moderatorId'] ?? 'dashboard'); ?></code></small></div>
-            <div class="mod-stat"><span>Guild</span><strong><?php echo esc($selectedCase['guildName'] ?? $selectedCase['guildId']); ?></strong><small><code><?php echo esc($selectedCase['guildId'] ?? ''); ?></code></small></div>
-            <div class="mod-stat"><span>Created</span><strong><?php echo !empty($selectedCase['createdAt']) ? date('d.m.Y H:i:s', (int)floor($selectedCase['createdAt'] / 1000)) : '—'; ?></strong></div>
-            <div class="mod-stat"><span>Updated</span><strong><?php echo !empty($selectedCase['updatedAt']) ? date('d.m.Y H:i:s', (int)floor($selectedCase['updatedAt'] / 1000)) : '—'; ?></strong></div>
-            <div class="mod-stat"><span>Duration</span><strong><?php echo !empty($selectedCase['durationMs']) ? esc(prettyMs($selectedCase['durationMs'])) : '—'; ?></strong></div>
+            <div class="mod-stat"><span><?= t('mo.case_id') ?></span><strong>#<?php echo (int)($selectedCase['id'] ?? 0); ?></strong></div>
+            <div class="mod-stat"><span><?= t('mo.type') ?></span><strong><?php echo esc($selectedCase['type'] ?? 'unknown'); ?></strong></div>
+            <div class="mod-stat"><span><?= t('mo.status') ?></span><strong><?php echo esc($selectedStatus); ?></strong></div>
+            <div class="mod-stat"><span><?= t('mo.user') ?></span><strong><?php echo esc($selectedCase['displayName'] ?? $selectedCase['userId']); ?></strong><small><code><?php echo esc($selectedCase['userId'] ?? ''); ?></code></small></div>
+            <div class="mod-stat"><span><?= t('mo.moderator') ?></span><strong><?php echo esc($selectedCase['moderatorName'] ?? 'dashboard'); ?></strong><small><code><?php echo esc($selectedCase['moderatorId'] ?? 'dashboard'); ?></code></small></div>
+            <div class="mod-stat"><span><?= t('mo.guild') ?></span><strong><?php echo esc($selectedCase['guildName'] ?? $selectedCase['guildId']); ?></strong><small><code><?php echo esc($selectedCase['guildId'] ?? ''); ?></code></small></div>
+            <div class="mod-stat"><span><?= t('mo.created') ?></span><strong><?php echo !empty($selectedCase['createdAt']) ? date('d.m.Y H:i:s', (int)floor($selectedCase['createdAt'] / 1000)) : '—'; ?></strong></div>
+            <div class="mod-stat"><span><?= t('mo.updated') ?></span><strong><?php echo !empty($selectedCase['updatedAt']) ? date('d.m.Y H:i:s', (int)floor($selectedCase['updatedAt'] / 1000)) : '—'; ?></strong></div>
+            <div class="mod-stat"><span><?= t('mo.duration') ?></span><strong><?php echo !empty($selectedCase['durationMs']) ? esc(prettyMs($selectedCase['durationMs'])) : '—'; ?></strong></div>
         </div>
 
         <div class="mod-detail-grid">
             <div class="mod-detail-card">
-                <h3>Edit Reason</h3>
+                <h3><?= t('mo.edit_reason') ?></h3>
                 <form method="POST" class="mod-form">
                     <input type="hidden" name="action" value="update_case_reason">
                     <input type="hidden" name="caseId" value="<?php echo (int)($selectedCase['id'] ?? 0); ?>">
@@ -418,7 +418,7 @@ function moderationFilterQuery($guildId, $page, $typeFilter, $userIdFilter, $mod
             </div>
 
             <div class="mod-detail-card">
-                <h3>Resolve / Reopen</h3>
+                <h3><?= t('mo.resolve') ?></h3>
                 <form method="POST" class="mod-form">
                     <input type="hidden" name="action" value="update_case_status">
                     <input type="hidden" name="caseId" value="<?php echo (int)($selectedCase['id'] ?? 0); ?>">
@@ -430,8 +430,8 @@ function moderationFilterQuery($guildId, $page, $typeFilter, $userIdFilter, $mod
                     <input type="hidden" name="page" value="<?php echo (int)$currentPage; ?>">
                     <label>Case status
                         <select name="caseStatus" required>
-                            <option value="open" <?php echo $selectedStatus === 'open' ? 'selected' : ''; ?>>Open</option>
-                            <option value="resolved" <?php echo $selectedStatus === 'resolved' ? 'selected' : ''; ?>>Resolved</option>
+                            <option value="open" <?php echo $selectedStatus === 'open' ? 'selected' : ''; ?>><?= t('mo.open') ?></option>
+                            <option value="resolved" <?php echo $selectedStatus === 'resolved' ? 'selected' : ''; ?>><?= t('mo.resolved') ?></option>
                         </select>
                     </label>
                     <button class="btn-icon success" type="submit"><span class="i">✓</span> Update status</button>

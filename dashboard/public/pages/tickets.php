@@ -367,9 +367,9 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
 
 <section class="dashboard-page-header">
     <div class="dashboard-page-copy">
-        <span class="dashboard-page-eyebrow">Support Module</span>
+        <span class="dashboard-page-eyebrow"><?= t('tk.eyebrow') ?></span>
         <h1>Tickets</h1>
-        <p>Panel, Routing und Team-Workflow im einheitlichen Dashboard-Layout.</p>
+        <p><?= t('tk.subtitle') ?></p>
         <div class="dashboard-page-meta">
             <span class="status-badge <?php echo $ticketsEnabled ? 'active' : 'inactive'; ?>"><?php echo $ticketsEnabled ? 'Aktiv' : 'Inaktiv'; ?></span>
         </div>
@@ -389,7 +389,7 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
 
 <?php if (!$ticketsEnabled): ?>
     <div class="empty-state">
-        <strong>Ticket-Modul ist deaktiviert</strong>
+        <strong><?= t('tk.disabled_title') ?></strong>
         <p>Aktiviere das Modul und starte danach mit Panel, Routing und Staff-Workflow.</p>
         <a class="btn-icon cta btn-primary-ui" href="modules.php?guildId=<?php echo urlencode($guildId); ?>">Modul aktivieren</a>
     </div>
@@ -400,15 +400,15 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
         
         <!-- COLUMN 1: SETUP -->
         <div class="tk-card">
-            <h2><span class="i">⚙️</span> Technical Setup</h2>
+            <h2><span class="i">⚙️</span> <?= t('tk.tech_setup') ?></h2>
             <div class="tk-note">
                 Ticket activity logs are controlled centrally in <a href="logging.php?guildId=<?php echo urlencode($guildId); ?>">Logging</a>. The transcript channel is only for ticket archive files.
             </div>
             
             <div class="tk-field">
-                <label>Ticket Category</label>
+                <label><?= t('tk.category') ?></label>
                 <select name="categoryId">
-                    <option value="">- Create new category -</option>
+                    <option value=""><?= t('tk.category_new') ?></option>
                     <?php foreach ($categories as $cat): ?>
                         <option value="<?php echo esc($cat['id']); ?>" <?php echo ($settings['categoryId'] ?? '') === $cat['id'] ? 'selected' : ''; ?>>
                             <?php echo esc($cat['name']); ?>
@@ -418,46 +418,46 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
             </div>
 
             <div class="tk-field">
-                <label>Staff Role</label>
+                <label><?= t('tk.staff_role') ?></label>
                 <select name="staffRoleId">
-                    <option value="">- No staff role -</option>
+                    <option value=""><?= t('tk.staff_none') ?></option>
                     <?php foreach ($roles as $role): ?>
                         <option value="<?php echo esc($role['id']); ?>" <?php echo ($settings['staffRoleId'] ?? '') === $role['id'] ? 'selected' : ''; ?>>
                             <?php echo esc($role['name']); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
-                <small>Role that can see and manage all tickets.</small>
+                <small><?= t('tk.staff_hint') ?></small>
             </div>
 
             <div class="tk-field">
-                <label>High Team Role <small style="font-weight:400; text-transform:none; font-size:.7rem;">(optional)</small></label>
+                <label><?= t('tk.high_role') ?> <small style="font-weight:400; text-transform:none; font-size:.7rem;">(<?= t('common.optional') ?>)</small></label>
                 <select name="highTeamRoleId">
-                    <option value="">- No high team role -</option>
+                    <option value=""><?= t('tk.high_none') ?></option>
                     <?php foreach ($roles as $role): ?>
                         <option value="<?php echo esc($role['id']); ?>" <?php echo ($settings['highTeamRoleId'] ?? '') === $role['id'] ? 'selected' : ''; ?>>
                             <?php echo esc($role['name']); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
-                <small>Senior staff with elevated access &mdash; can override staff actions.</small>
+                <small><?= t('tk.high_hint') ?></small>
             </div>
 
             <div class="tk-field">
-                <label>Transcript Channel</label>
+                <label><?= t('tk.transcript') ?></label>
                 <select name="transcriptChannelId">
-                    <option value="">- No transcripts -</option>
+                    <option value=""><?= t('tk.transcript_none') ?></option>
                     <?php foreach ($channels as $channel): ?>
                         <option value="<?php echo esc($channel['id']); ?>" <?php echo ($settings['transcriptChannelId'] ?? '') === $channel['id'] ? 'selected' : ''; ?>>
                             #<?php echo esc($channel['name']); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
-                <small>Transcript archive files will be sent here upon closing.</small>
+                <small><?= t('tk.transcript_hint') ?></small>
             </div>
 
             <div class="tk-field">
-                <label>Default Priority</label>
+                <label><?= t('tk.priority') ?></label>
                 <select name="defaultPriority">
                     <?php foreach ($priorityLabels as $value => $label): ?>
                         <option value="<?php echo esc($value); ?>" <?php echo ($settings['defaultPriority'] ?? 'normal') === $value ? 'selected' : ''; ?>><?php echo esc($label); ?></option>
@@ -466,14 +466,14 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
             </div>
 
             <div class="tk-field">
-                <label>Close Delay Seconds</label>
+                <label><?= t('tk.close_delay') ?></label>
                 <input type="text" name="closeDelaySeconds" value="<?php echo esc($settings['closeDelaySeconds'] ?? 5); ?>">
             </div>
 
             <div class="tk-field">
-                <label>SLA Minutes</label>
+                <label><?= t('tk.sla') ?></label>
                 <input type="text" name="slaMinutes" value="<?php echo esc($settings['slaMinutes'] ?? 240); ?>">
-                <small>Tickets older than this are marked as overdue. Use 0 to disable.</small>
+                <small><?= t('tk.sla_hint') ?></small>
             </div>
 
             <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--text-secondary);">
@@ -495,47 +495,47 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
 
         <!-- COLUMN 2: PANEL CONFIG -->
         <div class="tk-card">
-            <h2><span class="i">🎫</span> Panel Design</h2>
+            <h2><span class="i">🎫</span> <?= t('tk.panel_design') ?></h2>
             
             <div class="tk-field">
-                <label>Panel Title</label>
+                <label><?= t('tk.panel_title') ?></label>
                 <input type="text" name="panelTitle" id="tkTitle" value="<?php echo esc($settings['panelTitle'] ?? 'Need help?'); ?>">
             </div>
 
             <div class="tk-field">
-                <label>Panel Description</label>
+                <label><?= t('tk.panel_desc') ?></label>
                 <textarea name="panelDescription" id="tkDesc" style="min-height:100px;"><?php echo esc($settings['panelDescription'] ?? 'Open a private support ticket and the team will help you.'); ?></textarea>
             </div>
 
             <div class="tk-field">
-                <label>Button Label</label>
+                <label><?= t('tk.button_label') ?></label>
                 <input type="text" name="panelButtonLabel" id="tkBtn" value="<?php echo esc($settings['panelButtonLabel'] ?? 'Open Ticket'); ?>">
             </div>
 
-            <div class="tk-section-title">Panel Info</div>
+            <div class="tk-section-title"><?= t('tk.panel_info') ?></div>
             <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--text-secondary);">
                 <input type="checkbox" name="panelInfoEnabled" <?php echo $panelInfoEnabled ? 'checked' : ''; ?>>
-                Zusätzliche Panel-Infos anzeigen
+                <?= t('tk.info_extra') ?>
             </label>
             <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--text-secondary);">
                 <input type="checkbox" name="panelInfoShowOpenTickets" <?php echo $panelInfoShowOpenTickets ? 'checked' : ''; ?>>
-                Offene Tickets
+                <?= t('tk.info_open') ?>
             </label>
             <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--text-secondary);">
                 <input type="checkbox" name="panelInfoShowAverageResolution" <?php echo $panelInfoShowAverageResolution ? 'checked' : ''; ?>>
-                Ø Lösungszeit
+                <?= t('tk.info_avg') ?>
             </label>
             <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--text-secondary);">
                 <input type="checkbox" name="panelInfoShowOverdueTickets" <?php echo $panelInfoShowOverdueTickets ? 'checked' : ''; ?>>
-                Überfällige Tickets
+                <?= t('tk.info_overdue') ?>
             </label>
             <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--text-secondary);">
                 <input type="checkbox" name="panelInfoShowLastUpdated" <?php echo $panelInfoShowLastUpdated ? 'checked' : ''; ?>>
-                Letzte Aktualisierung
+                <?= t('tk.info_updated') ?>
             </label>
-            <small style="color:var(--text-secondary); font-size:.72rem;">Wenn deaktiviert, bleibt das Panel exakt wie bisher.</small>
+            <small style="color:var(--text-secondary); font-size:.72rem;"><?= t('tk.info_hint') ?></small>
 
-            <div class="tk-section-title">Ticket Types</div>
+            <div class="tk-section-title"><?= t('tk.types') ?></div>
             <div id="tkTypeContainer" style="display:grid; gap:.42rem;">
                 <?php foreach ($ticketTypes as $type): ?>
                     <div class="tk-type-card">
@@ -555,17 +555,17 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
                 <?php endforeach; ?>
             </div>
             <button type="button" id="tkAddType" class="btn-icon" style="font-size:.8rem; padding:.4rem .75rem; background:rgba(88,101,242,.12); border-color:rgba(88,101,242,.3); color:#c7d2fe; margin-top:.2rem;"><span class="i">+</span> Type hinzufügen</button>
-            <small style="color:var(--text-secondary); font-size:.72rem;">Max. 5 Types. Leere Labels werden ignoriert.</small>
+            <small style="color:var(--text-secondary); font-size:.72rem;"><?= t('tk.types_hint') ?></small>
 
-            <div class="tk-section-title">Deployment</div>
+            <div class="tk-section-title"><?= t('tk.deployment') ?></div>
             <div style="font-size:0.75rem; color:var(--text-secondary); display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.3rem;">
                 <span><?php echo $ticketPanelCount; ?> / <?php echo $maxTicketPanels < 0 ? '∞' : $maxTicketPanels; ?> Ticket-Panels genutzt</span>
-                <?php if ($atTicketPanelLimit): ?><span class="status-badge warning" style="font-size:0.68rem;">Limit erreicht</span><?php endif; ?>
+                <?php if ($atTicketPanelLimit): ?><span class="status-badge warning" style="font-size:0.68rem;"><?= t('common.limit_reached') ?></span><?php endif; ?>
             </div>
             <div class="tk-field">
-                <label>Target Channel</label>
+                <label><?= t('tk.target_channel') ?></label>
                 <select name="panelChannelId">
-                    <option value="">- Select channel -</option>
+                    <option value=""><?= t('tk.select_channel') ?></option>
                     <?php foreach ($channels as $channel): ?>
                         <option value="<?php echo esc($channel['id']); ?>" <?php echo ($settings['panelChannelId'] ?? '') === $channel['id'] ? 'selected' : ''; ?>>#<?php echo esc($channel['name']); ?></option>
                     <?php endforeach; ?>
@@ -575,7 +575,7 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
             <div class="tk-note" style="background:rgba(87,242,135,.08); border-color:rgba(87,242,135,.25); color:#51cf66;">
                 ✅ Panel aktiv in <strong>#<?php echo esc(array_column($channels, 'name', 'id')[$settings['panelChannelId']] ?? $settings['panelChannelId']); ?></strong> &mdash;
                 <a href="https://discord.com/channels/<?php echo urlencode($guildId); ?>/<?php echo urlencode($settings['panelChannelId']); ?>/<?php echo urlencode($settings['panelMessageId']); ?>" target="_blank" style="color:#51cf66;">Zur Nachricht →</a>
-                <br><small>Erneutes Senden bearbeitet das bestehende Panel.</small>
+                <br><small><?= t('tk.resend_hint') ?></small>
             </div>
             <?php else: ?>
             <div class="tk-note">
@@ -586,7 +586,7 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
             <div class="upgrade-limit-card">
                 <div class="ulc-icon">🚫</div>
                 <div class="ulc-body">
-                    <div class="ulc-title">Ticket-Panel-Limit erreicht</div>
+                    <div class="ulc-title"><?= t('tk.panel_limit') ?></div>
                     <div class="ulc-hint">💎 Premium ermöglicht bis zu 3 Panels, Pro unbegrenzt viele Ticket-Panels.</div>
                 </div>
                 <a href="server-plans.php<?php echo $guildId ? '?guildId=' . urlencode($guildId) : ''; ?>" class="ulc-cta">Jetzt upgraden</a>
@@ -599,14 +599,14 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
 
         <!-- COLUMN 3: PREVIEW -->
         <div class="tk-card">
-            <h2><span class="i">👁️</span> Live Preview</h2>
+            <h2><span class="i">👁️</span> <?= t('tk.live_preview') ?></h2>
             <div class="discord-preview">
                 <div id="pTitle" class="discord-title"></div>
                 <div id="pDesc" class="discord-desc"></div>
                 <div class="discord-btn">📩 <span id="pBtn"></span></div>
             </div>
 
-            <div class="tk-section-title">Instructions</div>
+            <div class="tk-section-title"><?= t('tk.instructions') ?></div>
             <div style="font-size:0.75rem; color:var(--text-secondary); display:grid; gap:0.4rem;">
                 <p>• <strong>Transcripts:</strong> Automatisch als .txt + .html gespeichert wenn ein Ticket geschlossen wird.</p>
                 <p>• <strong>Permissions:</strong> Bot verwaltet Channel-Berechtigungen automatisch für den User und Staff.</p>
@@ -615,9 +615,9 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
                 <p>• <strong>Staff Ops:</strong> <code>/ticket note</code>, <code>/ticket adduser</code>, <code>/ticket removeuser</code> innerhalb des Ticket-Channels.</p>
             </div>
 
-            <div class="tk-section-title">Live Test</div>
+            <div class="tk-section-title"><?= t('tk.live_test') ?></div>
             <div class="tk-field">
-                <label>Test Reason</label>
+                <label><?= t('tk.test_reason') ?></label>
                 <input type="text" id="tkTestReason" placeholder="z.B. Dashboard Test: Staff antwortet nicht.">
             </div>
             <button type="button" id="tkTestBtn" class="btn-icon" style="justify-content:center; background:rgba(88,101,242,.14); border-color:rgba(88,101,242,.4); color:#c7d2fe;"><span class="i">🧪</span> Test-Ticket erstellen</button>
@@ -626,11 +626,11 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
 
         <div class="ux-savebar" id="ticketsSaveBar">
             <div class="ux-save-info">
-                <strong>Ungespeicherte Aenderungen</strong>
-                <span>Basis-Einstellungen werden ohne Reload gespeichert.</span>
+                <strong><?= t('common.unsaved') ?></strong>
+                <span><?= t('tk.save_hint') ?></span>
             </div>
             <div class="ux-save-actions">
-                <span class="ux-save-status" id="ticketsSaveStatus">Bereit</span>
+                <span class="ux-save-status" id="ticketsSaveStatus"><?= t('common.ready') ?></span>
                 <button type="submit" name="action" value="save" id="ticketsStickySaveBtn" class="btn-icon btn-primary-ui"><span class="i">💾</span> Speichern</button>
             </div>
         </div>
@@ -651,12 +651,12 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
             </div>
             <div class="tk-metric accent-orange">
                 <strong><?php echo (int)($ticketStats['overdueOpen'] ?? count(array_filter($openTickets, fn($t) => !empty($t['slaBreached'])))); ?></strong>
-                <span>SLA Overdue</span>
+                <span><?= t('tk.a_overdue') ?></span>
                 <div class="tk-metric-accent"></div>
             </div>
             <div class="tk-metric accent-green">
                 <strong><?php echo (int)($ticketStats['closed'] ?? 0); ?></strong>
-                <span>Closed Archive</span>
+                <span><?= t('tk.archive') ?></span>
                 <div class="tk-metric-accent"></div>
             </div>
             <div class="tk-metric accent-yellow">
@@ -703,7 +703,7 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
                         </div>
                     <?php endforeach; ?>
                     <?php if (empty($laneTickets)): ?>
-                        <div style="color:var(--text-secondary); font-size:.75rem; text-align:center; padding:.4rem 0;">Leer</div>
+                        <div style="color:var(--text-secondary); font-size:.75rem; text-align:center; padding:.4rem 0;"><?= t('tk.empty') ?></div>
                     <?php endif; ?>
                 </div>
             <?php endforeach; ?>
@@ -748,36 +748,36 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
                 </div>
             <?php endforeach; ?>
             <?php if (empty($recentTickets)): ?>
-                <div style="color:var(--text-secondary); font-size:.9rem;">Archiv füllt sich wenn Tickets geöffnet oder geschlossen werden.</div>
+                <div style="color:var(--text-secondary); font-size:.9rem;"><?= t('tk.archive_hint') ?></div>
             <?php endif; ?>
         </div>
     </div>
 
     <div class="tk-card">
-        <h2>Ticket Analytics</h2>
+        <h2><?= t('tk.analytics') ?></h2>
         <div class="tk-metric-grid">
             <div class="tk-metric">
                 <strong><?= $ticketStats['avgResolutionMinutes'] ?? 'N/A' ?></strong>
-                <span>Avg Resolution (min)</span>
+                <span><?= t('tk.a_avg') ?></span>
             </div>
             <div class="tk-metric">
                 <strong><?= $ticketStats['resolvedCount'] ?? 0 ?></strong>
-                <span>Resolved Tickets</span>
+                <span><?= t('tk.a_resolved') ?></span>
             </div>
             <div class="tk-metric">
                 <strong><?= $ticketStats['feedback']['average'] ?? 'N/A' ?></strong>
-                <span>Feedback Avg</span>
+                <span><?= t('tk.a_fb_avg') ?></span>
             </div>
             <div class="tk-metric">
                 <strong><?= $ticketStats['feedback']['count'] ?? 0 ?></strong>
-                <span>Feedback Count</span>
+                <span><?= t('tk.a_fb_count') ?></span>
             </div>
             <div class="tk-metric">
                 <strong><?= $ticketStats['claimed']['openClaimed'] ?? 0 ?></strong>
                 <span>Open Claimed</span>
             </div>
         </div>
-        <div class="tk-section-title">Top Claimers</div>
+        <div class="tk-section-title"><?= t('tk.top_claimers') ?></div>
         <ul>
             <?php foreach ($ticketStats['claimed']['topClaimers'] ?? [] as $claimer): ?>
                 <li><?= esc($claimer['claimedBy']) ?>: <?= $claimer['count'] ?></li>

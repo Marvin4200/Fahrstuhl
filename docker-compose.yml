@@ -5,7 +5,7 @@ services:
     image: redis:7-alpine
     container_name: redis-phase1
     restart: unless-stopped
-    mem_limit: 128m
+    mem_limit: 96m
     mem_reservation: 16m
     networks:
       - marvin_internal
@@ -25,7 +25,7 @@ services:
       dockerfile: Dockerfile
     container_name: statuspage-phase1
     restart: unless-stopped
-    mem_limit: 256m
+    mem_limit: 192m
     mem_reservation: 64m
     env_file:
       - path: ../statuspage/.env
@@ -63,7 +63,7 @@ services:
       dockerfile: Dockerfile
     container_name: team-phase1
     restart: unless-stopped
-    mem_limit: 128m
+    mem_limit: 96m
     mem_reservation: 32m
     depends_on:
       fahrstuhl-docker:
@@ -94,7 +94,7 @@ services:
       dockerfile: Dockerfile
     container_name: linkshortener-phase1
     restart: unless-stopped
-    mem_limit: 256m
+    mem_limit: 160m
     mem_reservation: 64m
     depends_on:
       redis:
@@ -125,7 +125,7 @@ services:
       dockerfile: Dockerfile
     container_name: esel-phase1
     restart: unless-stopped
-    mem_limit: 256m
+    mem_limit: 160m
     mem_reservation: 64m
     environment:
       NODE_ENV: production
@@ -147,7 +147,7 @@ services:
       dockerfile: Dockerfile
     container_name: filehoster-phase1
     restart: unless-stopped
-    mem_limit: 256m
+    mem_limit: 160m
     mem_reservation: 64m
     depends_on:
       redis:
@@ -179,7 +179,7 @@ services:
       dockerfile: Dockerfile
     container_name: zitatboard-phase1
     restart: unless-stopped
-    mem_limit: 256m
+    mem_limit: 160m
     mem_reservation: 64m
     depends_on:
       redis:
@@ -227,7 +227,7 @@ services:
     container_name: deploy-webhook-phase1
     user: root
     restart: unless-stopped
-    mem_limit: 128m
+    mem_limit: 96m
     mem_reservation: 32m
     env_file:
       - path: ./.env
@@ -254,7 +254,7 @@ services:
     container_name: deploy-extra-phase1
     user: root
     restart: unless-stopped
-    mem_limit: 128m
+    mem_limit: 96m
     mem_reservation: 32m
     env_file:
       - path: ./.env
@@ -278,7 +278,7 @@ services:
     restart: unless-stopped
     environment:
       JAVA_TOOL_OPTIONS: "-Xms128m -Xmx384m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
-    mem_limit: 768m
+    mem_limit: 640m
     mem_reservation: 256m
     volumes:
       - ../musikbot/application.yml:/opt/Lavalink/application.yml:ro
@@ -402,7 +402,7 @@ services:
     image: postgres:15-alpine
     container_name: umami-db-phase1
     restart: unless-stopped
-    mem_limit: 256m
+    mem_limit: 192m
     mem_reservation: 64m
     environment:
       POSTGRES_DB: umami
@@ -423,7 +423,7 @@ services:
     image: ghcr.io/umami-software/umami:postgresql-latest
     container_name: umami-phase1
     restart: unless-stopped
-    mem_limit: 256m
+    mem_limit: 192m
     mem_reservation: 64m
     depends_on:
       umami-db:
@@ -464,7 +464,7 @@ services:
       dockerfile: Dockerfile
     container_name: fahrstuhl-phase1
     restart: unless-stopped
-    mem_limit: 768m
+    mem_limit: 512m
     mem_reservation: 256m
     depends_on:
       redis:
@@ -529,7 +529,7 @@ services:
       dockerfile: Dockerfile
     container_name: eseltokens-phase1
     restart: unless-stopped
-    mem_limit: 512m
+    mem_limit: 320m
     mem_reservation: 160m
     env_file:
       - path: ../eseltokens/.env.local

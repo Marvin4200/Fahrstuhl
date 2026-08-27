@@ -27,6 +27,17 @@ define('BASE_URL', $baseUrl);
 define('SESSION_TIMEOUT', 3600);
 
 if (session_status() === PHP_SESSION_NONE) {
+    // Sessions must live on the host-mounted volume, not inside the container's
+    // own filesystem — the latter is thrown away on every rebuild, which logged
+    // every user out on each deploy. This file sits in dashboard/public/includes,
+    // so the mounted dashboard/data is two levels up, not one.
+    $sessionPath = __DIR__ . '/../../data/sessions';
+    if (!is_dir($sessionPath)) {
+        @mkdir($sessionPath, 0700, true);
+    }
+    if (is_dir($sessionPath) && is_writable($sessionPath)) {
+        session_save_path($sessionPath);
+    }
     session_start();
 }
 

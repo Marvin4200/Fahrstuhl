@@ -20,3 +20,4 @@ cloudflared
 *.db-wal
 .env-dashboard
 .env-dashboard
+dashboard/data/sessions/

@@ -1,5 +1,9 @@
 <?php
-session_start();
+// No session_start() here: config.php starts the session centrally and sets
+// session.save_path first. Starting it beforehand pinned the login page to
+// PHP's default save path while every other page used the configured one —
+// two separate session stores, so a successful login was invisible
+// everywhere else and bounced between index.php and /ui/ forever.
 require_once __DIR__ . '/includes/config.php';
 
 $discord_client_id = getenv('DISCORD_CLIENT_ID') ?: '1487187616674611321';

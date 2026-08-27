@@ -12,7 +12,7 @@ $healthRaw = getAPI('/health/summary', 10);
 $health    = $healthRaw['data']['data'] ?? $healthRaw['data'] ?? [];
 $warnings  = $health['warnings'] ?? [];
 
-$opsRaw = getAPI('/ops-health', 10);
+$opsRaw = getAPI('/ops/health', 10);
 $ops    = $opsRaw['data']['data'] ?? $opsRaw['data'] ?? [];
 $targets = $ops['targets'] ?? $ops['services'] ?? [];
 

@@ -93,9 +93,9 @@ $styleVersion = file_exists($stylePath) ? filemtime($stylePath) : time();
             <span class="nav-user"><?php echo $u ? esc($u['username']) : 'Guest'; ?></span>
             <?php if (isOwner()): ?>
                 <?php if (isAdmin()): ?>
-                    <a href="<?= BASE_URL ?>/pages/portal.php?view_mode=user" class="btn-view-mode">Normal View</a>
+                    <a href="<?= BASE_URL ?>/pages/portal.php?view_mode=user" class="btn-view-mode"><?= t('nav.normal_view') ?></a>
                 <?php else: ?>
-                    <a href="<?= BASE_URL ?>/ui/?view_mode=admin" class="btn-view-mode">Admin Mode</a>
+                    <a href="<?= BASE_URL ?>/ui/?view_mode=admin" class="btn-view-mode"><?= t('nav.admin_mode') ?></a>
                 <?php endif; ?>
             <?php endif; ?>
             <a href="?setlang=<?= esc(t('nav.lang_next')) ?>" class="btn-lang" title="<?= esc(t('nav.lang_title')) ?>"><?= t('nav.lang_label') ?></a>

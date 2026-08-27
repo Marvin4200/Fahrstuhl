@@ -402,7 +402,7 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
         <div class="tk-card">
             <h2><span class="i">⚙️</span> <?= t('tk.tech_setup') ?></h2>
             <div class="tk-note">
-                Ticket activity logs are controlled centrally in <a href="logging.php?guildId=<?php echo urlencode($guildId); ?>">Logging</a>. The transcript channel is only for ticket archive files.
+                <?= t('tk.logs_hint_pre') ?> <a href="logging.php?guildId=<?php echo urlencode($guildId); ?>">Logging</a><?= t('tk.logs_hint_post') ?>
             </div>
             
             <div class="tk-field">

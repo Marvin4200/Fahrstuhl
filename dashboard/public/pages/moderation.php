@@ -350,8 +350,8 @@ function moderationFilterQuery($guildId, $page, $typeFilter, $userIdFilter, $mod
                         <td><?php echo esc($case['displayName'] ?? $case['userId']); ?><br><code><?php echo esc($case['userId']); ?></code></td>
                         <td><?php echo esc($case['moderatorName'] ?? 'dashboard'); ?><br><code><?php echo esc($case['moderatorId'] ?? 'dashboard'); ?></code></td>
                         <td>
-                            <?php echo esc($previewReason !== '' ? $previewReason : 'No reason provided'); ?>
-                            <?php if (!empty($case['durationMs'])): ?><br><small style="color:#777;">Duration: <?php echo esc(prettyMs($case['durationMs'])); ?></small><?php endif; ?>
+                            <?php echo esc($previewReason !== '' ? $previewReason : t('mo.no_reason')); ?>
+                            <?php if (!empty($case['durationMs'])): ?><br><small style="color:#777;"><?= t('mo.duration_lbl') ?> <?php echo esc(prettyMs($case['durationMs'])); ?></small><?php endif; ?>
                         </td>
                         <td><span class="mod-case-status <?php echo esc($statusLabel); ?>"><?php echo esc($statusLabel); ?></span></td>
                         <td><?php echo !empty($case['createdAt']) ? date('d.m H:i', (int)floor($case['createdAt'] / 1000)) : '—'; ?></td>

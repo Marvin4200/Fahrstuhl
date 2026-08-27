@@ -195,9 +195,9 @@ foreach ($channels as $channel) {
             </label>
 
             <div class="lg-field">
-                <label>Log Channel</label>
+                <label><?= t('lg.log_channel') ?></label>
                 <select name="channelId">
-                    <option value="">- Select channel -</option>
+                    <option value=""><?= t('lg.select_channel') ?></option>
                     <?php foreach ($channels as $channel): ?>
                         <option value="<?php echo esc($channel['id']); ?>" <?php echo ($settings['channelId'] ?? '') === $channel['id'] ? 'selected' : ''; ?>>
                             #<?php echo esc($channel['name']); ?>
@@ -212,7 +212,7 @@ foreach ($channels as $channel) {
                 <div class="lg-field">
                     <label><?php echo esc($group['label'] ?? ($group['key'] ?? 'Group')); ?></label>
                     <select name="groupChannels[<?php echo esc($group['key'] ?? ''); ?>]">
-                        <option value="">— fallback to global —</option>
+                        <option value=""><?= t('lg.fallback_global') ?></option>
                         <?php foreach ($channels as $channel): ?>
                             <option value="<?php echo esc($channel['id']); ?>" <?php echo (($groupChannels[$group['key']] ?? '') === $channel['id']) ? 'selected' : ''; ?>>
                                 #<?php echo esc($channel['name']); ?>
@@ -261,9 +261,9 @@ foreach ($channels as $channel) {
                             </div>
                         </label>
                         <div class="lg-event-channel">
-                            <label>Override channel</label>
+                            <label><?= t('lg.override_ch') ?></label>
                             <select name="eventChannels[<?php echo esc($event['key']); ?>]">
-                                <option value="">— use group/global fallback —</option>
+                                <option value=""><?= t('lg.fallback_group') ?></option>
                                 <?php foreach ($channels as $channel): ?>
                                     <option value="<?php echo esc($channel['id']); ?>" <?php echo $evChId === $channel['id'] ? 'selected' : ''; ?>>
                                         #<?php echo esc($channel['name']); ?>

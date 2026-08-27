@@ -145,7 +145,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
 
         <div class="tv-grid">
             <div class="tv-field">
-                <label>Join-Hub Voice Channel</label>
+                <label><?= t('tv.hub') ?></label>
                 <select name="hubChannelId" required>
                     <option value=""><?php echo empty($voiceChannels) ? 'Keine Voice-Channels gefunden' : 'Voice Channel auswählen'; ?></option>
                     <?php foreach ($voiceChannels as $channel): ?>
@@ -167,7 +167,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                 <input name="channelNameTemplate" maxlength="80" value="<?php echo esc($settings['channelNameTemplate'] ?? "{username}'s Channel"); ?>">
             </div>
             <div class="tv-field">
-                <label>User-Limit</label>
+                <label><?= t('tv.user_limit') ?></label>
                 <input type="number" name="userLimit" min="0" max="99" value="<?php echo esc((string)($settings['userLimit'] ?? 0)); ?>">
             </div>
             <div class="tv-field">
@@ -189,7 +189,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
     </section>
 
     <aside class="tv-panel tv-preview">
-        <h2 style="margin:0;">Live Preview</h2>
+        <h2 style="margin:0;"><?= t('tv.preview') ?></h2>
         <div class="voice-card">
             <div>
                 <div class="voice-name" id="previewName">Txxle's Channel</div>

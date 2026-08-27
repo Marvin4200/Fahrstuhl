@@ -117,7 +117,7 @@ foreach ($moderationPoints as $point) {
     <section class="dashboard-page-header">
         <div class="dashboard-page-copy">
             <span class="dashboard-page-eyebrow">Overview</span>
-            <h1>Server Analytics</h1>
+            <h1><?= t('st.title') ?></h1>
             <p>Kompakter Status für Mitglieder, Moderation, AutoMod, Tickets und Aktivität.</p>
             <div class="dashboard-page-meta">
                 <span class="status-badge <?php echo !empty($data) ? 'active' : 'inactive'; ?>"><?php echo !empty($data) ? 'Analytics aktiv' : 'Keine Daten'; ?></span>
@@ -167,7 +167,7 @@ foreach ($moderationPoints as $point) {
         <?php if (!$hasAdvancedInsights): ?>
             <div class="sa-upgrade">
                 <div>
-                    <strong>🔒 Advanced Insights sind Pro</strong>
+                    <strong><?= t('st.advanced_locked') ?></strong>
                     <p class="sa-note">Du hast dein Limit erreicht. Upgrade für tiefere Segmentierung und bessere Entscheidungs-Signale.</p>
                 </div>
                 <a href="<?php echo esc(dashboardPageUrl('server-plans')); ?>" class="btn-icon btn-secondary-ui">Pro ansehen</a>
@@ -208,7 +208,7 @@ foreach ($moderationPoints as $point) {
         </div>
 
         <div class="sa-panel">
-            <h2>Server Health Snapshot</h2>
+            <h2><?= t('st.health_snap') ?></h2>
             <div class="sa-health">
                 <div class="sa-card"><div class="sa-kpi-label">Warnings</div><div class="sa-kpi-value"><?php echo fmtNum($healthSummary['warnings'] ?? 0); ?></div></div>
                 <div class="sa-card"><div class="sa-kpi-label">Errors</div><div class="sa-kpi-value"><?php echo fmtNum($healthSummary['errors'] ?? 0); ?></div></div>
@@ -223,10 +223,10 @@ foreach ($moderationPoints as $point) {
 
         <?php if ($hasAdvancedInsights): ?>
             <div class="sa-panel">
-                <h2>Advanced Insights (Pro)</h2>
+                <h2><?= t('st.advanced') ?></h2>
                 <div class="sa-list">
                     <div class="sa-row">
-                        <strong>Top Moderation Types</strong>
+                        <strong><?= t('st.top_mod') ?></strong>
                         <span>
                             Warn: <?php echo fmtNum($insights['moderationSummary']['byType']['warn'] ?? 0); ?> ·
                             Timeout: <?php echo fmtNum($insights['moderationSummary']['byType']['timeout'] ?? 0); ?> ·
@@ -235,7 +235,7 @@ foreach ($moderationPoints as $point) {
                         </span>
                     </div>
                     <div class="sa-row">
-                        <strong>Server Health Summary</strong>
+                        <strong><?= t('st.health_sum') ?></strong>
                         <span>
                             Members: <?php echo fmtNum($insights['serverHealthSummary']['memberCount'] ?? 0); ?> ·
                             Channels: <?php echo fmtNum($insights['serverHealthSummary']['channelCount'] ?? 0); ?> ·
@@ -249,7 +249,7 @@ foreach ($moderationPoints as $point) {
 
         <div class="sa-sections">
             <div class="sa-panel">
-                <h2>Activity Charts</h2>
+                <h2><?= t('st.activity') ?></h2>
 
                 <div style="margin-bottom:1rem;">
                     <div class="sa-kpi-label" style="margin-bottom:0.35rem;">AutoMod Hits (last 14 days)</div>
@@ -298,7 +298,7 @@ foreach ($moderationPoints as $point) {
             </div>
 
             <div class="sa-panel">
-                <h2>Top Lists</h2>
+                <h2><?= t('st.top_lists') ?></h2>
 
                 <div style="margin-bottom:0.9rem;">
                     <div class="sa-kpi-label" style="margin-bottom:0.35rem;">Top XP Users</div>
@@ -371,7 +371,7 @@ foreach ($moderationPoints as $point) {
         </div>
 
         <div class="sa-panel">
-            <h2>Beginner Quick Read</h2>
+            <h2><?= t('st.quick_read') ?></h2>
             <p class="sa-note">Wenn Members hoch sind, aber Messages und Tickets niedrig bleiben, fehlt oft noch ein klarer Welcome/Onboarding Flow.</p>
             <p class="sa-note">Viele AutoMod Hits bei niedrigen Moderation Cases bedeuten: Regeln triggern oft, aber Staff muss wenig manuell eingreifen.</p>
             <p class="sa-note">Viele offene Tickets ueber laengere Zeit deuten auf fehlende Staff-Rotation oder fehlende Ticket-Workflows hin.</p>

@@ -357,6 +357,54 @@ function t(string $key): string {
                 'mo.t_1day'         => '1 Tag',
                 'mo.t_7days'        => '7 Tage',
                 'mo.t_28days'       => '28 Tage',
+
+                // ── Statistiken / Analytics ───────────────────────────────
+                'st.title'          => 'Server-Auswertung',
+                'st.health_snap'    => 'Zustand auf einen Blick',
+                'st.advanced'       => 'Erweiterte Auswertung (Pro)',
+                'st.advanced_locked'=> '🔒 Erweiterte Auswertung ist Pro',
+                'st.top_mod'        => 'Häufigste Moderationsarten',
+                'st.health_sum'     => 'Zusammenfassung Serverzustand',
+                'st.activity'       => 'Aktivitätsverlauf',
+                'st.top_lists'      => 'Bestenlisten',
+                'st.quick_read'     => 'Kurz erklärt',
+
+                // ── Social Alerts ─────────────────────────────────────────
+                'so.announce_ch'    => 'Ankündigungs-Kanal',
+                'so.preview'        => 'Vorschau',
+                'so.free_plan'      => 'Kostenlos-Tarif',
+                'so.t_youtube'      => 'YouTube',
+                'so.t_twitch'       => 'Twitch Live',
+                'so.t_rss'          => 'RSS',
+
+                // ── Temp Voice ────────────────────────────────────────────
+                'tv.hub'            => 'Join-Hub-Sprachkanal',
+                'tv.user_limit'     => 'Nutzer-Limit',
+                'tv.preview'        => 'Live-Vorschau',
+
+                // ── Logging ───────────────────────────────────────────────
+                'lg.log_channel'    => 'Protokoll-Kanal',
+                'lg.select_channel' => '– Kanal wählen –',
+                'lg.fallback_global'=> '— globalen Kanal verwenden —',
+                'lg.override_ch'    => 'Abweichender Kanal',
+                'lg.fallback_group' => '— Gruppen-/Standardkanal verwenden —',
+
+                // ── Reaction Roles ────────────────────────────────────────
+                'rr.display_mode'   => 'Darstellung',
+                'rr.mode_buttons'   => 'Buttons (empfohlen)',
+                'rr.mode_dropdown'  => 'Auswahlmenü',
+                'rr.choose_channel' => '– Kanal wählen –',
+                'rr.no_role'        => '– Keine Rolle –',
+                'rr.embed_title'    => 'Embed-Titel',
+                'rr.embed_desc'     => 'Embed-Beschreibung',
+                'rr.author_text'    => 'Author-Text',
+                'rr.footer_text'    => 'Footer-Text',
+                'rr.preview'        => 'Live-Vorschau',
+                'rr.target_ch'      => 'Ziel-Kanal',
+                'rr.panel_ch'       => 'Panel-Kanal',
+                'common.none'       => 'Keine',
+                'mo.duration_lbl'   => 'Dauer:',
+                'mo.no_reason'      => 'Kein Grund angegeben',
             ],
             'en' => [
                 // Navbar
@@ -695,6 +743,54 @@ function t(string $key): string {
                 'mo.t_1day'         => '1 day',
                 'mo.t_7days'        => '7 days',
                 'mo.t_28days'       => '28 days',
+
+                // ── Stats / Analytics ─────────────────────────────────────
+                'st.title'          => 'Server Analytics',
+                'st.health_snap'    => 'Server Health Snapshot',
+                'st.advanced'       => 'Advanced Insights (Pro)',
+                'st.advanced_locked'=> '🔒 Advanced Insights are Pro',
+                'st.top_mod'        => 'Top Moderation Types',
+                'st.health_sum'     => 'Server Health Summary',
+                'st.activity'       => 'Activity Charts',
+                'st.top_lists'      => 'Top Lists',
+                'st.quick_read'     => 'Beginner Quick Read',
+
+                // ── Social Alerts ─────────────────────────────────────────
+                'so.announce_ch'    => 'Announcement channel',
+                'so.preview'        => 'Preview',
+                'so.free_plan'      => 'Free Plan',
+                'so.t_youtube'      => 'YouTube',
+                'so.t_twitch'       => 'Twitch Live',
+                'so.t_rss'          => 'RSS',
+
+                // ── Temp Voice ────────────────────────────────────────────
+                'tv.hub'            => 'Join hub voice channel',
+                'tv.user_limit'     => 'User limit',
+                'tv.preview'        => 'Live preview',
+
+                // ── Logging ───────────────────────────────────────────────
+                'lg.log_channel'    => 'Log channel',
+                'lg.select_channel' => '– Select channel –',
+                'lg.fallback_global'=> '— fall back to global —',
+                'lg.override_ch'    => 'Override channel',
+                'lg.fallback_group' => '— use group/global fallback —',
+
+                // ── Reaction Roles ────────────────────────────────────────
+                'rr.display_mode'   => 'Display mode',
+                'rr.mode_buttons'   => 'Buttons (recommended)',
+                'rr.mode_dropdown'  => 'Dropdown menu',
+                'rr.choose_channel' => '– Choose channel –',
+                'rr.no_role'        => '– No role –',
+                'rr.embed_title'    => 'Embed title',
+                'rr.embed_desc'     => 'Embed description',
+                'rr.author_text'    => 'Author text',
+                'rr.footer_text'    => 'Footer text',
+                'rr.preview'        => 'Live preview',
+                'rr.target_ch'      => 'Target channel',
+                'rr.panel_ch'       => 'Panel channel',
+                'common.none'       => 'None',
+                'mo.duration_lbl'   => 'Duration:',
+                'mo.no_reason'      => 'No reason provided',
             ],
         ];
     }

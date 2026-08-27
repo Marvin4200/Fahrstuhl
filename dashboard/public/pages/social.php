@@ -145,7 +145,7 @@ $atFeedLimit    = !$socialBlocked && $maxFeeds >= 0 && $activeFeedCount >= $maxF
 <?php if (!$guildId): ?>
 <?php if ($socialBlocked && $guildId): ?>
     <div class="alert alert-error" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-        <span>⛔ Social Alerts sind im <strong>Free Plan</strong> nicht verfügbar.</span>
+        <span>⛔ Social Alerts sind im <strong><?= t('so.free_plan') ?></strong> nicht verfügbar.</span>
         <a href="server-plans.php<?php echo $guildId ? '?guildId=' . urlencode($guildId) : ''; ?>" style="color:#b48af7;font-weight:700;white-space:nowrap;">💎 Upgrade ansehen</a>
     </div>
 <?php endif; ?>
@@ -172,7 +172,7 @@ $atFeedLimit    = !$socialBlocked && $maxFeeds >= 0 && $activeFeedCount >= $maxF
                 <input type="number" name="pollMinutes" min="2" max="60" value="<?php echo esc((string)($settings['pollMinutes'] ?? 5)); ?>">
             </div>
             <div class="social-field">
-                <label>Announcement Channel</label>
+                <label><?= t('so.announce_ch') ?></label>
                 <select name="announcementChannelId">
                     <option value="">Channel auswählen</option>
                     <?php foreach ($channels as $channel): ?>
@@ -201,9 +201,9 @@ $atFeedLimit    = !$socialBlocked && $maxFeeds >= 0 && $activeFeedCount >= $maxF
                         <div class="social-field">
                             <label>Typ</label>
                             <select name="feedType[<?php echo $index; ?>]">
-                                <option value="youtube" <?php echo social_selected($feed['type'] ?? '', 'youtube'); ?>>YouTube</option>
-                                <option value="twitch" <?php echo social_selected($feed['type'] ?? '', 'twitch'); ?>>Twitch Live</option>
-                                <option value="rss" <?php echo social_selected($feed['type'] ?? '', 'rss'); ?>>RSS</option>
+                                <option value="youtube" <?php echo social_selected($feed['type'] ?? '', 'youtube'); ?>><?= t('so.t_youtube') ?></option>
+                                <option value="twitch" <?php echo social_selected($feed['type'] ?? '', 'twitch'); ?>><?= t('so.t_twitch') ?></option>
+                                <option value="rss" <?php echo social_selected($feed['type'] ?? '', 'rss'); ?>><?= t('so.t_rss') ?></option>
                             </select>
                         </div>
                         <div class="social-field">
@@ -233,7 +233,7 @@ $atFeedLimit    = !$socialBlocked && $maxFeeds >= 0 && $activeFeedCount >= $maxF
     </section>
 
     <aside class="social-panel social-preview">
-        <h2 style="margin:0;">Preview</h2>
+        <h2 style="margin:0;"><?= t('so.preview') ?></h2>
         <div class="social-post">
             <strong>Fahrstuhl Bot ist live</strong>
             <div class="social-muted">@everyone Twitch: Neuer Livestream<br>https://twitch.tv/fahrstuhl</div>

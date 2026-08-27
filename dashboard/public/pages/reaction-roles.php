@@ -287,7 +287,7 @@ $panelMessageId = $settings['messageId'] ?? ($settings['lastPanelMessageId'] ?? 
                 <input type="hidden" name="panelId" value="<?php echo esc($panelId); ?>">
                 <input type="hidden" name="action" value="send">
                 <div class="rr-field">
-                    <label>Target Channel</label>
+                    <label><?= t('rr.target_ch') ?></label>
                     <select name="channelId">
                         <?php foreach ($channels as $c): ?><option value="<?php echo $c['id']; ?>" <?php echo ($settings['channelId'] ?? '') === $c['id'] ? 'selected' : ''; ?>>#<?php echo esc($c['name']); ?></option><?php endforeach; ?>
                     </select>
@@ -314,16 +314,16 @@ $panelMessageId = $settings['messageId'] ?? ($settings['lastPanelMessageId'] ?? 
             <h2><span class="i">✍️</span> Configuration</h2>
             <div class="rr-grid-2">
                 <div class="rr-field"><label>Panel ID</label><input type="text" name="panelId" value="<?php echo esc($panelId === 'new' ? '' : $panelId); ?>" <?php echo ($panelId !== 'new' && $panelId !== 'default') ? 'readonly' : ''; ?> placeholder="e.g. colors"></div>
-                <div class="rr-field"><label>Display Mode</label><select name="mode" id="rrMode"><option value="buttons" <?php echo ($settings['mode'] ?? '') === 'buttons' ? 'selected' : ''; ?>>Buttons (Recommended)</option><option value="select" <?php echo ($settings['mode'] ?? '') === 'select' ? 'selected' : ''; ?>>Dropdown Menu</option></select></div>
+                <div class="rr-field"><label><?= t('rr.display_mode') ?></label><select name="mode" id="rrMode"><option value="buttons" <?php echo ($settings['mode'] ?? '') === 'buttons' ? 'selected' : ''; ?>><?= t('rr.mode_buttons') ?></option><option value="select" <?php echo ($settings['mode'] ?? '') === 'select' ? 'selected' : ''; ?>><?= t('rr.mode_dropdown') ?></option></select></div>
             </div>
             <label style="display:flex; align-items:center; gap:0.55rem; cursor:pointer;">
                 <input type="checkbox" name="exclusive" value="1" <?php echo !empty($settings['exclusive']) ? 'checked' : ''; ?>>
                 <span style="font-size:0.85rem; font-weight:700;">Exklusive Gruppe (nur eine Rolle aus diesem Panel erlaubt)</span>
             </label>
             <div class="rr-field">
-                <label>Panel Channel</label>
+                <label><?= t('rr.panel_ch') ?></label>
                 <select name="channelId">
-                    <option value="">- Choose channel -</option>
+                    <option value=""><?= t('rr.choose_channel') ?></option>
                     <?php foreach ($channels as $c): ?>
                         <option value="<?php echo esc($c['id']); ?>" <?php echo ($settings['channelId'] ?? '') === $c['id'] ? 'selected' : ''; ?>>
                             #<?php echo esc($c['name']); ?>
@@ -332,11 +332,11 @@ $panelMessageId = $settings['messageId'] ?? ($settings['lastPanelMessageId'] ?? 
                 </select>
             </div>
             <div class="rr-hint">Wenn ein User in einer exklusiven Gruppe eine neue Rolle auswählt, werden andere Rollen aus diesem Panel automatisch entfernt.</div>
-            <div class="rr-field"><label>Embed Title</label><input type="text" name="title" id="rrTitle" value="<?php echo esc($settings['title'] ?? ''); ?>"></div>
-            <div class="rr-field"><label>Embed Description</label><textarea name="description" id="rrDesc" style="min-height:60px;"><?php echo esc($settings['description'] ?? ''); ?></textarea></div>
+            <div class="rr-field"><label><?= t('rr.embed_title') ?></label><input type="text" name="title" id="rrTitle" value="<?php echo esc($settings['title'] ?? ''); ?>"></div>
+            <div class="rr-field"><label><?= t('rr.embed_desc') ?></label><textarea name="description" id="rrDesc" style="min-height:60px;"><?php echo esc($settings['description'] ?? ''); ?></textarea></div>
             <div class="rr-grid-2">
-                <div class="rr-field"><label>Author Text</label><input type="text" name="authorText" id="rrAuthor" value="<?php echo esc($settings['authorText'] ?? ''); ?>" placeholder="Optional small line above title"></div>
-                <div class="rr-field"><label>Footer Text</label><input type="text" name="footerText" id="rrFooter" value="<?php echo esc($settings['footerText'] ?? ''); ?>" placeholder="Optional small line below embed"></div>
+                <div class="rr-field"><label><?= t('rr.author_text') ?></label><input type="text" name="authorText" id="rrAuthor" value="<?php echo esc($settings['authorText'] ?? ''); ?>" placeholder="Optional small line above title"></div>
+                <div class="rr-field"><label><?= t('rr.footer_text') ?></label><input type="text" name="footerText" id="rrFooter" value="<?php echo esc($settings['footerText'] ?? ''); ?>" placeholder="Optional small line below embed"></div>
             </div>
             <div class="rr-grid-2">
                 <div class="rr-field"><label>Thumbnail URL</label><input type="text" name="thumbnailUrl" id="rrThumb" value="<?php echo esc($settings['thumbnailUrl'] ?? ''); ?>" placeholder="https://..."></div>
@@ -352,7 +352,7 @@ $panelMessageId = $settings['messageId'] ?? ($settings['lastPanelMessageId'] ?? 
                     <div class="rr-role-row">
                         <div class="rr-field">
                             <select name="roleIds[]">
-                                <option value="">- No role -</option>
+                                <option value=""><?= t('rr.no_role') ?></option>
                                 <?php foreach ($rolesList as $role): ?>
                                     <option value="<?php echo esc($role['id']); ?>" <?php echo $row['roleId'] === $role['id'] ? 'selected' : ''; ?>>
                                         <?php echo esc($role['name']); ?>
@@ -381,7 +381,7 @@ $panelMessageId = $settings['messageId'] ?? ($settings['lastPanelMessageId'] ?? 
 
         <!-- COLUMN 3: PREVIEW -->
         <div class="rr-card">
-            <h2><span class="i">👁️</span> Live Preview</h2>
+            <h2><span class="i">👁️</span> <?= t('rr.preview') ?></h2>
             <div class="discord-preview">
                 <img id="pThumb" class="discord-thumbnail" alt="Thumbnail" style="display:none;">
                 <div id="pAuthor" class="discord-author" style="display:none;"></div>

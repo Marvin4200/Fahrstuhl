@@ -316,7 +316,7 @@ $dashboardModuleRoles = $dashboardAccess['moduleRoles'] ?? [];
                         <div class="form-group">
                             <label><?= t('sc.select_role') ?></label>
                             <select name="role_id">
-                                <option value="">None</option>
+                                <option value=""><?= t('common.none') ?></option>
                                 <?php foreach ($roles as $role): ?>
                                 <option value="<?= esc($role['id']) ?>" <?= ($config['autoMoveRoleId'] ?? '') === $role['id'] ? 'selected' : '' ?>><?= esc($role['name']) ?></option>
                                 <?php endforeach; ?>

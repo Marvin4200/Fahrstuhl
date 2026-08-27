@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, MessageFlags, PermissionsBitField, AttachmentBuilder } = require("discord.js");
+const { SlashCommandBuilder, ContextMenuCommandBuilder, ApplicationCommandType, EmbedBuilder, MessageFlags, PermissionsBitField, AttachmentBuilder } = require("discord.js");
 const { COLORS, EMOJIS, FOOTERS, createLoadingEmbed, deferWithLoading } = require("../utils/designSystem");
 const { sendServerLog } = require("../utils/serverLogger");
 const ticketManager = require("../utils/ticketManager");
@@ -687,6 +687,10 @@ async function handleInteraction(interaction, dependencies) {
     } = dependencies;
 
     try {
+        // Kontextmenues sind keine ChatInput-Commands und wuerden vom Filter
+        // darunter verworfen - deshalb hier vorher abfangen.
+        if (await handleQuoteContextMenu(interaction, safeReply)) return;
+
         if (!interaction.isChatInputCommand()) return;
         if (!interaction.inGuild()) {
             return safeReply(interaction, { content: "This command only works in servers." });
@@ -3493,7 +3497,96 @@ ${errorSnippet}
     }
 }
 
+
+const QUOTE_MENU_NAME = "Als Zitat einreichen";
+
+/**
+ * Schickt die angeklickte Nachricht ans Zitat-Board.
+ * Gibt true zurueck, wenn die Interaktion hier behandelt wurde.
+ */
+async function handleQuoteContextMenu(interaction, safeReply) {
+    if (!interaction.isMessageContextMenuCommand?.()) return false;
+    if (interaction.commandName !== QUOTE_MENU_NAME) return false;
+
+    const token = process.env.ZITAT_BOT_TOKEN;
+    const base = process.env.ZITAT_API_URL || "http://zitatboard:3013";
+    if (!token) {
+        await safeReply(interaction, {
+            content: "Das Zitat-Board ist gerade nicht angebunden.",
+            flags: [MessageFlags.Ephemeral]
+        });
+        return true;
+    }
+
+    const msg = interaction.targetMessage;
+    const text = String(msg?.content || "").trim();
+
+    if (!text) {
+        await safeReply(interaction, {
+            content: "Diese Nachricht hat keinen Text — Bilder und Embeds kann das Board nicht aufnehmen.",
+            flags: [MessageFlags.Ephemeral]
+        });
+        return true;
+    }
+    if (msg.author?.bot) {
+        await safeReply(interaction, {
+            content: "Bot-Nachrichten lassen sich nicht als Zitat einreichen.",
+            flags: [MessageFlags.Ephemeral]
+        });
+        return true;
+    }
+
+    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] }).catch(() => {});
+
+    try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 8000);
+        const res = await fetch(`${base}/api/quotes/bot`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Bot-Token": token },
+            body: JSON.stringify({
+                text,
+                attributed_to: msg.author?.username || null,
+                discord_id: interaction.user.id,
+                username: interaction.user.username,
+            }),
+            signal: controller.signal,
+        });
+        clearTimeout(timer);
+
+        const data = await res.json().catch(() => ({}));
+
+        if (res.status === 201) {
+            await interaction.editReply({
+                content: `✅ Zitat eingereicht — jetzt auf <https://quotes.eselbande.com/> zu finden.`
+            });
+        } else if (res.ok && data.duplicate) {
+            await interaction.editReply({ content: "Dieses Zitat hast du schon eingereicht." });
+        } else {
+            await interaction.editReply({
+                content: `❌ Hat nicht geklappt: ${data.error || `Fehler ${res.status}`}`
+            });
+        }
+    } catch (err) {
+        await interaction.editReply({
+            content: `❌ Das Zitat-Board war nicht erreichbar (${err.name === "AbortError" ? "Zeitüberschreitung" : err.message}).`
+        }).catch(() => {});
+    }
+    return true;
+}
+
+// Nachrichten-Kontextmenue: Rechtsklick auf eine Nachricht -> ans Zitat-Board.
+// Das Board lag leer, weil Einreichen bisher hiess: Website oeffnen, anmelden,
+// Zitat abtippen. Zitate entstehen aber hier, im Gespraech.
+commands.push(
+    new ContextMenuCommandBuilder()
+        .setName("Als Zitat einreichen")
+        .setType(ApplicationCommandType.Message)
+        .toJSON()
+);
+
 module.exports = {
     commands,
-    handleInteraction
+    handleInteraction,
+    handleQuoteContextMenu
 };

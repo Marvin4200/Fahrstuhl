@@ -195,12 +195,12 @@ $starterActions = array_values(array_filter([
     [
         'done' => $selectedGuildId !== '',
         'step' => '1',
-        'title' => 'Server auswaehlen',
+        'title' => 'Server auswÃ¤hlen',
         'copy' => $selectedGuild
-            ? 'Aktiv: ' . $selectedGuild['name'] . '. Alle Einstellungen gelten jetzt fuer diesen Server.'
-            : 'Waehle zuerst den Server unten aus. Ohne Auswahl fuehlen sich Menues chaotisch an.',
+            ? 'Aktiv: ' . $selectedGuild['name'] . '. Alle Einstellungen gelten jetzt fÃ¼r diesen Server.'
+            : 'WÃ¤hle zuerst den Server unten aus. Ohne Auswahl fuehlen sich Menues chaotisch an.',
         'href' => BASE_URL . '/pages/portal.php',
-        'label' => $selectedGuild ? 'Server wechseln' : 'Server waehlen',
+        'label' => $selectedGuild ? 'Server wechseln' : 'Server wÃ¤hlen',
     ],
     [
         'done' => $coreModulesDone,
@@ -688,8 +688,8 @@ $portalRecentStats = [
     <div class="pt-warning-bar" id="health-check">
         <?php if ($selectedGuildId === ''): ?>
             <div>
-                <strong>Info: Kein Server gewaehlt</strong>
-                <p>Waehle unten einen Server, damit Health-Hinweise geladen werden.</p>
+                <strong>Info: Kein Server gewÃ¤hlt</strong>
+                <p>WÃ¤hle unten einen Server, damit Health-Hinweise geladen werden.</p>
             </div>
             <span class="status-badge inactive">Ohne Kontext</span>
         <?php elseif (empty($portalWarnings)): ?>
@@ -741,7 +741,7 @@ $portalRecentStats = [
                 <div class="dashboard-list-item">
                     <div>
                         <strong>Noch keine Module aktiv</strong>
-                        <p>Starte mit Welcome, Logging oder Tickets fuer einen sauberen Grundaufbau.</p>
+                        <p>Starte mit Welcome, Logging oder Tickets fÃ¼r einen sauberen Grundaufbau.</p>
                     </div>
                 </div>
             <?php else: ?>
@@ -779,7 +779,7 @@ $portalRecentStats = [
     <section class="dashboard-panel">
         <div class="dashboard-panel-header">
             <div>
-                <h2>Letzte Aktivitaet</h2>
+                <h2>Letzte AktivitÃ¤t</h2>
             </div>
             <a href="<?= dashboardPageUrl('activity') ?>" class="btn-icon btn-secondary-ui"><span class="i">⚡</span> Alle anzeigen</a>
         </div>
@@ -787,7 +787,7 @@ $portalRecentStats = [
             <?php if (empty($portalActivity)): ?>
                 <div class="dashboard-list-item">
                     <div>
-                        <strong>Noch keine Aktivitaet</strong>
+                        <strong>Noch keine AktivitÃ¤t</strong>
                         <p>Sobald Moderation, Tickets, Voice oder Leveling Daten anfallen, tauchen sie hier auf.</p>
                     </div>
                 </div>

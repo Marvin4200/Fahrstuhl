@@ -16,7 +16,7 @@ function reactionRolesPageAccessCheck($guildId, $moduleKey = 'reactionRoles') {
 }
 
 function reactionRolesPageAccessMessage($reason) {
-    if ($reason === 'missing_module_role') return 'Dir fehlt eine freigegebene Dashboard-Rolle fuer dieses Modul.';
+    if ($reason === 'missing_module_role') return 'Dir fehlt eine freigegebene Dashboard-Rolle fÃ¼r dieses Modul.';
     if ($reason === 'admin_role_not_configured') return 'Es ist noch keine Dashboard-Admin-Rolle gesetzt.';
     if ($reason === 'not_guild_admin') return 'Du bist kein Server-Owner/Admin und hast keine freigegebene Dashboard-Rolle.';
     return 'Du hast aktuell keinen Zugriff auf Reaction Roles.';

@@ -127,7 +127,7 @@ $atFeedLimit    = !$socialBlocked && $maxFeeds >= 0 && $activeFeedCount >= $maxF
     <div class="dashboard-page-copy">
         <span class="dashboard-page-eyebrow">Community Module</span>
         <h1>Social Alerts</h1>
-        <p>Postet Updates fuer <?php echo esc($guildName); ?> bei neuen Uploads, Streams oder RSS-Eintraegen.</p>
+        <p>Postet Updates fÃ¼r <?php echo esc($guildName); ?> bei neuen Uploads, Streams oder RSS-EintrÃ¤gen.</p>
     </div>
     <div class="module-header-actions">
         <form method="GET">
@@ -149,7 +149,7 @@ $atFeedLimit    = !$socialBlocked && $maxFeeds >= 0 && $activeFeedCount >= $maxF
         <a href="server-plans.php<?php echo $guildId ? '?guildId=' . urlencode($guildId) : ''; ?>" style="color:#b48af7;font-weight:700;white-space:nowrap;">💎 Upgrade ansehen</a>
     </div>
 <?php endif; ?>
-    <div class="social-panel">Bitte zuerst einen Server auswaehlen.</div>
+    <div class="social-panel">Bitte zuerst einen Server auswÃ¤hlen.</div>
 <?php else: ?>
 <form id="socialForm" method="POST" class="social-shell">
     <input type="hidden" name="guildId" value="<?php echo esc($guildId); ?>">
@@ -174,7 +174,7 @@ $atFeedLimit    = !$socialBlocked && $maxFeeds >= 0 && $activeFeedCount >= $maxF
             <div class="social-field">
                 <label>Announcement Channel</label>
                 <select name="announcementChannelId">
-                    <option value="">Channel auswaehlen</option>
+                    <option value="">Channel auswÃ¤hlen</option>
                     <?php foreach ($channels as $channel): ?>
                         <option value="<?php echo esc($channel['id']); ?>" <?php echo social_selected($settings['announcementChannelId'] ?? '', $channel['id'] ?? ''); ?>>#<?php echo esc($channel['name']); ?></option>
                     <?php endforeach; ?>
@@ -244,7 +244,7 @@ $atFeedLimit    = !$socialBlocked && $maxFeeds >= 0 && $activeFeedCount >= $maxF
             <div class="social-pill">Twitch <?php echo $twitchConfigured ? 'verbunden' : 'braucht Env Keys'; ?></div>
         </div>
         <p class="social-muted">YouTube funktioniert am stabilsten mit einer Channel-ID oder einer /channel/UC... URL. Twitch Live Alerts brauchen <code>TWITCH_CLIENT_ID</code> und <code>TWITCH_CLIENT_SECRET</code> in der Bot-Umgebung.</p>
-        <p class="social-muted">Beim ersten Speichern merkt sich der Bot nur den neuesten Stand. Erst neue Uploads, neue RSS Eintraege oder neue Twitch Streams werden gepostet.</p>
+        <p class="social-muted">Beim ersten Speichern merkt sich der Bot nur den neuesten Stand. Erst neue Uploads, neue RSS EintrÃ¤ge oder neue Twitch Streams werden gepostet.</p>
     </aside>
 </form>
 <?php endif; ?>

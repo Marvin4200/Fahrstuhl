@@ -118,7 +118,7 @@ foreach ($moderationPoints as $point) {
         <div class="dashboard-page-copy">
             <span class="dashboard-page-eyebrow">Overview</span>
             <h1>Server Analytics</h1>
-            <p>Kompakter Status fuer Mitglieder, Moderation, AutoMod, Tickets und Aktivitaet.</p>
+            <p>Kompakter Status fÃ¼r Mitglieder, Moderation, AutoMod, Tickets und AktivitÃ¤t.</p>
             <div class="dashboard-page-meta">
                 <span class="status-badge <?php echo !empty($data) ? 'active' : 'inactive'; ?>"><?php echo !empty($data) ? 'Analytics aktiv' : 'Keine Daten'; ?></span>
             </div>
@@ -137,8 +137,8 @@ foreach ($moderationPoints as $point) {
     <?php if (empty($guildId) || empty($data)): ?>
         <div class="sa-empty empty-state">
             <strong>Noch keine Analytics-Daten</strong>
-            <p>Waehle einen Server aus oder aktiviere zuerst zentrale Module wie Leveling, Tickets und Moderation.</p>
-            <a class="btn-icon cta btn-secondary-ui" href="modules.php?guildId=<?php echo urlencode($guildId); ?>">Module oeffnen</a>
+            <p>WÃ¤hle einen Server aus oder aktiviere zuerst zentrale Module wie Leveling, Tickets und Moderation.</p>
+            <a class="btn-icon cta btn-secondary-ui" href="modules.php?guildId=<?php echo urlencode($guildId); ?>">Module Ã¶ffnen</a>
         </div>
     <?php else: ?>
         <div class="sa-insights">
@@ -168,7 +168,7 @@ foreach ($moderationPoints as $point) {
             <div class="sa-upgrade">
                 <div>
                     <strong>🔒 Advanced Insights sind Pro</strong>
-                    <p class="sa-note">Du hast dein Limit erreicht. Upgrade fuer tiefere Segmentierung und bessere Entscheidungs-Signale.</p>
+                    <p class="sa-note">Du hast dein Limit erreicht. Upgrade fÃ¼r tiefere Segmentierung und bessere Entscheidungs-Signale.</p>
                 </div>
                 <a href="<?php echo esc(dashboardPageUrl('server-plans')); ?>" class="btn-icon btn-secondary-ui">Pro ansehen</a>
             </div>
@@ -293,7 +293,7 @@ foreach ($moderationPoints as $point) {
 
                 <div>
                     <div class="sa-kpi-label" style="margin-bottom:0.35rem;">Messages & Joins/Leaves</div>
-                    <div class="sa-empty">Aktuell werden dafuer noch keine historischen Zeitreihen gespeichert. Die Seite zeigt deshalb bewusst einen leeren Zustand statt fehlerhafter Fake-Daten.</div>
+                    <div class="sa-empty">Aktuell werden dafÃ¼r noch keine historischen Zeitreihen gespeichert. Die Seite zeigt deshalb bewusst einen leeren Zustand statt fehlerhafter Fake-Daten.</div>
                 </div>
             </div>
 
@@ -339,7 +339,7 @@ foreach ($moderationPoints as $point) {
                     <div class="sa-list">
                         <?php $activeChannels = $topLists['mostActiveChannels'] ?? []; ?>
                         <?php if (empty($activeChannels)): ?>
-                            <div class="sa-empty">Noch keine Channel-Aktivitaet vorhanden.</div>
+                            <div class="sa-empty">Noch keine Channel-AktivitÃ¤t vorhanden.</div>
                         <?php else: ?>
                             <?php foreach (array_slice($activeChannels, 0, 6) as $row): ?>
                                 <div class="sa-row">
@@ -356,7 +356,7 @@ foreach ($moderationPoints as $point) {
                     <div class="sa-list">
                         <?php $recent = $topLists['recentActivity'] ?? []; ?>
                         <?php if (empty($recent)): ?>
-                            <div class="sa-empty">Noch keine Moderation-Aktivitaet vorhanden.</div>
+                            <div class="sa-empty">Noch keine Moderation-AktivitÃ¤t vorhanden.</div>
                         <?php else: ?>
                             <?php foreach (array_slice($recent, 0, 8) as $row): ?>
                                 <div class="sa-row">

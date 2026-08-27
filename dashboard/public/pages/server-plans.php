@@ -197,7 +197,7 @@ function planLimit(int $val): string {
     <div class="dashboard-page-copy">
         <span class="dashboard-page-eyebrow">Premium / Product</span>
         <h1>Server Plans</h1>
-        <p>Alle Feature-Tiers fuer Fahrstuhl-Server: Free fuer Einstieg, Premium fuer Kapazitaet, Pro fuer Advanced Insights.</p>
+        <p>Alle Feature-Tiers fÃ¼r Fahrstuhl-Server: Free fÃ¼r Einstieg, Premium fÃ¼r KapazitÃ¤t, Pro fÃ¼r Advanced Insights.</p>
         <div class="dashboard-page-meta">
             <?php if ($isPro): ?>
                 <span class="status-badge premium">Pro User · <?= $daysLeft ?>d</span>

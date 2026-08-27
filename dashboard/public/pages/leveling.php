@@ -16,7 +16,7 @@ function levelingPageAccessCheck($guildId, $moduleKey = 'leveling') {
 }
 
 function levelingPageAccessMessage($reason) {
-    if ($reason === 'missing_module_role') return 'Dir fehlt eine freigegebene Dashboard-Rolle fuer dieses Modul.';
+    if ($reason === 'missing_module_role') return 'Dir fehlt eine freigegebene Dashboard-Rolle fÃ¼r dieses Modul.';
     if ($reason === 'admin_role_not_configured') return 'Es ist noch keine Dashboard-Admin-Rolle gesetzt.';
     if ($reason === 'not_guild_admin') return 'Du bist kein Server-Owner/Admin und hast keine freigegebene Dashboard-Rolle.';
     return 'Du hast aktuell keinen Zugriff auf Leveling.';
@@ -46,7 +46,7 @@ if ($guildId && empty($moduleAccess['allowed'])) {
     <div class="empty-state" style="max-width:780px; margin:1rem auto; text-align:left;">
         <strong>Kein Zugriff auf <?= esc($denyLabel) ?></strong>
         <p><?= esc($denyMessage) ?></p>
-        <p style="color:var(--text-secondary); font-size:.82rem;">Falls du Zugriff brauchst, bitte den Owner um eine freigegebene Dashboard-Rolle fuer dieses Modul.</p>
+        <p style="color:var(--text-secondary); font-size:.82rem;">Falls du Zugriff brauchst, bitte den Owner um eine freigegebene Dashboard-Rolle fÃ¼r dieses Modul.</p>
         <a class="btn-icon cta btn-primary-ui" href="portal.php">Zurueck zum Portal</a>
     </div>
     <?php

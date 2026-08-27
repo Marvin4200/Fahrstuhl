@@ -112,7 +112,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
 <div class="tv-head">
     <div class="tv-title">
         <h1>Temp Voice</h1>
-        <p>Erstellt automatisch private Voice-Channels fuer <strong><?php echo esc($guildName); ?></strong>, wenn User dem Hub beitreten.</p>
+        <p>Erstellt automatisch private Voice-Channels fÃ¼r <strong><?php echo esc($guildName); ?></strong>, wenn User dem Hub beitreten.</p>
     </div>
     <form method="GET">
         <select name="guildId" onchange="this.form.submit()" style="padding:.6rem;border-radius:8px;background:var(--bg-tertiary);color:#fff;border:1px solid var(--border-light);">
@@ -126,7 +126,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
 <?php if ($message): ?><div class="alert alert-<?php echo esc($messageType); ?>"><?php echo esc($message); ?></div><?php endif; ?>
 
 <?php if (!$guildId): ?>
-    <div class="tv-panel">Bitte zuerst einen Server auswaehlen.</div>
+    <div class="tv-panel">Bitte zuerst einen Server auswÃ¤hlen.</div>
 <?php else: ?>
 <form id="tvForm" method="POST" class="tv-shell">
     <input type="hidden" name="guildId" value="<?php echo esc($guildId); ?>">
@@ -134,7 +134,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
             <div>
                 <h2 style="margin:0;">Setup</h2>
-                <p style="margin:.25rem 0 0;color:var(--text-secondary);">Hub waehlen, Vorlage setzen, speichern, fertig.</p>
+                <p style="margin:.25rem 0 0;color:var(--text-secondary);">Hub wÃ¤hlen, Vorlage setzen, speichern, fertig.</p>
             </div>
             <label class="tv-check" style="padding:.55rem .75rem;">
                 <input type="hidden" name="enabled" value="0">
@@ -147,14 +147,14 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
             <div class="tv-field">
                 <label>Join-Hub Voice Channel</label>
                 <select name="hubChannelId" required>
-                    <option value=""><?php echo empty($voiceChannels) ? 'Keine Voice-Channels gefunden' : 'Voice Channel auswaehlen'; ?></option>
+                    <option value=""><?php echo empty($voiceChannels) ? 'Keine Voice-Channels gefunden' : 'Voice Channel auswÃ¤hlen'; ?></option>
                     <?php foreach ($voiceChannels as $channel): ?>
                         <option value="<?php echo esc($channel['id']); ?>" <?php echo selectedAttr($settings['hubChannelId'] ?? '', $channel['id'] ?? ''); ?>><?php echo esc($channel['name']); ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <div class="tv-field">
-                <label>Kategorie fuer neue Channels</label>
+                <label>Kategorie fÃ¼r neue Channels</label>
                 <select name="categoryId">
                     <option value="">Wie Hub / keine Kategorie</option>
                     <?php foreach ($categories as $category): ?>
@@ -180,7 +180,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
             <label class="tv-check"><input type="hidden" name="allowRename" value="0"><input type="checkbox" name="allowRename" value="1" <?php echo checkedAttr($settings['allowRename'] ?? true); ?>> Rename erlauben</label>
             <label class="tv-check"><input type="hidden" name="allowLock" value="0"><input type="checkbox" name="allowLock" value="1" <?php echo checkedAttr($settings['allowLock'] ?? true); ?>> Lock erlauben</label>
             <label class="tv-check"><input type="hidden" name="allowLimit" value="0"><input type="checkbox" name="allowLimit" value="1" <?php echo checkedAttr($settings['allowLimit'] ?? true); ?>> Limit erlauben</label>
-            <label class="tv-check"><input type="hidden" name="deleteWhenEmpty" value="0"><input type="checkbox" name="deleteWhenEmpty" value="1" <?php echo checkedAttr($settings['deleteWhenEmpty'] ?? true); ?>> Leere Channels loeschen</label>
+            <label class="tv-check"><input type="hidden" name="deleteWhenEmpty" value="0"><input type="checkbox" name="deleteWhenEmpty" value="1" <?php echo checkedAttr($settings['deleteWhenEmpty'] ?? true); ?>> Leere Channels lÃ¶schen</label>
         </div>
 
         <div style="margin-top:1rem;display:flex;justify-content:flex-end;">

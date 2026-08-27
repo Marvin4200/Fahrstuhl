@@ -263,7 +263,16 @@ $legalItems = [
                             $swParams['guildId'] = $_swg['id'];
                             unset($swParams['id']);
                             if ($p === 'guild-detail') { $swParams['id'] = $_swg['id']; unset($swParams['guildId']); }
-                            $_swUrl = $path . '?' . http_build_query($swParams);
+                            // nginx leitet mit `proxy_pass .../` weiter und schneidet dabei
+                            // das /fahrstuhl-Praefix ab - REQUEST_URI enthaelt es hier also
+                            // nicht. Ohne BASE_URL davor zeigt der Link auf /pages/... und
+                            // laeuft in die 404-Seite. Erst abschneiden, dann setzen, damit
+                            // es auch beim direkten Zugriff ohne Proxy stimmt.
+                            $swBase = rtrim(BASE_URL, '/');
+                            if ($swBase !== '' && strpos($path, $swBase . '/') === 0) {
+                                $path = substr($path, strlen($swBase));
+                            }
+                            $_swUrl = $swBase . $path . '?' . http_build_query($swParams);
                         } else {
                             $_swUrl = BASE_URL . '/pages/' . (isAdmin() ? 'guild-detail' : 'portal') . '.php?'
                                 . (isAdmin() ? 'id=' : 'guildId=') . urlencode($_swg['id']);

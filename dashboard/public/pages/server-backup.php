@@ -165,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
                 'type' => $ok ? 'success' : 'error',
             ];
         }
-        header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?') . '?guildId=' . urlencode($guildId));
+        header('Location: ' . selfPath(['guildId' => $guildId]));
         exit;
     }
 
@@ -174,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
         $targetGuildId = preg_replace('/[^0-9]/', '', $_POST['target_guild_id'] ?? '');
         if ($targetGuildId && !isAdmin() && !isServerAdmin($targetGuildId)) {
             $_SESSION['flash'] = ['msg' => 'No access to the target guild.', 'type' => 'error'];
-            header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?') . '?guildId=' . urlencode($guildId));
+            header('Location: ' . selfPath(['guildId' => $guildId]));
             exit;
         }
         if ($backupId > 0 && $targetGuildId) {
@@ -199,7 +199,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
                     $_SESSION['restore_job'] = ['jobId' => $jobId, 'guildId' => $targetGuildId, 'name' => $tName];
                     unset($_SESSION['backup_job']); // clear stale backup panel
                     $_SESSION['flash'] = ['msg' => '🔄 Restore von Backup #' . $backupId . ' auf "' . htmlspecialchars($tName) . '" gestartet.', 'type' => 'success'];
-                    header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?') . '?guildId=' . urlencode($guildId) . '&rjob=' . $jobId . '&rguild=' . urlencode($targetGuildId));
+                    header('Location: ' . selfPath(['guildId' => $guildId, 'rjob' => $jobId, 'rguild' => $targetGuildId]));
                     exit;
                 } else {
                     $_SESSION['flash'] = ['msg' => 'Restore gestartet, aber keine Job-ID erhalten.', 'type' => 'error'];
@@ -208,7 +208,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
                 $_SESSION['flash'] = ['msg' => $result['data']['message'] ?? 'Restore fehlgeschlagen.', 'type' => 'error'];
             }
         }
-        header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?') . '?guildId=' . urlencode($guildId));
+        header('Location: ' . selfPath(['guildId' => $guildId]));
         exit;
     }
 
@@ -220,14 +220,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
                 $_SESSION['backup_job'] = ['jobId' => $jobId, 'guildId' => $guildId, 'name' => $guildId];
                 unset($_SESSION['restore_job']); // clear stale restore panel
                 $_SESSION['flash'] = ['msg' => '⏳ Backup wird im Hintergrund erstellt.', 'type' => 'success'];
-                header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?') . '?guildId=' . urlencode($guildId) . '&bjob=' . $jobId);
+                header('Location: ' . selfPath(['guildId' => $guildId, 'bjob' => $jobId]));
                 exit;
             }
             $_SESSION['flash'] = ['msg' => '⏳ Backup gestartet.', 'type' => 'success'];
         } else {
             $_SESSION['flash'] = ['msg' => $result['data']['message'] ?? 'Backup fehlgeschlagen.', 'type' => 'error'];
         }
-        header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?') . '?guildId=' . urlencode($guildId));
+        header('Location: ' . selfPath(['guildId' => $guildId]));
         exit;
     }
 
@@ -249,7 +249,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
                 : ($result['data']['message'] ?? 'Fehler beim Speichern des Zeitplans.'),
             'type' => ($result['data']['success'] ?? false) ? 'success' : 'error',
         ];
-        header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?') . '?guildId=' . urlencode($guildId));
+        header('Location: ' . selfPath(['guildId' => $guildId]));
         exit;
     }
 
@@ -258,7 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
         $targetGuildId = preg_replace('/[^0-9]/', '', $_POST['target_guild_id'] ?? '');
         if ($targetGuildId && !isAdmin() && !isServerAdmin($targetGuildId)) {
             $_SESSION['flash'] = ['msg' => 'No access to the target guild.', 'type' => 'error'];
-            header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?') . '?guildId=' . urlencode($guildId));
+            header('Location: ' . selfPath(['guildId' => $guildId]));
             exit;
         }
         if ($backupId > 0 && $targetGuildId) {
@@ -270,7 +270,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
                 $_SESSION['flash'] = ['msg' => $result['data']['message'] ?? 'Verify fehlgeschlagen.', 'type' => 'error'];
             }
         }
-        header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?') . '?guildId=' . urlencode($guildId));
+        header('Location: ' . selfPath(['guildId' => $guildId]));
         exit;
     }
 }

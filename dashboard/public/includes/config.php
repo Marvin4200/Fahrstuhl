@@ -131,6 +131,21 @@ if (isset($_SESSION['user'])) {
 
 verifyDashboardCsrf();
 
+// Absolute URL der aktuellen Seite, mit BASE_URL davor.
+// nginx leitet mit `proxy_pass .../` weiter und schneidet dabei das
+// /fahrstuhl-Praefix ab, REQUEST_URI enthaelt es hier also nicht. Wer daraus
+// eine Weiterleitung baut, landet ohne diesen Helfer auf der 404-Seite.
+function selfPath($query = []) {
+    $path = strtok($_SERVER['REQUEST_URI'] ?? '', '?');
+    $base = rtrim(BASE_URL, '/');
+    if ($base !== '' && strpos($path, $base . '/') === 0) {
+        $path = substr($path, strlen($base));
+    }
+    $url = $base . $path;
+    if ($query) $url .= '?' . http_build_query($query);
+    return $url;
+}
+
 function isLoggedIn() { return isset($_SESSION['user']); }
 function requireLogin() { if (!isLoggedIn()) { header('Location: ' . BASE_URL . '/index.php'); exit(); } }
 function getUser() { return $_SESSION['user'] ?? null; }

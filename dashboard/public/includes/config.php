@@ -27,16 +27,6 @@ define('BASE_URL', $baseUrl);
 define('SESSION_TIMEOUT', 3600);
 
 if (session_status() === PHP_SESSION_NONE) {
-    // Default session.save_path is the container's own /tmp, which is wiped
-    // on every rebuild — that logs everyone out on every deploy. dashboard/data
-    // is bind-mounted to the host, so sessions survive container recreation.
-    $sessionPath = __DIR__ . '/../data/sessions';
-    if (!is_dir($sessionPath)) {
-        @mkdir($sessionPath, 0700, true);
-    }
-    if (is_dir($sessionPath) && is_writable($sessionPath)) {
-        session_save_path($sessionPath);
-    }
     session_start();
 }
 

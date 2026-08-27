@@ -224,8 +224,8 @@ $userGroups = [
   ];
 
 $legalItems = [
-    ['page' => 'privacy', 'icon' => '🔒', 'label' => 'Privacy Policy'],
-    ['page' => 'terms', 'icon' => '📜', 'label' => 'Terms of Service'],
+    ['page' => 'privacy', 'icon' => '🔒', 'label' => t('legal.privacy')],
+    ['page' => 'terms', 'icon' => '📜', 'label' => t('legal.terms')],
 ];
 ?>
 <aside class="sidebar" id="dashboardSidebar" aria-label="Dashboard navigation">

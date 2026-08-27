@@ -1,14 +1,14 @@
 <?php
-$page_title = 'Terms of Service';
+$page_title = 'Nutzungsbedingungen';
 require_once __DIR__ . '/../includes/config.php';
-// Public page — no login required
+// Öffentliche Seite — kein Login nötig
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Terms of Service – Fahrstuhl Bot</title>
+<title>Nutzungsbedingungen – Fahrstuhl Bot</title>
 <style>
   body { font-family: 'Segoe UI', sans-serif; background:#0d0d1a; color:#e0e0e0; margin:0; padding:0; }
   .container { max-width: 800px; margin: 0 auto; padding: 40px 20px 80px; }
@@ -21,69 +21,98 @@ require_once __DIR__ . '/../includes/config.php';
   .meta { color: #555; font-size: 0.85em; margin-top: -8px; margin-bottom: 32px; }
   .back { display: inline-block; margin-bottom: 24px; background: #1a1a2e; border: 1px solid #333;
           border-radius: 6px; padding: 6px 14px; color: #aaa; font-size: 0.85em; }
-  .warning { background: #2a1a1a; border-left: 4px solid #ED4245; padding: 12px 16px;
-             border-radius: 0 6px 6px 0; margin: 16px 0; }
+  .warning { background:#2a1a1a; border:1px solid #5a2a2a; border-left:3px solid #ED4245;
+             border-radius:6px; padding:14px 16px; margin:18px 0; color:#e8c4c4; }
 </style>
 </head>
 <body>
 <div class="container">
-  <a href="<?= BASE_URL ?>/" class="back">← Back</a>
-  <h1>Terms of Service</h1>
-  <p class="meta">Last updated: May 8, 2026</p>
+  <a href="<?= BASE_URL ?>/" class="back">← Zurück</a>
+  <h1>Nutzungsbedingungen</h1>
+  <p class="meta">Stand: 27. August 2026</p>
 
-  <p>By adding Fahrstuhl Bot to your Discord server or using its commands, you agree to these Terms of Service. Please read them carefully.</p>
+  <p>
+    Wer den Fahrstuhl Bot auf einen Discord-Server holt oder seine Befehle nutzt, stimmt diesen
+    Bedingungen zu.
+  </p>
 
-  <h2>1. Intended Use</h2>
-  <p>Fahrstuhl Bot is a <strong>fun, opt-in troll bot</strong> for Discord voice channels. It is designed to be used in a friendly, consensual environment among people who enjoy pranks and jokes.</p>
+  <h2>1. Wofür der Bot gedacht ist</h2>
+  <p>
+    Fahrstuhl ist ein Allround-Bot für Discord-Server: Begrüßung, Level, Tickets, Moderation,
+    AutoMod, Reaction Roles, Temp-Voice und einige Spaß-Funktionen für Sprachkanäle. Die
+    Spaß-Funktionen sind für Runden gedacht, in denen alle Beteiligten damit einverstanden sind.
+  </p>
   <div class="warning">
-    ⚠️ Fahrstuhl Bot must <strong>not</strong> be used to harass, bully, or harm other users. Any misuse may result in a permanent ban from the bot.
+    ⚠️ Der Bot darf <strong>nicht</strong> zum Belästigen, Bloßstellen oder Schikanieren
+    eingesetzt werden. Missbrauch kann zu einer dauerhaften Sperre führen.
   </div>
 
-  <h2>2. User Responsibilities</h2>
+  <h2>2. Was von dir erwartet wird</h2>
   <ul>
-    <li>You must comply with <a href="https://discord.com/terms" target="_blank">Discord's Terms of Service</a> and <a href="https://discord.com/guidelines" target="_blank">Community Guidelines</a></li>
-    <li>Server administrators are responsible for ensuring the bot is used appropriately within their server</li>
-    <li>Troll commands should only be used in servers where all participants have consented to the bot's activity</li>
-    <li>You must not attempt to abuse, exploit, or spam bot commands</li>
-    <li>You must not attempt to circumvent blacklists or other safety mechanisms</li>
+    <li>Die <a href="https://discord.com/terms" target="_blank" rel="noopener">Discord-Nutzungsbedingungen</a>
+        und <a href="https://discord.com/guidelines" target="_blank" rel="noopener">Community-Richtlinien</a> einhalten</li>
+    <li>Als Server-Admin dafür sorgen, dass der Bot auf dem eigenen Server angemessen genutzt wird</li>
+    <li>Spaß-Befehle nur dort einsetzen, wo alle Beteiligten einverstanden sind</li>
+    <li>Befehle nicht missbrauchen, ausnutzen oder zuspammen</li>
+    <li>Sperrlisten und andere Schutzmechanismen nicht umgehen</li>
   </ul>
 
-  <h2>3. Bot Features & Availability</h2>
+  <h2>3. Funktionen und Verfügbarkeit</h2>
   <ul>
-    <li>Fahrstuhl Bot is provided <strong>"as is"</strong> without guarantees of uptime or feature availability</li>
-    <li>Features may be added, changed, or removed at any time</li>
-    <li>Premium features require active premium status, which may be revoked for ToS violations</li>
-    <li>The dashboard may show operational and analytics data (including voice presence metadata and command logs) to admins</li>
+    <li>Der Bot wird <strong>ohne Gewähr</strong> bereitgestellt — es gibt keine Zusage zu
+        Verfügbarkeit oder Funktionsumfang</li>
+    <li>Funktionen können jederzeit hinzukommen, sich ändern oder wegfallen</li>
+    <li>Premium-Funktionen setzen aktiven Premium-Status voraus, der bei Regelverstößen
+        entzogen werden kann</li>
+    <li>Das Dashboard zeigt Server-Admins Betriebs- und Statistikdaten, darunter Sprachkanal-
+        Nutzung und Befehlsverläufe</li>
   </ul>
 
-  <h2>4. Prohibited Actions</h2>
-  <p>The following actions will result in a permanent bot ban:</p>
+  <h2>4. Was nicht erlaubt ist</h2>
+  <p>Folgendes führt zur dauerhaften Sperre:</p>
   <ul>
-    <li>Using bot commands to harass or target users without their consent</li>
-    <li>Attempting to abuse or exploit bot features</li>
-    <li>Using the bot to violate Discord's Terms of Service</li>
-    <li>Attempting to interfere with the bot's operation</li>
+    <li>Befehle nutzen, um andere ohne deren Einverständnis zu belästigen oder gezielt zu treffen</li>
+    <li>Funktionen missbrauchen oder Lücken ausnutzen</li>
+    <li>Den Bot verwenden, um gegen die Discord-Nutzungsbedingungen zu verstoßen</li>
+    <li>Den Betrieb des Bots stören</li>
   </ul>
 
-  <h2>5. Premium Services</h2>
-  <p>Premium features are provided as a bonus for supporters. We reserve the right to modify, suspend, or discontinue premium features at any time. No refunds are provided for premium access that is revoked due to ToS violations.</p>
+  <h2>5. Premium</h2>
+  <p>
+    Premium-Funktionen sind ein Extra für Unterstützende. Sie können jederzeit geändert,
+    ausgesetzt oder eingestellt werden. Für Premium-Zugang, der wegen eines Regelverstoßes
+    entzogen wird, gibt es keine Erstattung.
+  </p>
 
-  <h2>6. Shield System</h2>
-  <p>Shields are obtained through joining partner communities or server boosting. Shields are non-transferable and cannot be sold or traded.</p>
+  <h2>6. Shield-System</h2>
+  <p>
+    Shields bekommt man über Partner-Communities oder Server-Boosts. Sie sind nicht
+    übertragbar und können weder verkauft noch getauscht werden.
+  </p>
 
-  <h2>8. Leveling System</h2>
-  <p>The leveling system tracks XP earned through voice channel activity. XP and level data are stored per-server and are not shared across servers. Server administrators may reset leveling data for individual users or the entire server at any time via <code>/leveling resetuser</code> or <code>/leveling resetserver</code>.</p>
-  <p>Fahrstuhl Bot and its developers are not liable for any damages, losses, or disputes arising from use of the bot. Users interact with the bot at their own risk.</p>
+  <h2>7. Haftung</h2>
+  <p>
+    Der Fahrstuhl Bot und die Personen dahinter haften nicht für Schäden, Verluste oder
+    Streitigkeiten, die aus der Nutzung entstehen. Die Nutzung erfolgt auf eigene Verantwortung.
+  </p>
 
-  <h2>9. Contact & Appeals</h2>
-  <p>If you believe you have been wrongly banned or have questions about these terms, contact us:</p>
+  <h2>8. Level-System</h2>
+  <p>
+    Das Level-System zählt XP, die durch Nachrichten und Sprachaktivität gesammelt werden.
+    XP und Level gelten jeweils nur für einen Server und werden nicht zwischen Servern geteilt.
+    Server-Admins können die Daten einzelner Mitglieder oder des ganzen Servers jederzeit im
+    Dashboard unter <em>Leveling → XP zurücksetzen</em> löschen.
+  </p>
+
+  <h2>9. Kontakt und Einsprüche</h2>
+  <p>Bei Fragen oder wenn du eine Sperre für ungerechtfertigt hältst:</p>
   <ul>
-    <li>Support Server: <a href="https://discord.gg/zfzDHKcWDx" target="_blank">discord.gg/zfzDHKcWDx</a></li>
-    <li>GitHub: <a href="https://github.com/Marvin4200/Fahrstuhl" target="_blank">github.com/Marvin4200/Fahrstuhl</a></li>
+    <li>Support-Discord: <a href="https://discord.gg/zfzDHKcWDx" target="_blank" rel="noopener">discord.gg/zfzDHKcWDx</a></li>
+    <li>GitHub: <a href="https://github.com/Marvin4200/Fahrstuhl" target="_blank" rel="noopener">github.com/Marvin4200/Fahrstuhl</a></li>
   </ul>
 
   <p style="margin-top:40px; color:#555; font-size:0.85em;">
-    See also: <a href="<?= BASE_URL ?>/pages/privacy.php">Privacy Policy</a>
+    Siehe auch: <a href="<?= BASE_URL ?>/pages/privacy.php">Datenschutz</a>
   </p>
 </div>
 </body>

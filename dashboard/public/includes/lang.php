@@ -54,6 +54,8 @@ function t(string $key): string {
                 'sidebar.nav_admin'  => 'Arbeitsbereich',
                 'sidebar.nav_user'   => 'Navigation',
                 'sidebar.legal'      => 'Rechtliches',
+                'legal.privacy'      => 'Datenschutz',
+                'legal.terms'        => 'Nutzungsbedingungen',
                 // Footer
                 'footer.copyright'   => '© 2026 Fahrstuhl Bot',
                 'footer.help'        => 'Hilfe?',
@@ -440,6 +442,8 @@ function t(string $key): string {
                 'sidebar.nav_admin'  => 'Workspace',
                 'sidebar.nav_user'   => 'Navigation',
                 'sidebar.legal'      => 'Legal',
+                'legal.privacy'      => 'Privacy Policy',
+                'legal.terms'        => 'Terms of Service',
                 // Footer
                 'footer.copyright'   => '© 2026 Fahrstuhl Bot',
                 'footer.help'        => 'Help?',

@@ -7,4 +7,10 @@ COPY dashboard/data /app/dashboard/data
 
 EXPOSE 8081
 
+# PHP's built-in server handles one request at a time by default, so a
+# single slow page (e.g. one waiting on the bot API) blocks every other
+# asset on that page — CSS, images, everything queues behind it. This
+# opts into the built-in worker pool (PHP >= 7.4) so requests run concurrently.
+ENV PHP_CLI_SERVER_WORKERS=4
+
 CMD ["php", "-S", "0.0.0.0:8081", "-t", "/app/dashboard/public", "/app/dashboard/public/router.php"]

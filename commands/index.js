@@ -979,6 +979,35 @@ async function handleInteraction(interaction, dependencies) {
             }
         }
 
+        if (interaction.commandName === "rueckblick") {
+            const days = interaction.options.getInteger("tage") || 7;
+            const channel = interaction.options.getChannel("kanal");
+
+            await interaction.deferReply().catch(() => {});
+
+            // Kanal merken, damit der woechentliche Post weiss, wohin.
+            if (channel) {
+                if (!channel.isTextBased?.()) {
+                    return interaction.editReply({ content: "Das muss ein Textkanal sein." }).catch(() => {});
+                }
+                setGuildConfig(interaction.guild.id, { recapChannelId: channel.id });
+            }
+
+            try {
+                const { buildRecapEmbed } = require("../utils/weeklyRecap");
+                const { embed } = await buildRecapEmbed(days);
+                const note = channel
+                    ? `\nAb jetzt kommt der Rückblick jeden Montag automatisch in <#${channel.id}>.`
+                    : "";
+                await interaction.editReply({ content: note || undefined, embeds: [embed] });
+            } catch (err) {
+                await interaction.editReply({
+                    content: `Der Rückblick liess sich nicht bauen: ${err.message}`
+                }).catch(() => {});
+            }
+            return;
+        }
+
         if (interaction.commandName === "help") {
             const config = getGuildConfig(interaction.guild.id);
             const roleDisplay = config.roleId ? `<@&${config.roleId}>` : "❌ Not set";
@@ -3574,6 +3603,22 @@ async function handleQuoteContextMenu(interaction, safeReply) {
     }
     return true;
 }
+
+// Wochenrueckblick — auf Zuruf, und optional als wiederkehrender Post.
+commands.push(
+    new SlashCommandBuilder()
+        .setName("rueckblick")
+        .setDescription("📅 Zeigt, was in den letzten Tagen los war")
+        .addIntegerOption(option =>
+            option.setName("tage")
+                .setDescription("Zeitraum in Tagen (Standard: 7)")
+                .setMinValue(1)
+                .setMaxValue(90))
+        .addChannelOption(option =>
+            option.setName("kanal")
+                .setDescription("Diesen Kanal ab jetzt jede Woche automatisch bespielen"))
+        .toJSON()
+);
 
 // Nachrichten-Kontextmenue: Rechtsklick auf eine Nachricht -> ans Zitat-Board.
 // Das Board lag leer, weil Einreichen bisher hiess: Website oeffnen, anmelden,

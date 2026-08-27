@@ -1370,6 +1370,46 @@ client.once(Events.ClientReady, async () => {
     }, 24 * 60 * 60 * 1000);
     activeIntervals.push(reminderLogPrune);
 
+    // Wochenrueckblick: montags posten, in jeden Server der einen Kanal
+    // dafuer gesetzt hat (/rueckblick kanal:#x).
+    //
+    // Bewusst kein Cron: stuendlich pruefen und den Kalendertag des letzten
+    // Posts merken ist robuster gegen Neustarts als ein exakter Zeitpunkt,
+    // den ein Bot verschlaeft, wenn er genau dann nicht laeuft.
+    async function runWeeklyRecap() {
+        const now = new Date();
+        if (now.getDay() !== 1 || now.getHours() < 10) return; // Montag ab 10 Uhr
+        const stamp = now.toISOString().slice(0, 10);
+
+        for (const [guildId, guild] of client.guilds.cache) {
+            try {
+                const config = getGuildConfig(guildId);
+                if (!config.recapChannelId) continue;
+                if (config.recapLastPosted === stamp) continue; // diese Woche schon erledigt
+
+                const channel = await client.channels.fetch(config.recapChannelId).catch(() => null);
+                if (!channel?.isTextBased?.()) continue;
+
+                const { buildRecapEmbed } = require("./utils/weeklyRecap");
+                const { embed, empty } = await buildRecapEmbed(7);
+                // Eine leere Woche ist keinen Post wert - lieber Stille als Rauschen.
+                if (empty) {
+                    setGuildConfig(guildId, { recapLastPosted: stamp });
+                    continue;
+                }
+
+                await channel.send({ embeds: [embed] });
+                setGuildConfig(guildId, { recapLastPosted: stamp });
+                console.log(`📅 Wochenrückblick gepostet in ${guild.name}`);
+            } catch (err) {
+                console.warn(`⚠️ Wochenrückblick für ${guildId} fehlgeschlagen: ${err.message}`);
+            }
+        }
+    }
+
+    const weeklyRecapInterval = setInterval(runWeeklyRecap, 60 * 60 * 1000); // stuendlich pruefen
+    activeIntervals.push(weeklyRecapInterval);
+
     // Cleanup stale fallback data
     const gracefulDegradationCleanup = setInterval(() => {
         gracefulDegradation.cleanupStale();

@@ -245,11 +245,11 @@ $totalPages = max(1, (int)($leaderboardRaw['data']['totalPages'] ?? ceil($totalM
 
 <section class="dashboard-page-header">
     <div class="dashboard-page-copy">
-        <span class="dashboard-page-eyebrow">Engagement Module</span>
+        <span class="dashboard-page-eyebrow"><?= t('lvl.eyebrow') ?></span>
         <h1>Leveling</h1>
-        <p>XP, Rewards und Anti-Farm Regeln im konsistenten Save-Workflow.</p>
+        <p><?= t('lvl.subtitle') ?></p>
         <div class="dashboard-page-meta">
-            <span class="status-badge <?php echo $levelingEnabled ? 'active' : 'inactive'; ?>"><?php echo $levelingEnabled ? 'Aktiv' : 'Inaktiv'; ?></span>
+            <span class="status-badge <?php echo $levelingEnabled ? 'active' : 'inactive'; ?>"><?php echo $levelingEnabled ? t('common.active') : t('common.inactive'); ?></span>
         </div>
     </div>
     <div class="module-header-actions">
@@ -267,9 +267,9 @@ $totalPages = max(1, (int)($leaderboardRaw['data']['totalPages'] ?? ceil($totalM
 
 <?php if (!$levelingEnabled): ?>
     <div class="empty-state">
-        <strong>Leveling ist deaktiviert</strong>
-        <p>Aktiviere zuerst das Modul und starte danach direkt mit XP, Voice XP und Anti-Farm Regeln.</p>
-        <a class="btn-icon cta btn-primary-ui" href="modules.php?guildId=<?php echo urlencode($guildId); ?>">Modul aktivieren</a>
+        <strong><?= t('lvl.disabled_title') ?></strong>
+        <p><?= t('lvl.disabled_text') ?></p>
+        <a class="btn-icon cta btn-primary-ui" href="modules.php?guildId=<?php echo urlencode($guildId); ?>"><?= t('common.enable_module') ?></a>
     </div>
 <?php else: ?>
     <form method="POST" class="lvl-compact" id="levelingSettingsForm">
@@ -278,24 +278,24 @@ $totalPages = max(1, (int)($leaderboardRaw['data']['totalPages'] ?? ceil($totalM
         
         <!-- COLUMN 1: XP SETTINGS -->
         <div class="lvl-card">
-            <h2><span class="i">⚡</span> XP Settings</h2>
+            <h2><span class="i">⚡</span> <?= t('lvl.xp_settings') ?></h2>
             <div class="lvl-grid-2">
-                <div class="lvl-field"><label>Min XP</label><input type="number" name="messageXpMin" value="<?php echo esc($settings['messageXpMin'] ?? 15); ?>"></div>
-                <div class="lvl-field"><label>Max XP</label><input type="number" name="messageXpMax" value="<?php echo esc($settings['messageXpMax'] ?? 25); ?>"></div>
+                <div class="lvl-field"><label><?= t('lvl.min_xp') ?></label><input type="number" name="messageXpMin" value="<?php echo esc($settings['messageXpMin'] ?? 15); ?>"></div>
+                <div class="lvl-field"><label><?= t('lvl.max_xp') ?></label><input type="number" name="messageXpMax" value="<?php echo esc($settings['messageXpMax'] ?? 25); ?>"></div>
             </div>
             <div class="lvl-field">
-                <label>Cooldown (Seconds)</label>
+                <label><?= t('lvl.cooldown') ?></label>
                 <input type="number" name="cooldownSeconds" value="<?php echo esc($settings['cooldownSeconds'] ?? 60); ?>">
             </div>
-            <div class="lvl-section-title">Announcement</div>
+            <div class="lvl-section-title"><?= t('lvl.announcement') ?></div>
             <label style="display:flex; gap:0.5rem; align-items:center; font-size:0.85rem; color:var(--text-secondary);">
                 <input type="checkbox" name="announceLevelUp" <?php echo !empty($settings['announceLevelUp']) ? 'checked' : ''; ?>>
-                Send level-up messages
+                <?= t('lvl.send_levelup') ?>
             </label>
             <div class="lvl-field">
-                <label>Announcement Channel</label>
+                <label><?= t('lvl.announce_channel') ?></label>
                 <select name="announceChannelId">
-                    <option value="">Use message channel</option>
+                    <option value=""><?= t('lvl.use_msg_channel') ?></option>
                     <?php foreach ($channels as $channel): ?>
                         <option value="<?php echo esc($channel['id']); ?>" <?php echo ($settings['announceChannelId'] ?? '') === $channel['id'] ? 'selected' : ''; ?>>
                             #<?php echo esc($channel['name']); ?>
@@ -304,48 +304,48 @@ $totalPages = max(1, (int)($leaderboardRaw['data']['totalPages'] ?? ceil($totalM
                 </select>
             </div>
             <div class="lvl-field">
-                <label>Level-Up Message</label>
+                <label><?= t('lvl.levelup_msg') ?></label>
                 <textarea name="announceMessage" style="min-height:60px;"><?php echo esc($settings['announceMessage'] ?? 'GG {user}, you reached level **{level}**!'); ?></textarea>
-                <small style="font-size:0.7rem;">Leave empty for default. Use {user}, {level}.</small>
+                <small style="font-size:0.7rem;"><?= t('lvl.levelup_hint') ?></small>
             </div>
-            <div class="lvl-section-title">Anti-Farm</div>
+            <div class="lvl-section-title"><?= t('lvl.antifarm') ?></div>
             <div class="lvl-field">
-                <label>Min Message Length</label>
+                <label><?= t('lvl.min_msg_len') ?></label>
                 <input type="number" name="minMessageLength" value="<?php echo esc($settings['minMessageLength'] ?? 5); ?>" min="1" max="100">
-                <small style="font-size:0.7rem;">Messages shorter than this gain no XP.</small>
+                <small style="font-size:0.7rem;"><?= t('lvl.min_msg_hint') ?></small>
             </div>
             <label style="display:flex; gap:0.5rem; align-items:center; font-size:0.85rem; color:var(--text-secondary);">
                 <input type="checkbox" name="blockDuplicateMessages" <?php echo ($settings['blockDuplicateMessages'] ?? true) ? 'checked' : ''; ?>>
-                Block duplicate messages (3+ same in 60s &rarr; no XP)
+                <?= t('lvl.block_dupes') ?>
             </label>
-            <div class="lvl-section-title">Voice XP</div>
+            <div class="lvl-section-title"><?= t('lvl.voice_xp') ?></div>
             <label style="display:flex; gap:0.5rem; align-items:center; font-size:0.85rem; color:var(--text-secondary);">
                 <input type="checkbox" name="voiceXpEnabled" <?php echo !empty($settings['voiceXpEnabled']) ? 'checked' : ''; ?>>
-                Enable Voice XP
+                <?= t('lvl.voice_enable') ?>
             </label>
             <div class="lvl-field">
-                <label>Voice XP per Minute</label>
+                <label><?= t('lvl.voice_per_min') ?></label>
                 <input type="number" name="voiceXpPerMinute" value="<?php echo esc($settings['voiceXpPerMinute'] ?? 2); ?>" min="1" max="100">
-                <small style="font-size:0.7rem;">XP per minute in voice (&ge;2 members, not muted).</small>
+                <small style="font-size:0.7rem;"><?= t('lvl.voice_hint') ?></small>
             </div>
-            <div class="lvl-section-title">Live Test</div>
+            <div class="lvl-section-title"><?= t('lvl.live_test') ?></div>
             <div class="lvl-field">
-                <label>Test XP Amount</label>
+                <label><?= t('lvl.test_amount') ?></label>
                 <input type="number" id="levelingTestAmount" min="1" max="1000" value="100">
-                <small style="font-size:0.7rem;">Vergibt Test-XP an deinen eigenen Dashboard-Account.</small>
+                <small style="font-size:0.7rem;"><?= t('lvl.test_hint') ?></small>
             </div>
-            <button type="button" id="levelingTestBtn" class="btn-icon" style="justify-content:center; background:rgba(88,101,242,.14); border:1px solid rgba(88,101,242,.4); color:#c7d2fe;"><span class="i">🧪</span> +XP testen</button>
-            <button type="submit" id="levelingSaveBtn" class="btn-icon" style="margin-top:0.5rem; justify-content:center; background:var(--primary); color:#fff; border:none; padding:0.7rem;"><span class="i">💾</span> Save Settings</button>
+            <button type="button" id="levelingTestBtn" class="btn-icon" style="justify-content:center; background:rgba(88,101,242,.14); border:1px solid rgba(88,101,242,.4); color:#c7d2fe;"><span class="i">🧪</span> <?= t('lvl.test_btn') ?></button>
+            <button type="submit" id="levelingSaveBtn" class="btn-icon" style="margin-top:0.5rem; justify-content:center; background:var(--primary); color:#fff; border:none; padding:0.7rem;"><span class="i">💾</span> <?= t('common.save_settings') ?></button>
         </div>
 
         <!-- COLUMN 2: ROLE REWARDS -->
         <div class="lvl-card">
-            <h2><span class="i">🏆</span> Role Rewards</h2>
+            <h2><span class="i">🏆</span> <?= t('lvl.role_rewards') ?></h2>
             <div class="lvl-field">
-                <label>Reward Mode</label>
+                <label><?= t('lvl.reward_mode') ?></label>
                 <select name="roleMode">
-                    <option value="stack" <?php echo ($settings['roleMode'] ?? '') === 'stack' ? 'selected' : ''; ?>>Stack Roles (Keep all)</option>
-                    <option value="highest" <?php echo ($settings['roleMode'] ?? '') === 'highest' ? 'selected' : ''; ?>>Highest Only (Remove old)</option>
+                    <option value="stack" <?php echo ($settings['roleMode'] ?? '') === 'stack' ? 'selected' : ''; ?>><?= t('lvl.mode_stack') ?></option>
+                    <option value="highest" <?php echo ($settings['roleMode'] ?? '') === 'highest' ? 'selected' : ''; ?>><?= t('lvl.mode_highest') ?></option>
                 </select>
             </div>
             
@@ -357,7 +357,7 @@ $totalPages = max(1, (int)($leaderboardRaw['data']['totalPages'] ?? ceil($totalM
                     <div class="lvl-reward-row">
                         <input type="number" name="rewardLevels[]" value="<?php echo esc($reward['level']); ?>" placeholder="Lvl">
                         <select name="rewardRoleIds[]">
-                            <option value="">- Role -</option>
+                            <option value=""><?= t('lvl.role_placeholder') ?></option>
                             <?php foreach ($rolesList as $role): ?>
                                 <option value="<?php echo esc($role['id']); ?>" <?php echo $reward['roleId'] === $role['id'] ? 'selected' : ''; ?>>
                                     <?php echo esc($role['name']); ?>
@@ -369,21 +369,21 @@ $totalPages = max(1, (int)($leaderboardRaw['data']['totalPages'] ?? ceil($totalM
                 <?php endforeach; ?>
             </div>
             <div style="font-size:0.73rem; color:var(--text-secondary); display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-                <span><?php echo count($configuredRewards); ?> / <?php echo $maxRewards < 0 ? '∞' : $maxRewards; ?> Rewards genutzt</span>
-                <?php if ($atRewardsLimit): ?><span class="status-badge warning" style="font-size:0.68rem;">Limit erreicht</span><a href="server-plans.php<?php echo $guildId ? '?guildId=' . urlencode($guildId) : ''; ?>" style="color:#b48af7; font-weight:700; font-size:0.73rem;">💎 Upgrade</a><?php endif; ?>
+                <span><?php echo count($configuredRewards); ?> / <?php echo $maxRewards < 0 ? '∞' : $maxRewards; ?> <?= t('lvl.rewards_used') ?></span>
+                <?php if ($atRewardsLimit): ?><span class="status-badge warning" style="font-size:0.68rem;"><?= t('common.limit_reached') ?></span><a href="server-plans.php<?php echo $guildId ? '?guildId=' . urlencode($guildId) : ''; ?>" style="color:#b48af7; font-weight:700; font-size:0.73rem;">💎 Upgrade</a><?php endif; ?>
             </div>
             <?php if ($atRewardsLimit): ?>
-            <button type="button" class="btn-icon" disabled style="font-size:0.8rem; background:rgba(255,255,255,0.02); border:1px dashed var(--border-light); opacity:0.45; cursor:not-allowed;"><span class="i">➕</span> Add Reward</button>
+            <button type="button" class="btn-icon" disabled style="font-size:0.8rem; background:rgba(255,255,255,0.02); border:1px dashed var(--border-light); opacity:0.45; cursor:not-allowed;"><span class="i">➕</span> <?= t('lvl.add_reward') ?></button>
             <?php else: ?>
-            <button type="button" onclick="addRewardRow()" class="btn-icon" style="font-size:0.8rem; background:rgba(255,255,255,0.05); border:1px dashed var(--border-light);"><span class="i">➕</span> Add Reward</button>
+            <button type="button" onclick="addRewardRow()" class="btn-icon" style="font-size:0.8rem; background:rgba(255,255,255,0.05); border:1px dashed var(--border-light);"><span class="i">➕</span> <?= t('lvl.add_reward') ?></button>
             <?php endif; ?>
         </div>
 
         <!-- COLUMN 3: BYPASSES -->
         <div class="lvl-card">
-            <h2><span class="i">🏃</span> Advanced · Bypasses</h2>
+            <h2><span class="i">🏃</span> <?= t('lvl.advanced') ?></h2>
             <div class="lvl-field">
-                <label>Ignored Roles</label>
+                <label><?= t('lvl.ignored_roles') ?></label>
                 <div style="max-height:120px; overflow-y:auto; border:1px solid var(--border-light); padding:0.5rem; border-radius:6px; background:var(--bg-tertiary);">
                     <?php foreach ($rolesList as $role): ?>
                         <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.8rem; cursor:pointer; margin-bottom:0.2rem;">
@@ -394,7 +394,7 @@ $totalPages = max(1, (int)($leaderboardRaw['data']['totalPages'] ?? ceil($totalM
                 </div>
             </div>
             <div class="lvl-field">
-                <label>Ignored Channels</label>
+                <label><?= t('lvl.ignored_channels') ?></label>
                 <div style="max-height:120px; overflow-y:auto; border:1px solid var(--border-light); padding:0.5rem; border-radius:6px; background:var(--bg-tertiary);">
                     <?php foreach ($channels as $channel): ?>
                         <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.8rem; cursor:pointer; margin-bottom:0.2rem;">
@@ -403,17 +403,17 @@ $totalPages = max(1, (int)($leaderboardRaw['data']['totalPages'] ?? ceil($totalM
                         </label>
                     <?php endforeach; ?>
                 </div>
-                <small style="font-size:0.7rem; color:var(--text-secondary);">No-XP channels never grant XP.</small>
+                <small style="font-size:0.7rem; color:var(--text-secondary);"><?= t('lvl.noxp_hint') ?></small>
             </div>
-            <div class="lvl-section-title">XP Multipliers</div>
+            <div class="lvl-section-title"><?= t('lvl.multipliers') ?></div>
             <div class="lvl-field">
-                <label>Role Multipliers</label>
+                <label><?= t('lvl.role_multipliers') ?></label>
                 <div id="roleMultiplierList" style="display:grid; gap:0.5rem;">
                     <?php $roleMultiplierRows = count($configuredRoleMultipliers) ? $configuredRoleMultipliers : [['roleId' => '', 'multiplier' => '1.00']]; ?>
                     <?php foreach ($roleMultiplierRows as $row): ?>
                         <div class="lvl-multiplier-row">
                             <select name="roleMultiplierRoleIds[]">
-                                <option value="">- Role -</option>
+                                <option value=""><?= t('lvl.role_placeholder') ?></option>
                                 <?php foreach ($rolesList as $role): ?>
                                     <option value="<?php echo esc($role['id']); ?>" <?php echo ($row['roleId'] ?? '') === $role['id'] ? 'selected' : ''; ?>>
                                         <?php echo esc($role['name']); ?>
@@ -425,16 +425,16 @@ $totalPages = max(1, (int)($leaderboardRaw['data']['totalPages'] ?? ceil($totalM
                         </div>
                     <?php endforeach; ?>
                 </div>
-                <button type="button" onclick="addRoleMultiplierRow()" class="btn-icon" style="font-size:0.8rem; background:rgba(255,255,255,0.05); border:1px dashed var(--border-light);"><span class="i">➕</span> Add Role Multiplier</button>
+                <button type="button" onclick="addRoleMultiplierRow()" class="btn-icon" style="font-size:0.8rem; background:rgba(255,255,255,0.05); border:1px dashed var(--border-light);"><span class="i">➕</span> <?= t('lvl.add_role_mult') ?></button>
             </div>
             <div class="lvl-field">
-                <label>Channel Multipliers (Optional)</label>
+                <label><?= t('lvl.channel_multipliers') ?> <small style="font-weight:400;">(<?= t('common.optional') ?>)</small></label>
                 <div id="channelMultiplierList" style="display:grid; gap:0.5rem;">
                     <?php $channelMultiplierRows = count($configuredChannelMultipliers) ? $configuredChannelMultipliers : [['channelId' => '', 'multiplier' => '1.00']]; ?>
                     <?php foreach ($channelMultiplierRows as $row): ?>
                         <div class="lvl-multiplier-row">
                             <select name="channelMultiplierChannelIds[]">
-                                <option value="">- Channel -</option>
+                                <option value=""><?= t('lvl.channel_placeholder') ?></option>
                                 <?php foreach ($channels as $channel): ?>
                                     <option value="<?php echo esc($channel['id']); ?>" <?php echo ($row['channelId'] ?? '') === $channel['id'] ? 'selected' : ''; ?>>
                                         #<?php echo esc($channel['name']); ?>
@@ -446,29 +446,29 @@ $totalPages = max(1, (int)($leaderboardRaw['data']['totalPages'] ?? ceil($totalM
                         </div>
                     <?php endforeach; ?>
                 </div>
-                <button type="button" onclick="addChannelMultiplierRow()" class="btn-icon" style="font-size:0.8rem; background:rgba(255,255,255,0.05); border:1px dashed var(--border-light);"><span class="i">➕</span> Add Channel Multiplier</button>
+                <button type="button" onclick="addChannelMultiplierRow()" class="btn-icon" style="font-size:0.8rem; background:rgba(255,255,255,0.05); border:1px dashed var(--border-light);"><span class="i">➕</span> <?= t('lvl.add_channel_mult') ?></button>
             </div>
-            <div class="lvl-section-title">Bulk Actions</div>
-            <button type="button" onclick="document.getElementById('autoCreateModal').style.display='flex'" class="btn-icon" style="font-size:0.8rem; background:rgba(88,101,242,0.1); border:1px solid #5865f2; color:#5865f2;"><span class="i">🪄</span> Auto-Create Roles</button>
-            <div class="lvl-section-title">XP Reset</div>
+            <div class="lvl-section-title"><?= t('lvl.bulk_actions') ?></div>
+            <button type="button" onclick="document.getElementById('autoCreateModal').style.display='flex'" class="btn-icon" style="font-size:0.8rem; background:rgba(88,101,242,0.1); border:1px solid #5865f2; color:#5865f2;"><span class="i">🪄</span> <?= t('lvl.autocreate') ?></button>
+            <div class="lvl-section-title"><?= t('lvl.xp_reset') ?></div>
             <div style="display:grid; gap:0.5rem;">
-                <input type="text" id="resetUserIdInput" name="resetUserId" placeholder="User ID for XP reset">
-                <button type="submit" name="action" value="reset-user" class="btn-icon" onclick="if(!document.getElementById('resetUserIdInput').value.trim()){alert('Please enter a User ID.');return false;}" style="font-size:0.8rem; background:rgba(255,165,0,.15); border:1px solid rgba(255,165,0,.4); color:#ffc36b;">Reset User XP</button>
+                <input type="text" id="resetUserIdInput" name="resetUserId" placeholder="<?= esc(t('lvl.reset_user_ph')) ?>">
+                <button type="submit" name="action" value="reset-user" class="btn-icon" onclick="if(!document.getElementById('resetUserIdInput').value.trim()){alert('<?= esc(t('lvl.reset_user_alert')) ?>');return false;}" style="font-size:0.8rem; background:rgba(255,165,0,.15); border:1px solid rgba(255,165,0,.4); color:#ffc36b;"><?= t('lvl.reset_user_btn') ?></button>
             </div>
             <div style="display:grid; gap:0.5rem; margin-top:0.4rem;">
                 <input type="text" name="resetConfirm" placeholder="Type: RESET <?php echo esc($guildId); ?>">
-                <button type="submit" name="action" value="reset-all" class="btn-icon" onclick="return confirm('Reset all XP data for this server? This cannot be undone.');" style="font-size:0.8rem; background:rgba(242,63,67,.15); border:1px solid rgba(242,63,67,.45); color:#ff9b9d;">Reset All Server XP</button>
+                <button type="submit" name="action" value="reset-all" class="btn-icon" onclick="return confirm('<?= esc(t('lvl.reset_all_confirm')) ?>');" style="font-size:0.8rem; background:rgba(242,63,67,.15); border:1px solid rgba(242,63,67,.45); color:#ff9b9d;"><?= t('lvl.reset_all_btn') ?></button>
             </div>
         </div>
 
         <div class="ux-savebar" id="levelingSaveBar">
             <div class="ux-save-info">
-                <strong>Ungespeicherte Aenderungen</strong>
-                <span>Leveling-Konfiguration wird per AJAX gespeichert.</span>
+                <strong><?= t('common.unsaved') ?></strong>
+                <span><?= t('lvl.save_hint') ?></span>
             </div>
             <div class="ux-save-actions">
-                <span class="ux-save-status" id="levelingSaveStatus">Bereit</span>
-                <button type="submit" id="levelingStickySaveBtn" class="btn-icon btn-primary-ui"><span class="i">💾</span> Speichern</button>
+                <span class="ux-save-status" id="levelingSaveStatus"><?= t('common.ready') ?></span>
+                <button type="submit" id="levelingStickySaveBtn" class="btn-icon btn-primary-ui"><span class="i">💾</span> <?= t('common.save') ?></button>
             </div>
         </div>
     </form>
@@ -476,17 +476,17 @@ $totalPages = max(1, (int)($leaderboardRaw['data']['totalPages'] ?? ceil($totalM
     <!-- LEADERBOARD -->
     <div class="lvl-card">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h2><span class="i">📊</span> Global Leaderboard</h2>
-            <div style="font-size:0.8rem; color:var(--text-secondary);"><?php echo number_format($totalMembers); ?> total members tracked</div>
+            <h2><span class="i">📊</span> <?= t('lvl.leaderboard') ?></h2>
+            <div style="font-size:0.8rem; color:var(--text-secondary);"><?php echo number_format($totalMembers); ?> <?= t('lvl.members_tracked') ?></div>
         </div>
         <div class="dashboard-table-wrap">
         <table class="lb-table">
             <thead>
                 <tr>
-                    <th>Rank</th>
-                    <th>User</th>
-                    <th>Level</th>
-                    <th style="width:200px;">Progress</th>
+                    <th><?= t('lvl.th_rank') ?></th>
+                    <th><?= t('lvl.th_user') ?></th>
+                    <th><?= t('lvl.th_level') ?></th>
+                    <th style="width:200px;"><?= t('lvl.th_progress') ?></th>
                     <th style="text-align:right;">XP</th>
                 </tr>
             </thead>
@@ -539,22 +539,22 @@ $totalPages = max(1, (int)($leaderboardRaw['data']['totalPages'] ?? ceil($totalM
 <!-- MODAL: AUTO-CREATE -->
 <div id="autoCreateModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:1000; align-items:center; justify-content:center; padding:1rem;">
     <div class="lvl-card" style="max-width:400px; width:100%;">
-        <h2>🪄 Auto-Create Roles</h2>
+        <h2>🪄 <?= t('lvl.autocreate') ?></h2>
         <p style="font-size:0.9rem; color:var(--text-secondary);">This will create new roles for the specified levels (if they don't exist) and link them.</p>
         <form method="POST">
             <input type="hidden" name="guildId" value="<?php echo esc($guildId); ?>">
             <input type="hidden" name="action" value="auto-create">
             <div class="lvl-field">
-                <label>Comma separated levels</label>
+                <label><?= t('lvl.ac_levels') ?></label>
                 <input type="text" name="levels" value="5,10,20,30,50,100">
             </div>
             <div class="lvl-field" style="margin-top:0.75rem;">
-                <label>Role prefix</label>
+                <label><?= t('lvl.ac_prefix') ?></label>
                 <input type="text" name="prefix" value="<?php echo esc($settings['autoRolePrefix'] ?? 'Level'); ?>">
             </div>
             <div style="display:flex; gap:0.5rem; margin-top:1rem;">
-                <button type="submit" class="btn-icon" style="flex:1; background:#5865f2; color:#fff; border:none; padding:0.6rem;">Create Roles</button>
-                <button type="button" onclick="document.getElementById('autoCreateModal').style.display='none'" class="btn-icon" style="flex:1; background:transparent; border:1px solid var(--border-light); padding:0.6rem;">Cancel</button>
+                <button type="submit" class="btn-icon" style="flex:1; background:#5865f2; color:#fff; border:none; padding:0.6rem;"><?= t('lvl.ac_create') ?></button>
+                <button type="button" onclick="document.getElementById('autoCreateModal').style.display='none'" class="btn-icon" style="flex:1; background:transparent; border:1px solid var(--border-light); padding:0.6rem;"><?= t('common.cancel') ?></button>
             </div>
         </form>
     </div>
@@ -568,7 +568,7 @@ function addRewardRow() {
     div.innerHTML = `
         <input type="number" name="rewardLevels[]" placeholder="Lvl">
         <select name="rewardRoleIds[]">
-            <option value="">- Role -</option>
+            <option value=""><?= t('lvl.role_placeholder') ?></option>
             <?php foreach ($rolesList as $role): ?>
                 <option value="<?php echo esc($role['id']); ?>"><?php echo esc($role['name']); ?></option>
             <?php endforeach; ?>
@@ -584,7 +584,7 @@ function addRoleMultiplierRow() {
     div.className = 'lvl-multiplier-row';
     div.innerHTML = `
         <select name="roleMultiplierRoleIds[]">
-            <option value="">- Role -</option>
+            <option value=""><?= t('lvl.role_placeholder') ?></option>
             <?php foreach ($rolesList as $role): ?>
                 <option value="<?php echo esc($role['id']); ?>"><?php echo esc($role['name']); ?></option>
             <?php endforeach; ?>
@@ -601,7 +601,7 @@ function addChannelMultiplierRow() {
     div.className = 'lvl-multiplier-row';
     div.innerHTML = `
         <select name="channelMultiplierChannelIds[]">
-            <option value="">- Channel -</option>
+            <option value=""><?= t('lvl.channel_placeholder') ?></option>
             <?php foreach ($channels as $channel): ?>
                 <option value="<?php echo esc($channel['id']); ?>">#<?php echo esc($channel['name']); ?></option>
             <?php endforeach; ?>
@@ -675,7 +675,7 @@ function addChannelMultiplierRow() {
         [saveBtn, stickySaveBtn].forEach((btn) => {
             if (!btn) return;
             btn.disabled = loading;
-            btn.innerHTML = loading ? '<span class="i">⏳</span> Speichert...' : '<span class="i">💾</span> Speichern';
+            btn.innerHTML = loading ? '<span class="i">⏳</span> Speichert...' : '<span class="i">💾</span> <?= t('common.save') ?>';
         });
     }
 
@@ -768,7 +768,7 @@ function addChannelMultiplierRow() {
             showFeedback('error', error.message || 'Test-XP fehlgeschlagen.');
         } finally {
             testBtn.disabled = false;
-            testBtn.innerHTML = '<span class="i">🧪</span> +XP testen';
+            testBtn.innerHTML = '<span class="i">🧪</span> <?= t('lvl.test_btn') ?>';
         }
     });
 

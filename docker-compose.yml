@@ -11,9 +11,9 @@ services:
       - marvin_internal
     volumes:
       - redis_data:/data
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "4vBhAQcrSGrOnR3GS9fBhfGj6IH2EuRiDKUgmAwS"]
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "4vBhAQcrSGrOnR3GS9fBhfGj6IH2EuRiDKUgmAwS", "--no-auth-warning", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "--no-auth-warning", "ping"]
       interval: 15s
       timeout: 5s
       retries: 10
@@ -105,7 +105,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3010
-      REDIS_URL: redis://:4vBhAQcrSGrOnR3GS9fBhfGj6IH2EuRiDKUgmAwS@redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
     ports:
       - "127.0.0.1:3110:3010"
     volumes:
@@ -158,7 +158,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3011
-      REDIS_URL: redis://:4vBhAQcrSGrOnR3GS9fBhfGj6IH2EuRiDKUgmAwS@redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
     ports:
       - "127.0.0.1:3111:3011"
     volumes:
@@ -190,7 +190,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3013
-      REDIS_URL: redis://:4vBhAQcrSGrOnR3GS9fBhfGj6IH2EuRiDKUgmAwS@redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
     ports:
       - "127.0.0.1:3113:3013"
     volumes:
@@ -483,7 +483,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3002
-      REDIS_URL: redis://:4vBhAQcrSGrOnR3GS9fBhfGj6IH2EuRiDKUgmAwS@redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       MYSQL_HOST: host.docker.internal
       NODE_OPTIONS: "--max-old-space-size=384"
       # Override 127.0.0.1 defaults — use container names inside Docker network

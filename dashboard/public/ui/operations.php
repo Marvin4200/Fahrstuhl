@@ -50,8 +50,10 @@ if (!$targets) {
     echo '<div class="table-wrap"><table class="data"><thead><tr><th>Dienst</th><th>Status</th><th>Detail</th></tr></thead><tbody>';
     foreach ($targets as $t) {
         $name = (string)($t['name'] ?? $t['id'] ?? '?');
-        $up   = !empty($t['ok']) || ($t['status'] ?? '') === 'ok' || ($t['status'] ?? '') === 'up';
-        $note = (string)($t['detail'] ?? $t['message'] ?? $t['url'] ?? '');
+        $up   = !empty($t['ok']) || in_array($t['status'] ?? '', ['ok', 'up', 'online'], true);
+        $note = $up
+            ? (isset($t['latencyMs']) ? $t['latencyMs'] . ' ms — ' . (string)($t['endpoint'] ?? '') : (string)($t['endpoint'] ?? ''))
+            : (string)($t['error'] ?? $t['endpoint'] ?? '');
         echo '<tr><td class="mono">' . esc($name) . '</td>'
            . '<td>' . ($up ? ui_badge('Läuft', 'ok') : ui_badge('Problem', 'crit')) . '</td>'
            . '<td class="cell-sub">' . esc($note) . '</td></tr>';

@@ -4,6 +4,7 @@ const { sendServerLog } = require("../utils/serverLogger");
 const ticketManager = require("../utils/ticketManager");
 const { parseBoolean } = require("../utils/valueParsers");
 const { version: BOT_VERSION } = require("../package.json");
+const PRICING = require("../utils/pricing");
 
 function dashboardBaseUrl() {
     const raw = String(process.env.DASHBOARD_PUBLIC_URL || process.env.DASHBOARD_URL || "https://eselbande.com/fahrstuhl").trim();
@@ -39,7 +40,7 @@ function dashboardPageUrl(page, params = {}) {
 const commands = [
     new SlashCommandBuilder()
         .setName("elevator")
-        .setDescription("🚀 Move user(s) randomly through voice channels (Pro: 60s duration, Multi-target)")
+        .setDescription("🚀 Schick User zufällig durch die Voice-Channels")
         .addUserOption(option =>
             option.setName("user")
                 .setDescription("The user to troll")
@@ -136,10 +137,10 @@ const commands = [
         .setDescription("🛑 Emergency stop - disable all troll functions on all servers (dev-only)"),
     new SlashCommandBuilder()
         .setName("claim")
-        .setDescription("🛡️ Claim 1 free shield every 2.5 hours (requires Unique Bots membership)"),
+        .setDescription("🛡️ Hol dir regelmäßig ein kostenloses Shield"),
     new SlashCommandBuilder()
         .setName("shield")
-        .setDescription("🛡️ Activate a shield for 2 hours of immunity from all trolls")
+        .setDescription("🛡️ Aktiviere ein Shield und werde für eine Weile immun gegen alle Trolls")
         .addUserOption(option =>
             option.setName("user")
                 .setDescription("The user to troll (optional)")
@@ -197,6 +198,17 @@ const commands = [
     new SlashCommandBuilder()
         .setName("testsetupdm")
         .setDescription("Send a test setup reminder DM to yourself (owner-only)"),
+    new SlashCommandBuilder()
+        .setName("trollcolor")
+        .setDescription("🎨 Set a custom colour for your troll embeds (Premium)")
+        .addStringOption(option =>
+            option.setName("hex")
+                .setDescription("Hex colour, e.g. #ff0055 — leave empty to reset")
+                .setRequired(false)
+        ),
+    new SlashCommandBuilder()
+        .setName("premium")
+        .setDescription("💎 Show your plan and what the paid tiers actually get you"),
     new SlashCommandBuilder()
         .setName("notifysettings")
         .setDescription("📬 Toggle troll notifications - Get DM when you're being trolled")
@@ -735,10 +747,22 @@ async function handleInteraction(interaction, dependencies) {
                     : `\`/${interaction.commandName}\` requires **💎 Premium** access.`
                 )
                 .addFields(
-                    { name: '💎 Basic Premium', value: '€4,99/Monat — Cooldowns, Notifications, Badge', inline: true },
-                    { name: '👑 Pro', value: '€9,99/Monat — Alles + Custom Messages, Bonus Shields', inline: true }
+                    {
+                        name: `${PRICING.TIERS.basic.emoji} ${PRICING.TIERS.basic.label}`,
+                        value: `${PRICING.formatPrice(PRICING.TIERS.basic.priceMonthly)}/Monat `
+                             + `(oder ${PRICING.formatPrice(PRICING.TIERS.basic.priceLifetime)} einmalig)\n`
+                             + `${PRICING.cooldownSavingPercent('basic')}% kürzere Cooldowns, Notifications, Badge`,
+                        inline: true,
+                    },
+                    {
+                        name: `${PRICING.TIERS.pro.emoji} ${PRICING.TIERS.pro.label}`,
+                        value: `${PRICING.formatPrice(PRICING.TIERS.pro.priceMonthly)}/Monat `
+                             + `(oder ${PRICING.formatPrice(PRICING.TIERS.pro.priceLifetime)} einmalig)\n`
+                             + `Alles aus Premium + Custom Messages, Bonus-Shields`,
+                        inline: true,
+                    }
                 )
-                .setFooter({ text: 'Tritt unserem Server bei und frag nach Premium!' });
+                .setFooter({ text: 'Direkt online kaufen — sofort freigeschaltet.' });
 
             return safeReply(interaction, {
                 embeds: [upgradeEmbed],
@@ -750,13 +774,13 @@ async function handleInteraction(interaction, dependencies) {
                                 type: 2,
                                 label: '💎 Premium kaufen',
                                 style: 5,
-                                url: 'https://eselbande.com/fahrstuhl/pages/premium-info.php'
+                                url: PRICING.PRICING_PAGE_URL
                             },
                             {
                                 type: 2,
                                 label: '💬 Support Server',
                                 style: 5,
-                                url: 'https://discord.gg/zfzDHKcWDx'
+                                url: PRICING.SUPPORT_INVITE
                             }
                         ]
                     }
@@ -836,16 +860,24 @@ async function handleInteraction(interaction, dependencies) {
             clearTimeout(entry);
         };
 
-        const getTimedTrollDurationMs = () => {
-            if (isProUser) return 10 * 60 * 1000;
-            if (isPremiumUser) return 5 * 60 * 1000;
-            return 60 * 1000;
+        // Durations come from utils/pricing.js so the bot and the sales page can
+        // never disagree about what a tier actually buys you.
+        const getTimedTrollDurationMs = () =>
+            PRICING.tierFor(isPremiumUser, isProUser).trollDurationMs;
+
+        // Paid tiers can stamp their own colour on their troll embeds. Purely
+        // cosmetic, but it's the one perk that's visible to everyone else in the
+        // channel — which is exactly what makes it worth paying for.
+        const trollEmbedColor = (fallback) => {
+            if (!PRICING.tierFor(isPremiumUser, isProUser).customEmbedColor) return fallback;
+            const custom = require("../utils/userPrefs").getTrollColor(interaction.user.id);
+            return (custom === null || custom === undefined) ? fallback : custom;
         };
 
         const getTimedTrollDurationLabel = () => {
-            if (isProUser) return "10 Minuten 👑";
-            if (isPremiumUser) return "5 Minuten 💎";
-            return "1 Minute";
+            const tier = PRICING.tierFor(isPremiumUser, isProUser);
+            const label = PRICING.formatDuration(tier.trollDurationMs);
+            return tier.key === 'free' ? label : `${label} ${tier.emoji}`;
         };
 
         const checkTrollRole = () => {
@@ -979,10 +1011,23 @@ async function handleInteraction(interaction, dependencies) {
                     .setTitle('🛡️ SHIELD SYSTEM (Free Protection!)')
                     .setDescription('Protect yourself from trolling!')
                     .addFields(
-                        { name: '📎 /claim', value: '🎁 Get 1 free shield every 2.5 hours\n*(Requires: Unique Bots member)*\n💎 Boosters: +10 bonus shields/month\n👑 Pro: +10 bonus shields/month' },
-                        { name: '🛡️ /shield', value: '⏱️ Activate shield for 2 hours immunity' },
+                        {
+                            name: '📎 /claim',
+                            value: `🎁 Ein kostenloses Shield alle ${PRICING.formatDuration(PRICING.tierFor(isPremiumUser, isProUser).shieldClaimCooldownMs)}`
+                                 + `${PRICING.tierFor(isPremiumUser, isProUser).claimRequiresDevServer ? '\n*(Nur für Unique-Bots-Mitglieder)*' : ''}`
+                                 + `\n💎 Booster: +10 Bonus-Shields/Monat`
+                                 + `\n${PRICING.TIERS.basic.emoji} ${PRICING.TIERS.basic.label}: +${PRICING.TIERS.basic.monthlyBonusShields}/Monat · `
+                                 + `${PRICING.TIERS.pro.emoji} ${PRICING.TIERS.pro.label}: +${PRICING.TIERS.pro.monthlyBonusShields}/Monat`,
+                        },
+                        {
+                            name: '🛡️ /shield',
+                            value: `⏱️ Schützt dich ${PRICING.formatDuration(PRICING.tierFor(isPremiumUser, isProUser).shieldDurationMs)}`
+                                 + `\n(${PRICING.TIERS.free.emoji} ${PRICING.formatDuration(PRICING.TIERS.free.shieldDurationMs)} · `
+                                 + `${PRICING.TIERS.basic.emoji} ${PRICING.formatDuration(PRICING.TIERS.basic.shieldDurationMs)} · `
+                                 + `${PRICING.TIERS.pro.emoji} ${PRICING.formatDuration(PRICING.TIERS.pro.shieldDurationMs)})`,
+                        },
                         { name: '📊 /checkshield', value: '📈 Check your shield status & inventory' },
-                        { name: '💡 How Shields Work', value: '✅ Active shield = Can\'t be trolled\n✅ Share with friends\n✅ Recharge for free every 2.5h' }
+                        { name: '💡 How Shields Work', value: '✅ Aktives Shield = du kannst nicht getrollt werden\n✅ Mit Freunden teilbar\n✅ Lädt sich kostenlos wieder auf' }
                     ),
                 other: new (require("discord.js").EmbedBuilder)()
                     .setColor(0x57F287)
@@ -1095,12 +1140,29 @@ async function handleInteraction(interaction, dependencies) {
                 const targetUsers = [user1, user2, user3].filter(u => u !== null);
 
                 // Premium check: only Pro users can use multi-target
-                if (targetUsers.length > 1 && !isProUser) {
+                const elevatorTier = PRICING.tierFor(isPremiumUser, isProUser);
+                if (targetUsers.length > elevatorTier.maxElevatorTargets) {
+                    // Must be the cheapest tier that actually unlocks this many
+                    // targets, NOT simply the next tier up: basic allows the same
+                    // single target as free, so pitching it here would charge for
+                    // something the purchase doesn't deliver.
+                    const upgradeTier = PRICING.cheapestTierFor(
+                        t => t.maxElevatorTargets >= targetUsers.length
+                    ) || PRICING.TIERS.pro;
                     const proOnlyEmbed = new EmbedBuilder()
                         .setColor(0xFF6B9D)
-                        .setTitle("💎 Premium Feature")
-                        .setDescription(`Multi-target elevator is **👑 Pro only**!\n\nYou're using **${targetUsers.length}** targets, but only have ${isPremiumUser ? "💎 Basic" : "❌ No Premium"}`)
-                        .addFields({ name: "Upgrade", value: "[👑 Get Pro](https://eselbande.com/fahrstuhl/pages/premium-info.php) for multi-target & 60s duration" })
+                        .setTitle(`${upgradeTier.emoji} ${upgradeTier.label} Feature`)
+                        .setDescription(
+                            `Du hast **${targetUsers.length}** Ziele gewählt, dein Plan `
+                            + `(${elevatorTier.emoji} ${elevatorTier.label}) erlaubt **${elevatorTier.maxElevatorTargets}**.`
+                        )
+                        .addFields({
+                            name: "Upgrade",
+                            value: `[${upgradeTier.emoji} ${upgradeTier.label} holen](${PRICING.PRICING_PAGE_URL}) — `
+                                 + `bis zu **${upgradeTier.maxElevatorTargets} Ziele** gleichzeitig, `
+                                 + `${PRICING.formatDuration(upgradeTier.trollDurationMs)} Troll-Dauer, `
+                                 + `ab ${PRICING.formatPrice(upgradeTier.priceMonthly)}/Monat`,
+                        })
                         .setFooter({ text: FOOTERS.TROLL });
                     return safeReply(interaction, { embeds: [proOnlyEmbed], flags: [MessageFlags.Ephemeral] });
                 }
@@ -1206,7 +1268,7 @@ async function handleInteraction(interaction, dependencies) {
                     ? (require("../utils/userPrefs").getCustomTrollMessage(interaction.user.id) || `The ghost will now haunt **${freshMember.user.username}** for **${durationLabel}**! 👻`)
                     : `The ghost will now haunt **${freshMember.user.username}** for **${durationLabel}**! 👻`;
                 const ghostEmbed = new EmbedBuilder()
-                    .setColor(COLORS.SUCCESS)
+                    .setColor(trollEmbedColor(COLORS.SUCCESS))
                     .setTitle(`${EMOJIS.GHOST} Ghost Activated!`)
                     .setDescription(ghostDesc)
                     .addFields(
@@ -1261,7 +1323,7 @@ async function handleInteraction(interaction, dependencies) {
                     ? (require("../utils/userPrefs").getCustomTrollMessage(interaction.user.id) || `**${freshMember.user.username}** will now get randomly muted for **${durationLabel}**! 🔇`)
                     : `**${freshMember.user.username}** will now get randomly muted for **${durationLabel}**! 🔇`;
                 const silentEmbed = new EmbedBuilder()
-                    .setColor(COLORS.SUCCESS)
+                    .setColor(trollEmbedColor(COLORS.SUCCESS))
                     .setTitle(`${EMOJIS.MUTE} Silent Post Activated!`)
                     .setDescription(silentDesc)
                     .addFields(
@@ -1317,7 +1379,7 @@ async function handleInteraction(interaction, dependencies) {
                     ? (require("../utils/userPrefs").getCustomTrollMessage(interaction.user.id) || `The bot is now copying **${freshMember.user.username}**'s identity for **${durationLabel}**! 🪞`)
                     : `The bot is now copying **${freshMember.user.username}**'s identity for **${durationLabel}**! 🪞`;
                 const mirrorEmbed = new EmbedBuilder()
-                    .setColor(COLORS.SUCCESS)
+                    .setColor(trollEmbedColor(COLORS.SUCCESS))
                     .setTitle(`${EMOJIS.MIRROR} Mirror Activated!`)
                     .setDescription(mirrorDesc)
                     .addFields(
@@ -1372,7 +1434,7 @@ async function handleInteraction(interaction, dependencies) {
                     ? (require("../utils/userPrefs").getCustomTrollMessage(interaction.user.id) || `**${freshMember.user.username}** will now get randomly deafened for **${durationLabel}**! 📞`)
                     : `**${freshMember.user.username}** will now get randomly deafened for **${durationLabel}**! 📞`;
                 const deafEmbed = new EmbedBuilder()
-                    .setColor(COLORS.SUCCESS)
+                    .setColor(trollEmbedColor(COLORS.SUCCESS))
                     .setTitle(`${EMOJIS.DEAFEN} Tote Leitung Activated!`)
                     .setDescription(deafDesc)
                     .addFields(
@@ -1615,20 +1677,36 @@ async function handleInteraction(interaction, dependencies) {
             const now = Date.now();
             const oneDay = 24 * 60 * 60 * 1000;
 
+            const claimTier = PRICING.tierFor(isPremiumUser, isProUser);
+
             const devGuild = client.guilds.cache.get(DEV_GUILD_ID) || await client.guilds.fetch(DEV_GUILD_ID).catch(() => null);
             const memberOnDev = devGuild ? await devGuild.members.fetch(interaction.user.id).catch(() => null) : null;
 
-            if (!memberOnDev) {
+            // Paying users skip the "join our Discord first" hoop entirely —
+            // they already paid, making them jump through an extra loyalty gate
+            // is exactly the kind of friction that makes a purchase feel cheap.
+            if (!memberOnDev && claimTier.claimRequiresDevServer) {
                 const joinEmbed = new (require("discord.js").EmbedBuilder)()
                     .setColor(0xFEE75C)
                     .setTitle("🛡️ Shield claim denied")
-                    .setDescription("You must be a member of **Unique Bots** to get free shields every 2.5 hours!")
-                    .addFields({ name: "🔗 Join Unique Bots", value: "[Click here to join](https://discord.gg/zfzDHKcWDx)" })
+                    .setDescription(
+                        `You must be a member of **Unique Bots** to get free shields every `
+                        + `${PRICING.formatDuration(claimTier.shieldClaimCooldownMs)}!`
+                    )
+                    .addFields(
+                        { name: "🔗 Join Unique Bots", value: `[Click here to join](${PRICING.SUPPORT_INVITE})` },
+                        {
+                            name: `${PRICING.TIERS.basic.emoji} Oder Premium holen`,
+                            value: `Mit **${PRICING.TIERS.basic.label}** brauchst du keine Mitgliedschaft — `
+                                 + `und bekommst alle ${PRICING.formatDuration(PRICING.TIERS.basic.shieldClaimCooldownMs)} `
+                                 + `ein Shield statt alle ${PRICING.formatDuration(PRICING.TIERS.free.shieldClaimCooldownMs)}.`,
+                        }
+                    )
                     .setFooter({ text: "Join Unique Bots and use /claim again!" });
                 return safeReply(interaction, { embeds: [joinEmbed], flags: [require("discord.js").MessageFlags.Ephemeral] });
             }
 
-            const claimCooldownMs = 2.5 * 60 * 60 * 1000;
+            const claimCooldownMs = claimTier.shieldClaimCooldownMs;
             const lastClaim = stats.lastDailyClaim || 0;
 
             if (now - lastClaim < claimCooldownMs) {
@@ -1645,11 +1723,26 @@ async function handleInteraction(interaction, dependencies) {
                     .setColor(0xED4245)
                     .setTitle("⏱️ Wait!")
                     .setDescription(`You have already claimed your free shield.\nCome back in **${hours}h ${mins}m**!`);
+
+                // Only pitch when it's concretely true for THIS user: the wait
+                // they're staring at would already be over on the next tier.
+                const fasterTier = PRICING.nextTierFor(isPremiumUser, isProUser);
+                if (fasterTier && (now - lastClaim) >= fasterTier.shieldClaimCooldownMs) {
+                    waitEmbed.addFields({
+                        name: `${fasterTier.emoji} Mit ${fasterTier.label} wäre das Shield schon da`,
+                        value: `Alle ${PRICING.formatDuration(fasterTier.shieldClaimCooldownMs)} statt alle `
+                             + `${PRICING.formatDuration(claimTier.shieldClaimCooldownMs)} — `
+                             + `ab ${PRICING.formatPrice(fasterTier.priceMonthly)}/Monat.`,
+                    });
+                }
                 return safeReply(interaction, { embeds: [waitEmbed], flags: [require("discord.js").MessageFlags.Ephemeral] });
             }
 
             let amount = 1;
-            let isBooster = memberOnDev.premiumSinceTimestamp !== null;
+            // memberOnDev is null for paying users who aren't on the dev guild —
+            // they're allowed past the join gate above, so this must not assume
+            // a member object exists. Booster status simply doesn't apply then.
+            let isBooster = Boolean(memberOnDev && memberOnDev.premiumSinceTimestamp !== null);
 
             const lastMonthly = stats.lastMonthlyBonus || 0;
             const oneMonth = 30 * oneDay;
@@ -1660,12 +1753,15 @@ async function handleInteraction(interaction, dependencies) {
                 bonusApplied = true;
             }
 
-            // Pro monthly bonus (+10 shields once per 30 days)
+            // Monthly bonus shields for paying users. Premium used to get nothing
+            // here — a paid tier whose only benefits are "slightly faster" is a
+            // hard sell, so it now carries a real recurring payout too.
             const userPrefs = require("../utils/userPrefs");
             const lastPremiumBonus = userPrefs.getLastPremiumMonthlyBonus(interaction.user.id);
+            const monthlyBonus = claimTier.monthlyBonusShields || 0;
             let premiumBonusApplied = false;
-            if (isProUser && (now - lastPremiumBonus > oneMonth)) {
-                amount += 10;
+            if (monthlyBonus > 0 && (now - lastPremiumBonus > oneMonth)) {
+                amount += monthlyBonus;
                 premiumBonusApplied = true;
                 userPrefs.setLastPremiumMonthlyBonus(interaction.user.id, now);
             }
@@ -1676,10 +1772,15 @@ async function handleInteraction(interaction, dependencies) {
                 ...(bonusApplied ? { lastMonthlyBonus: now } : {})
             });
 
-            let footerText = "Come back in 2.5 hours for more!";
-            if (bonusApplied && premiumBonusApplied) footerText = "💎 Includes 10 booster + 10 Pro bonus shields!";
-            else if (bonusApplied) footerText = "💎 Includes 10 bonus shields for your server boost!";
-            else if (premiumBonusApplied) footerText = "👑 Includes 10 Pro monthly bonus shields!";
+            const nextClaimIn = PRICING.formatDuration(claimCooldownMs);
+            let footerText = `Come back in ${nextClaimIn} for more!`;
+            if (bonusApplied && premiumBonusApplied) {
+                footerText = `💎 Inklusive 10 Booster- + ${monthlyBonus} ${claimTier.label}-Bonus-Shields!`;
+            } else if (bonusApplied) {
+                footerText = "💎 Inklusive 10 Bonus-Shields für deinen Server-Boost!";
+            } else if (premiumBonusApplied) {
+                footerText = `${claimTier.emoji} Inklusive ${monthlyBonus} ${claimTier.label}-Monatsbonus-Shields!`;
+            }
 
             const claimEmbed = new (require("discord.js").EmbedBuilder)()
                 .setColor(0x57F287)
@@ -1702,8 +1803,12 @@ async function handleInteraction(interaction, dependencies) {
             }
 
             const now = Date.now();
+            const shieldTier = PRICING.tierFor(isPremiumUser, isProUser);
+            // One shield protects longer on paid tiers — the same item is simply
+            // worth more, so the inventory a user already has goes further.
+            const shieldMs = shieldTier.shieldDurationMs;
             const baseTime = stats.activeShieldExpiry && stats.activeShieldExpiry > now ? stats.activeShieldExpiry : now;
-            const expiry = baseTime + (2 * 60 * 60 * 1000);
+            const expiry = baseTime + shieldMs;
             setUserStats(interaction.user.id, {
                 shieldsOwned: stats.shieldsOwned - 1,
                 activeShieldExpiry: expiry
@@ -1712,8 +1817,20 @@ async function handleInteraction(interaction, dependencies) {
             const activeEmbed = new (require("discord.js").EmbedBuilder)()
                 .setColor(0x00FFFF)
                 .setTitle("🛡️ SHIELD ACTIVATED")
-                .setDescription(`Your shield has been **extended by 2 hours**!\nExpires: <t:${Math.floor(expiry / 1000)}:F>`)
-                .setFooter({ text: `Remaining shields in inventory: ${stats.shieldsOwned - 1}` });
+                .setDescription(
+                    `Dein Schutz wurde um **${PRICING.formatDuration(shieldMs)}** verlängert!\n`
+                    + `Läuft ab: <t:${Math.floor(expiry / 1000)}:F>`
+                )
+                .setFooter({ text: `Shields im Inventar: ${stats.shieldsOwned - 1}` });
+
+            const strongerTier = PRICING.nextTierFor(isPremiumUser, isProUser);
+            if (strongerTier) {
+                activeEmbed.addFields({
+                    name: `${strongerTier.emoji} Mit ${strongerTier.label} hält dasselbe Shield ${PRICING.formatDuration(strongerTier.shieldDurationMs)}`,
+                    value: `Statt ${PRICING.formatDuration(shieldMs)} — dein Vorrat reicht damit `
+                         + `${(strongerTier.shieldDurationMs / shieldMs).toFixed(1).replace('.', ',')}× so weit.`,
+                });
+            }
 
             return safeReply(interaction, { embeds: [activeEmbed], flags: [require("discord.js").MessageFlags.Ephemeral] });
         }
@@ -2829,6 +2946,123 @@ async function handleInteraction(interaction, dependencies) {
                 });
             }
         }
+        if (interaction.commandName === "trollcolor") {
+            const userPrefs = require("../utils/userPrefs");
+            const raw = (interaction.options.getString("hex") || "").trim();
+
+            if (!raw) {
+                userPrefs.setTrollColor(interaction.user.id, null);
+                const resetEmbed = new EmbedBuilder()
+                    .setColor(COLORS.INFO)
+                    .setTitle("🎨 Farbe zurückgesetzt")
+                    .setDescription("Deine Troll-Embeds nutzen wieder die Standardfarben.");
+                return safeReply(interaction, { embeds: [resetEmbed], flags: [MessageFlags.Ephemeral] });
+            }
+
+            const match = /^#?([0-9a-fA-F]{6})$/.exec(raw);
+            if (!match) {
+                const badEmbed = new EmbedBuilder()
+                    .setColor(COLORS.ERROR || 0xED4245)
+                    .setTitle("❌ Ungültige Farbe")
+                    .setDescription("Bitte einen 6-stelligen Hex-Code angeben, z.B. `#ff0055`.");
+                return safeReply(interaction, { embeds: [badEmbed], flags: [MessageFlags.Ephemeral] });
+            }
+
+            const color = parseInt(match[1], 16);
+            userPrefs.setTrollColor(interaction.user.id, color);
+
+            const okEmbed = new EmbedBuilder()
+                .setColor(color)
+                .setTitle("🎨 Farbe gesetzt")
+                .setDescription(`Deine Troll-Embeds erscheinen ab jetzt in **#${match[1].toLowerCase()}**.\nSo sieht das aus.`);
+            return safeReply(interaction, { embeds: [okEmbed], flags: [MessageFlags.Ephemeral] });
+        }
+
+        if (interaction.commandName === "premium") {
+            const tier = PRICING.tierFor(isPremiumUser, isProUser);
+            const next = PRICING.nextTierFor(isPremiumUser, isProUser);
+            const premiumManager = require("../utils/premiumManager");
+            const info = await premiumManager.getUserInfo(interaction.user.id).catch(() => null);
+
+            const embed = new EmbedBuilder()
+                .setColor(isProUser ? 0xFFD700 : isPremiumUser ? 0x4CAF50 : 0x5865F2)
+                .setTitle(`${tier.emoji} Dein Plan: ${tier.label}`);
+
+            if (info && info.expires_at && isPremiumUser) {
+                const expiresTs = Math.floor(new Date(info.expires_at).getTime() / 1000);
+                embed.setDescription(`Läuft noch bis <t:${expiresTs}:D> (<t:${expiresTs}:R>).`);
+            } else {
+                embed.setDescription("Du nutzt gerade den kostenlosen Plan.");
+            }
+
+            // What you have right now — concrete numbers, not adjectives.
+            embed.addFields({
+                name: "Was du aktuell hast",
+                value: [
+                    `⏱️ Command-Cooldown: **${PRICING.formatDuration(tier.cooldownMs)}**`,
+                    `🎢 Troll-Dauer: **${PRICING.formatDuration(tier.trollDurationMs)}**`,
+                    `🛡️ Shield alle **${PRICING.formatDuration(tier.shieldClaimCooldownMs)}**, schützt **${PRICING.formatDuration(tier.shieldDurationMs)}**`,
+                    `📈 XP-Boost: **${tier.xpMultiplier}×**`,
+                    tier.monthlyBonusShields > 0 ? `🎁 Monatsbonus: **+${tier.monthlyBonusShields} Shields**` : null,
+                ].filter(Boolean).join("\n"),
+                inline: false,
+            });
+
+            if (next) {
+                // Frame the upgrade as the delta, so the value is arithmetic
+                // rather than marketing copy.
+                const shieldFactor = (next.shieldDurationMs / tier.shieldDurationMs).toFixed(1).replace(".", ",");
+                const perks = [
+                    `⏱️ Cooldown **${PRICING.formatDuration(tier.cooldownMs)} → ${PRICING.formatDuration(next.cooldownMs)}**`,
+                    `🎢 Troll-Dauer **${PRICING.formatDuration(tier.trollDurationMs)} → ${PRICING.formatDuration(next.trollDurationMs)}**`,
+                    `🛡️ Shield alle **${PRICING.formatDuration(next.shieldClaimCooldownMs)}** statt **${PRICING.formatDuration(tier.shieldClaimCooldownMs)}**`,
+                    `🛡️ Ein Shield schützt **${shieldFactor}× so lange** (${PRICING.formatDuration(next.shieldDurationMs)})`,
+                    `📈 XP-Boost **${tier.xpMultiplier}× → ${next.xpMultiplier}×**`,
+                    next.monthlyBonusShields > tier.monthlyBonusShields
+                        ? `🎁 **+${next.monthlyBonusShields} Bonus-Shields** jeden Monat`
+                        : null,
+                    next.claimRequiresDevServer === false && tier.claimRequiresDevServer
+                        ? `✅ **/claim ohne** Pflicht-Mitgliedschaft im Support-Server`
+                        : null,
+                    next.customEmbedColor && !tier.customEmbedColor ? `🎨 Eigene Farbe für deine Troll-Embeds` : null,
+                    next.notifySettings && !tier.notifySettings ? `🔔 \`/notifysettings\` — DM wenn du getrollt wirst` : null,
+                    next.customTrollMessage && !tier.customTrollMessage ? `✍️ Eigene Troll-Nachricht auf allen Commands` : null,
+                    next.maxElevatorTargets > tier.maxElevatorTargets
+                        ? `🎯 Elevator gegen bis zu **${next.maxElevatorTargets} User** gleichzeitig`
+                        : null,
+                ].filter(Boolean);
+
+                embed.addFields({
+                    name: `${next.emoji} Was ${next.label} dir zusätzlich bringt`,
+                    value: perks.join("\n"),
+                    inline: false,
+                });
+
+                embed.addFields({
+                    name: "Preis",
+                    value: `**${PRICING.formatPrice(next.priceMonthly)}/Monat** — kein Abo, läuft einfach aus.\n`
+                         + `Oder **${PRICING.formatPrice(next.priceLifetime)} einmalig** für dauerhaft.`,
+                    inline: false,
+                });
+            } else {
+                embed.addFields({
+                    name: "👑 Maximaler Plan",
+                    value: "Du hast bereits alles freigeschaltet. Danke für den Support!",
+                    inline: false,
+                });
+            }
+
+            const components = next ? [{
+                type: 1,
+                components: [
+                    { type: 2, label: `${next.emoji} ${next.label} holen`, style: 5, url: PRICING.PRICING_PAGE_URL },
+                    { type: 2, label: "💬 Support", style: 5, url: PRICING.SUPPORT_INVITE },
+                ],
+            }] : [];
+
+            return safeReply(interaction, { embeds: [embed], components, flags: [MessageFlags.Ephemeral] });
+        }
+
         if (interaction.commandName === "notifysettings") {
             const userId = interaction.user?.id;
             

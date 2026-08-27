@@ -21,6 +21,24 @@ function parseArgs(argv) {
     return out;
 }
 
+// Resolve a user-supplied filename against a base backup directory, rejecting
+// any path (absolute, "..", or otherwise) that would escape that directory.
+// Without this, `--sql`/`--files` accepted an attacker-controlled absolute
+// path or "../" traversal and would happily tar-extract/mysql-import an
+// arbitrary file from anywhere on disk.
+function safeResolveInDir(baseDir, fileName) {
+    if (!fileName || typeof fileName !== "string") {
+        throw new Error("Missing backup filename");
+    }
+    const resolvedBase = path.resolve(baseDir);
+    const resolved = path.resolve(resolvedBase, fileName);
+    const relative = path.relative(resolvedBase, resolved);
+    if (relative.startsWith("..") || path.isAbsolute(relative)) {
+        throw new Error(`Refusing to use backup file outside of ${resolvedBase}: ${fileName}`);
+    }
+    return resolved;
+}
+
 function writeJson(file, data) {
     try {
         fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -82,7 +100,7 @@ async function main() {
 
         if (mode === "files" || mode === "full") {
             if (!filesFileName) throw new Error("Missing --files argument");
-            const archive = path.resolve(filesBackupDir, filesFileName);
+            const archive = safeResolveInDir(filesBackupDir, filesFileName);
             startState.steps.push({ at: new Date().toISOString(), step: "restore_files", detail: filesFileName });
             writeJson(stateFile, startState);
             const res = await spawnForResult(process.env.TAR_PATH || "tar", ["-xzf", archive, "--overwrite", "-C", projectRoot]);
@@ -91,7 +109,7 @@ async function main() {
 
         if (mode === "db" || mode === "full") {
             if (!sqlFileName) throw new Error("Missing --sql argument");
-            const sqlPath = path.resolve(backupDir, sqlFileName);
+            const sqlPath = safeResolveInDir(backupDir, sqlFileName);
             startState.steps.push({ at: new Date().toISOString(), step: "restore_db", detail: sqlFileName });
             writeJson(stateFile, startState);
 

@@ -10,7 +10,7 @@ $premiumUsers = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action   = $_POST['action'] ?? '';
     $userId   = trim($_POST['user_id'] ?? '');
-    $daysValid = max(1, intval($_POST['days'] ?? 365));
+    $daysValid = max(1, intval($_POST["days"] ?? 30));
     $tier     = in_array($_POST['tier'] ?? '', ['basic', 'pro']) ? $_POST['tier'] : 'basic';
 
     if (empty($userId)) {

@@ -8,6 +8,11 @@ requireLogin();
 $ajaxGuildId = preg_replace('/[^0-9]/', '', $_GET['guildId'] ?? '');
 if (isset($_GET['ajax_job']) && $ajaxGuildId !== '') {
     header('Content-Type: application/json');
+    if (!isAdmin() && !isServerAdmin($ajaxGuildId)) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'No access to this guild']);
+        exit;
+    }
     $jobId = (int)($_GET['ajax_job']);
     $jobType = ($_GET['type'] ?? 'restore') === 'backup' ? 'backup' : 'restore';
     if ($jobId > 0) {
@@ -28,6 +33,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_preview'])) {
     $ajaxPreviewGuildId = preg_replace('/[^0-9]/', '', $_POST['guildId'] ?? '');
     if ($ajaxPreviewGuildId === '') {
         echo json_encode(['success' => false, 'message' => 'Missing guild ID']);
+        exit;
+    }
+    if (!isAdmin() && !isServerAdmin($ajaxPreviewGuildId)) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'No access to this guild']);
         exit;
     }
     $backupId = (int)($_POST['backupId'] ?? 0);
@@ -62,6 +72,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_preview'])) {
 $guildsRaw = getAPI('/voice/guilds', 8);
 $guilds = $guildsRaw['data']['guilds'] ?? [];
 $guildId = dashboardSelectedGuildId($guilds);
+
+// dashboardSelectedGuildId() only validates against guilds the BOT is in, not
+// guilds THIS user administers — without this check any logged-in dashboard
+// user could pass an arbitrary guildId to read/download/delete/restore
+// another server's Discord backups.
+if ($guildId && !isAdmin() && !isServerAdmin($guildId)) {
+    header('Location: ' . BASE_URL . '/pages/portal.php');
+    exit();
+}
 
 // 1. URL-params after PRG redirect (most reliable – set directly in Location header)
 $rjobParam   = (int)($_GET['rjob']   ?? 0);
@@ -153,6 +172,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
     if ($action === 'restore_backup') {
         $backupId      = (int)($_POST['backup_id'] ?? 0);
         $targetGuildId = preg_replace('/[^0-9]/', '', $_POST['target_guild_id'] ?? '');
+        if ($targetGuildId && !isAdmin() && !isServerAdmin($targetGuildId)) {
+            $_SESSION['flash'] = ['msg' => 'No access to the target guild.', 'type' => 'error'];
+            header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?') . '?guildId=' . urlencode($guildId));
+            exit;
+        }
         if ($backupId > 0 && $targetGuildId) {
             $opts = [
                 'backupId' => $backupId,
@@ -232,6 +256,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
     if ($action === 'verify_backup') {
         $backupId = (int)($_POST['backup_id'] ?? 0);
         $targetGuildId = preg_replace('/[^0-9]/', '', $_POST['target_guild_id'] ?? '');
+        if ($targetGuildId && !isAdmin() && !isServerAdmin($targetGuildId)) {
+            $_SESSION['flash'] = ['msg' => 'No access to the target guild.', 'type' => 'error'];
+            header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?') . '?guildId=' . urlencode($guildId));
+            exit;
+        }
         if ($backupId > 0 && $targetGuildId) {
             $result = api('/guilds/' . $targetGuildId . '/discord-backups/verify', 'POST', ['backupId' => $backupId], 20);
             if ($result['data']['success'] ?? false) {
@@ -690,12 +719,14 @@ function renderRestorePreview(data) {
     const wipe = p.wipe
         ? 'Wipe: Channels ' + (p.wipe.channels || 0) + ', Emojis ' + (p.wipe.emojis || 0) + ', Rollen ' + (p.wipe.roles || 0)
         : 'Wipe: nein';
-    const warns = w.length ? ('Warnungen: ' + w.join(' | ')) : 'Warnungen: keine';
+    // Warnings come straight from the API and can reference guild-controlled
+    // names (roles/channels), so escape before it goes into innerHTML.
+    const warns = w.length ? ('Warnungen: ' + escapeHtml(w.join(' | '))) : 'Warnungen: keine';
     box.innerHTML =
         '<div class="title">Dry-Run Vorschau</div>' +
         '<div>Rollen: ' + (p.rolesCreatable || 0) + '/' + (p.rolesTotal || 0) + ' erstellbar</div>' +
         '<div>Channels: ' + (p.channelsTotal || 0) + ', Emojis: ' + (p.emojisTotal || 0) + ', Messages: ' + (p.messagesTotal || 0) + '</div>' +
-        '<div>' + wipe + '</div>' +
+        '<div>' + escapeHtml(wipe) + '</div>' +
         '<div>' + warns + '</div>';
     box.classList.add('active');
 }

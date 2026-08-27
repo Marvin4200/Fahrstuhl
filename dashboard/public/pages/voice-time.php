@@ -28,6 +28,16 @@ $guilds = $guildsRaw['data']['guilds'] ?? [];
 
 $guildId = dashboardSelectedGuildId($guilds);
 
+// dashboardSelectedGuildId() only validates against guilds the BOT is in, not
+// guilds THIS user administers — without this any logged-in dashboard user
+// could view another server's per-user voice activity data (the "Available
+// for server owners and configured dashboard admin roles" note below was
+// never actually enforced).
+if ($guildId && !isAdmin() && !isServerAdmin($guildId)) {
+    header('Location: ' . BASE_URL . '/pages/portal.php');
+    exit();
+}
+
 $days = isset($_GET['days']) ? max(1, min(365, (int)$_GET['days'])) : 30;
 $limit = isset($_GET['limit']) ? max(5, min(300, (int)$_GET['limit'])) : 100;
 $userId = trim($_GET['userId'] ?? '');

@@ -70,10 +70,22 @@ function parseTicketTopic(topic = "") {
     return data;
 }
 
+// The topic is a "|"-delimited key:value string that parseTicketTopic()
+// re-parses later. Free-text fields (reason/type/owner tag) MUST NOT contain
+// "|" or ":" — otherwise a user-supplied reason like
+// "x | claimed:someone | status:resolved" gets split into extra fields and
+// re-parsed as real data, letting any ticket opener forge their own
+// claimedBy/priority/status and bypass the isTicketStaff() checks that gate
+// claimTicket/setTicketPriority/setTicketStatus.
+function stripTopicDelimiters(value) {
+    return String(value || "").replace(/[|:]/g, "");
+}
+
 function buildTicketTopic({ user, reason, priority = "normal", claimedBy = null, type = "Support", status = "open" }) {
-    const safeReason = cleanText(reason, "No reason provided").replace(/\s+/g, " ").slice(0, 220);
-    const safeType = cleanText(type, "Support").replace(/\s+/g, " ").slice(0, 40);
-    return `fahrstuhl-ticket:${user.id} | owner:${user.tag || user.username} | priority:${PRIORITIES[priority] ? priority : "normal"} | claimed:${claimedBy || "none"} | type:${safeType} | status:${STATUSES[status] ? status : "open"} | reason:${safeReason}`;
+    const safeReason = stripTopicDelimiters(cleanText(reason, "No reason provided").replace(/\s+/g, " ")).slice(0, 220);
+    const safeType = stripTopicDelimiters(cleanText(type, "Support").replace(/\s+/g, " ")).slice(0, 40);
+    const safeOwnerTag = stripTopicDelimiters(user.tag || user.username);
+    return `fahrstuhl-ticket:${user.id} | owner:${safeOwnerTag} | priority:${PRIORITIES[priority] ? priority : "normal"} | claimed:${claimedBy || "none"} | type:${safeType} | status:${STATUSES[status] ? status : "open"} | reason:${safeReason}`;
 }
 
 function isTicketChannel(channel) {

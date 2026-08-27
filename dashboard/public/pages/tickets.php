@@ -307,10 +307,10 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
 .tk-card-owner { font-size:.73rem; color:var(--text-secondary); }
 .tk-card-meta { display:flex; align-items:center; gap:.35rem; flex-wrap:wrap; }
 .tk-card-type { font-size:.67rem; font-weight:700; color:var(--text-secondary); background:rgba(255,255,255,.07); padding:.1rem .38rem; border-radius:4px; }
-.tk-claimed-badge { font-size:.67rem; font-weight:700; color:#57f287; background:rgba(87,242,135,.1); border:1px solid rgba(87,242,135,.28); padding:.1rem .38rem; border-radius:999px; }
+.tk-claimed-badge { font-size:.67rem; font-weight:700; color:var(--success); background:rgba(35,165,89,.13); border:1px solid rgba(35,165,89,.27); padding:.1rem .38rem; border-radius:999px; }
 .tk-card-footer { display:flex; align-items:center; gap:.4rem; flex-wrap:wrap; margin-top:.05rem; }
 .tk-card-age { font-size:.7rem; color:var(--text-secondary); display:flex; align-items:center; gap:.3rem; }
-.tk-card-age.is-overdue { color:#ff9f43; font-weight:700; }
+.tk-card-age.is-overdue { color:var(--warning); font-weight:700; }
 
 /* Ticket type cards */
 .tk-type-card { background:rgba(255,255,255,.04); border:1px solid var(--border-light); border-radius:8px; padding:.55rem .65rem; display:grid; gap:.38rem; }
@@ -318,8 +318,8 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
 .tk-type-card-top input[type="text"] { font-size:.85rem; padding:.38rem .55rem; border-radius:5px; border:1px solid var(--border-light); background:var(--bg-tertiary); color:var(--text-primary); width:100%; }
 .tk-type-card-top select { font-size:.78rem; padding:.38rem .4rem; border-radius:5px; border:1px solid var(--border-light); background:var(--bg-tertiary); color:var(--text-primary); }
 .tk-type-card-desc input[type="text"] { font-size:.78rem; padding:.35rem .55rem; border-radius:5px; border:1px solid var(--border-light); background:var(--bg-tertiary); color:var(--text-secondary); width:100%; }
-.tk-type-remove { background:rgba(255,107,107,.1); border:1px solid rgba(255,107,107,.28); color:#ff6b6b; border-radius:5px; padding:0; width:26px; height:26px; cursor:pointer; font-size:1rem; line-height:1; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background .12s; }
-.tk-type-remove:hover { background:rgba(255,107,107,.22); }
+.tk-type-remove { background:rgba(242,63,67,.13); border:1px solid rgba(242,63,67,.28); color:var(--danger); border-radius:5px; padding:0; width:26px; height:26px; cursor:pointer; font-size:1rem; line-height:1; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background .12s; }
+.tk-type-remove:hover { background:rgba(242,63,67,.24); }
 
 /* Archive */
 .tk-archive-search { margin-bottom:.55rem; }
@@ -792,6 +792,15 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
 </div>
 
 <script>
+function escapeHtml(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 function updatePreview() {
     document.getElementById('pTitle').textContent = document.getElementById('tkTitle').value;
     document.getElementById('pDesc').textContent = document.getElementById('tkDesc').value;
@@ -849,11 +858,14 @@ document.addEventListener('DOMContentLoaded', updatePreview);
 
     function setTestResult(message, type = 'info', data = null) {
         if (!testResult) return;
+        // message/channelName come from the API response and channel names
+        // are attacker-controllable (any member with rename permission), so
+        // both must be escaped before going into innerHTML.
         const link = data?.channelId
-            ? `<br>Erstellt in <strong>#${data.channelName || data.channelId}</strong>.`
+            ? `<br>Erstellt in <strong>#${escapeHtml(data.channelName || data.channelId)}</strong>.`
             : '';
         testResult.className = `tk-test-result ${type}`;
-        testResult.innerHTML = `${message}${link}`;
+        testResult.innerHTML = `${escapeHtml(message)}${link}`;
     }
 
     form.addEventListener('input', syncSaveBar);
@@ -978,7 +990,12 @@ document.addEventListener('DOMContentLoaded', updatePreview);
                 throw new Error(json.message || 'Panel konnte nicht gesendet werden.');
             }
             panelResult.className = 'tk-test-result success';
-            const link = json.url ? ` <a href="${json.url}" target="_blank" style="color:inherit;">→ Zur Nachricht</a>` : '';
+            // Only build the link for an actual http(s) URL, and escape it
+            // for the href attribute — json.url is API-returned and should
+            // always be a discord.com message link, but this closes off a
+            // javascript:-scheme or attribute-breakout XSS either way.
+            const isSafeUrl = typeof json.url === 'string' && /^https:\/\//i.test(json.url);
+            const link = isSafeUrl ? ` <a href="${escapeHtml(json.url)}" target="_blank" rel="noopener" style="color:inherit;">→ Zur Nachricht</a>` : '';
             panelResult.innerHTML = `✅ Panel erfolgreich gesendet!${link}`;
         } catch (error) {
             panelResult.className = 'tk-test-result error';

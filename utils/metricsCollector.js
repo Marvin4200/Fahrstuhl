@@ -82,10 +82,16 @@ class MetricsCollector {
 
     // Get metric statistics
     getMetricStats(name) {
-        const values = Array.from(this.metrics.values())
-            .filter(v => v.some(vv => this.buildKey(name) === name))
-            .flat()
-            .map(v => v.value);
+        // Was `.filter(v => v.some(vv => this.buildKey(name) === name))` —
+        // that predicate never actually looked at the Map key or at `vv`;
+        // `this.buildKey(name)` with no tags just returns `name` again, so
+        // the condition was always true for any non-empty values array and
+        // this silently aggregated stats across every recorded metric
+        // instead of the one requested. Mirror getTimingStats()'s (correct)
+        // key-based filtering below instead.
+        const values = Array.from(this.metrics.entries())
+            .filter(([key]) => key.includes(name))
+            .flatMap(([, v]) => v.map(vv => vv.value));
 
         if (values.length === 0) return null;
 

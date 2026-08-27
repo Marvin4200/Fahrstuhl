@@ -584,6 +584,15 @@ $atTermsLimit  = $maxTerms >= 0 && $currentTerms >= $maxTerms;
 </div>
 
 <script>
+function escapeHtml(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 const AUTOMOD_PRESETS = {
     relaxed: {
         blockInvites: true, blockLinks: false, blockSpam: false, blockRepeatedText: false,
@@ -677,11 +686,11 @@ function applyAutomodPreset(name) {
         const violations = Array.isArray(payload?.violations) ? payload.violations : [];
         if (!violations.length) {
             testResult.className = `am-test-result ${type}`;
-            testResult.innerHTML = `<strong>${fallbackMessage}</strong>`;
+            testResult.innerHTML = `<strong>${escapeHtml(fallbackMessage)}</strong>`;
             return;
         }
         testResult.className = 'am-test-result success';
-        testResult.innerHTML = `<strong>${fallbackMessage}</strong><br>${violations.map((violation) => `• ${violation.reason} → Aktion: ${violation.action || 'none'}`).join('<br>')}`;
+        testResult.innerHTML = `<strong>${escapeHtml(fallbackMessage)}</strong><br>${violations.map((violation) => `• ${escapeHtml(violation.reason)} → Aktion: ${escapeHtml(violation.action || 'none')}`).join('<br>')}`;
     }
 
     form.addEventListener('input', setDirtyUi);

@@ -17,12 +17,20 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'exec') {
         exit;
     }
 
-    // Block obviously destructive commands
+    // Speed-bump for a few of the most common destructive one-liners, so a
+    // fat-fingered command doesn't immediately nuke something. This is NOT a
+    // real sandbox — this endpoint runs arbitrary bash as the bot's user, and
+    // there are countless ways to cause the same damage that this list does
+    // not (and cannot) catch (e.g. `python3 -c "import shutil; ..."`,
+    // `curl x | bash`, alternate rm invocations, etc.). It only exists to
+    // block a handful of exact accidental keystrokes; requireAdmin() above —
+    // restricting this page to the bot owner — is the actual security
+    // boundary, not this list.
     $blocked = ['/\brm\s+-rf\s+\//i', '/\bmkfs\b/i', '/\bdd\s+if=/i', '/>\s*\/dev\/(s|h)d/i'];
     foreach ($blocked as $pattern) {
         if (preg_match($pattern, $cmd)) {
             http_response_code(403);
-            echo json_encode(['out' => '', 'err' => '⛔ Blocked: command not allowed.', 'exit' => 1]);
+            echo json_encode(['out' => '', 'err' => '⛔ Blocked: this looks like a common accidental destructive command. (Note: this is only a speed-bump, not a sandbox — other destructive commands are not blocked.)', 'exit' => 1]);
             exit;
         }
     }

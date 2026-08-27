@@ -124,6 +124,26 @@ function activityFetch($guildId, $filter, $limit, $offset) {
 $guildsRaw = getAPI('/voice/guilds', 8);
 $guilds = $guildsRaw['data']['guilds'] ?? [];
 $guildId = dashboardSelectedGuildId($guilds);
+
+$isAjaxRequest = strcasecmp($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '', 'XMLHttpRequest') === 0
+    || stripos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false
+    || (($_GET['ajax'] ?? '') === '1');
+
+// dashboardSelectedGuildId() only validates against guilds the BOT is in, not
+// guilds THIS user administers. The Node API independently re-checks access
+// on every route this page calls, so this isn't currently exploitable — but
+// add the same PHP-side gate as every other guild-scoped page for
+// defense-in-depth, so a future API route that forgets the check doesn't
+// become a live IDOR through this page (viewing another server's moderation/
+// automod/ticket/leveling/voice activity feed).
+if ($guildId !== '' && !isAdmin() && !isServerAdmin($guildId)) {
+    if ($isAjaxRequest) {
+        activitySendJson(['success' => false, 'message' => 'No access to this guild'], 403);
+    }
+    header('Location: ' . BASE_URL . '/pages/portal.php');
+    exit();
+}
+
 $selectedGuild = null;
 foreach ($guilds as $guildRow) {
     if (($guildRow['id'] ?? '') === $guildId) {
@@ -145,9 +165,6 @@ $filter = strtolower(trim((string)($_GET['type'] ?? 'all')));
 if (!isset($filters[$filter])) $filter = 'all';
 $limit = max(5, min(30, (int)($_GET['limit'] ?? 20)));
 $offset = max(0, (int)($_GET['offset'] ?? 0));
-$isAjaxRequest = strcasecmp($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '', 'XMLHttpRequest') === 0
-    || stripos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false
-    || (($_GET['ajax'] ?? '') === '1');
 
 $activityItems = [];
 $pagination = ['limit' => $limit, 'offset' => $offset, 'hasMore' => false];

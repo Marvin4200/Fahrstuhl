@@ -231,13 +231,20 @@ class AnalyticsDatabase {
     getTopCommands(limit = 10) {
         try {
             if (!this.db) return [];
-            
+
+            // exec() has no parameter binding, so limit/offset are string-
+            // interpolated everywhere in this class — every current caller
+            // already clamps with parseInt()/Math.min() before calling in,
+            // but that made it a latent SQLi footgun for any future caller
+            // that doesn't. Clamp defensively here too, at the source.
+            const safeLimit = Math.min(Math.max(0, Number.parseInt(limit, 10) || 10), 1000);
+
             const result = this.db.exec(`
                 SELECT command, COUNT(*) as count
                 FROM command_executions
                 GROUP BY command
                 ORDER BY count DESC
-                LIMIT ${limit}
+                LIMIT ${safeLimit}
             `);
             
             if (result[0]) {
@@ -259,13 +266,15 @@ class AnalyticsDatabase {
     getTopUsers(limit = 10) {
         try {
             if (!this.db) return [];
-            
+
+            const safeLimit = Math.min(Math.max(0, Number.parseInt(limit, 10) || 10), 1000);
+
             const result = this.db.exec(`
                 SELECT user_id, COUNT(*) as count
                 FROM command_executions
                 GROUP BY user_id
                 ORDER BY count DESC
-                LIMIT ${limit}
+                LIMIT ${safeLimit}
             `);
             
             if (result[0]) {
@@ -287,18 +296,20 @@ class AnalyticsDatabase {
     getAllUsers(limit = 100, offset = 0) {
         try {
             if (!this.db) return { users: [], total: 0 };
-            
+
             // Get total count
             const countResult = this.db.exec(`SELECT COUNT(DISTINCT user_id) as count FROM command_executions`);
             const total = countResult[0]?.values[0][0] || 0;
-            
+
             // Get paginated users with stats (no parameter binding in exec(), use string interpolation)
+            const safeLimit = Math.min(Math.max(0, Number.parseInt(limit, 10) || 100), 1000);
+            const safeOffset = Math.max(0, Number.parseInt(offset, 10) || 0);
             const result = this.db.exec(`
                 SELECT user_id, COUNT(*) as count, MAX(timestamp) as last_used
                 FROM command_executions
                 GROUP BY user_id
                 ORDER BY count DESC
-                LIMIT ${limit} OFFSET ${offset}
+                LIMIT ${safeLimit} OFFSET ${safeOffset}
             `);
             
             if (result[0]) {
@@ -324,12 +335,14 @@ class AnalyticsDatabase {
     getRecentExecutions(limit = 50) {
         try {
             if (!this.db) return [];
-            
+
+            const safeLimit = Math.min(Math.max(0, Number.parseInt(limit, 10) || 50), 1000);
+
             const result = this.db.exec(`
                 SELECT command, user_id, guild_id, timestamp, success
                 FROM command_executions
                 ORDER BY timestamp DESC
-                LIMIT ${limit}
+                LIMIT ${safeLimit}
             `);
             
             if (result[0]) {

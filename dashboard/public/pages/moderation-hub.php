@@ -5,6 +5,8 @@ requireLogin();
 
 $voiceGuildsRaw = getAPI('/voice/guilds', 8);
 $manageableGuilds = $voiceGuildsRaw['data']['guilds'] ?? [];
+// Ausgewählte Guild für die guild-scoped Links unten (AutoMod, Logging).
+$guildId = dashboardSelectedGuildId($manageableGuilds);
 $health = [];
 $warnings = [];
 if (isAdmin()) {
@@ -56,6 +58,14 @@ if (isAdmin()) {
         <p>Live bot logs for debugging moderation and permission issues.</p>
     </a>
     <?php endif; ?>
+    <a class="hub-card" href="<?php echo BASE_URL; ?>/pages/automod.php<?php echo $guildId ? '?guildId=' . urlencode($guildId) : ''; ?>">
+        <h3>🚨 AutoMod</h3>
+        <p>Filter, Schutzregeln und automatische Aktionen.</p>
+    </a>
+    <a class="hub-card" href="<?php echo BASE_URL; ?>/pages/logging.php<?php echo $guildId ? '?guildId=' . urlencode($guildId) : ''; ?>">
+        <h3>🧾 Discord-Events</h3>
+        <p>Welche Server-Events in welchen Channel geloggt werden.</p>
+    </a>
 </div>
 
 <?php if (!isAdmin() && empty($manageableGuilds)): ?>

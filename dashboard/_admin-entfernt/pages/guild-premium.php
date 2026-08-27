@@ -235,15 +235,19 @@ requireAdmin();
     const grantsList   = document.getElementById('gpGrantsList');
 
     // Tier buttons
-    document.querySelectorAll('.gp-tier-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            selectedTier = btn.dataset.tier;
-            document.querySelectorAll('.gp-tier-btn').forEach(b => {
-                b.classList.remove('active', 'active-pro');
-            });
-            btn.classList.add('active');
-            if (selectedTier === 'pro') btn.classList.add('active-pro');
+    function applyTierSelection(tier) {
+        selectedTier = tier;
+        document.querySelectorAll('.gp-tier-btn').forEach(b => {
+            b.classList.remove('active', 'active-pro');
+            if (b.dataset.tier === tier) {
+                b.classList.add('active');
+                if (tier === 'pro') b.classList.add('active-pro');
+            }
         });
+    }
+
+    document.querySelectorAll('.gp-tier-btn').forEach(btn => {
+        btn.addEventListener('click', () => applyTierSelection(btn.dataset.tier));
     });
 
     // Day presets
@@ -323,8 +327,21 @@ requireAdmin();
             previewBadge.className = 'gp-preview-badge gp-badge-' + pm.tier;
             if (pm.expiresAt) {
                 const exp = new Date(pm.expiresAt);
-                previewMeta.textContent += ` · Premium bis ${exp.toLocaleDateString('de-DE')}`;
+                previewMeta.textContent += ` · Plan bis ${exp.toLocaleDateString('de-DE')}`;
             }
+            // Make it obvious whether this server has its own plan or is only
+            // inheriting the owner's personal premium (the old, leaky model).
+            if (pm.source === 'owner') {
+                previewMeta.textContent += ' · ⚠️ geerbt vom Owner-Account';
+            } else if (pm.source === 'guild') {
+                previewMeta.textContent += ' · eigener Server-Plan';
+            }
+
+            // Snap the tier selector to whatever this server actually has.
+            // The default used to stay on 'pro' regardless, so hitting
+            // "Verlängern" on a basic plan counted as a tier CHANGE and threw
+            // the remaining time away instead of adding to it.
+            if (pm.tier === 'basic' || pm.tier === 'pro') applyTierSelection(pm.tier);
 
             preview.classList.add('visible');
             setButtons(true);
@@ -387,7 +404,7 @@ requireAdmin();
             }
 
             let html = '<div class="table-scroll"><table class="gp-grants-table"><thead><tr>'
-                + '<th>Server</th><th>Plan</th><th>Owner-ID</th><th>Läuft ab</th></tr></thead><tbody>';
+                + '<th>Server</th><th>Plan</th><th>Quelle</th><th>Owner-ID</th><th>Läuft ab</th></tr></thead><tbody>';
 
             for (const g of grants) {
                 const tierLabel = g.tier === 'pro' ? '👑 Pro' : '💎 Basic';
@@ -398,10 +415,15 @@ requireAdmin();
                     ? `<img src="${escHtml(g.guildIcon)}" alt="" class="gp-grants-icon" onerror="this.style.display='none'">`
                     : '';
 
+                const sourceLabel = g.source === 'owner'
+                    ? '<span class="status-badge warning" title="Läuft über das Privat-Premium des Owners — betrifft alle seine Server">⚠️ Owner-Account</span>'
+                    : '<span class="status-badge success">Server-Plan</span>';
+
                 html += `<tr>
                     <td>${icon}<strong>${escHtml(g.guildName)}</strong><br>
                         <small style="color:var(--text-secondary);">${escHtml(g.guildId)}</small></td>
                     <td><span class="gp-preview-badge ${escHtml(tierCls)}">${tierLabel}</span></td>
+                    <td>${sourceLabel}</td>
                     <td><code style="font-size:.78rem;">${escHtml(g.ownerId)}</code></td>
                     <td style="${expired ? 'color:#ed4245;' : ''}">${escHtml(expDate)}${expired ? ' ⚠️' : ''}</td>
                 </tr>`;

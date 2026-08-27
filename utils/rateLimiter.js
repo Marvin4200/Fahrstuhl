@@ -1,4 +1,5 @@
 const { TIMINGS } = require("./constants");
+const PRICING = require("./pricing");
 
 class RateLimiter {
     constructor(cooldownMs = TIMINGS.COMMAND_COOLDOWN) {
@@ -14,11 +15,14 @@ class RateLimiter {
      * @param {boolean} isPremium - Is user premium (reduces cooldown)
      * @returns {object} { ok: boolean, retryAfter: number }
      */
-    // Cooldowns per tier: normal=10min, premium=3min, pro=1min
+    // Cooldowns per tier — sourced from utils/pricing.js so the numbers the bot
+    // enforces and the numbers the sales page advertises can never drift apart.
+    // Free used to be 10 minutes, which paywalled the core loop instead of
+    // upselling it; see the comment in pricing.js.
     static COOLDOWNS = {
-        normal:  10 * 60 * 1000,
-        premium:  3 * 60 * 1000,
-        pro:      1 * 60 * 1000,
+        normal:  PRICING.TIERS.free.cooldownMs,
+        premium: PRICING.TIERS.basic.cooldownMs,
+        pro:     PRICING.TIERS.pro.cooldownMs,
     };
 
     check(userId, commandName, isPremium = false, isPro = false) {
@@ -48,7 +52,11 @@ class RateLimiter {
 
     getRetryMessage(retryAfter, isPremium = false, isPro = false) {
         const seconds = Math.ceil(retryAfter / 1000);
-        const tierNote = isPro ? ' (👑 Pro: 1min cooldown)' : isPremium ? ' (💎 Premium: 3min cooldown)' : '';
+        const tierNote = isPro
+            ? ` (👑 Pro: ${PRICING.formatDuration(PRICING.TIERS.pro.cooldownMs)} Cooldown)`
+            : isPremium
+                ? ` (💎 Premium: ${PRICING.formatDuration(PRICING.TIERS.basic.cooldownMs)} Cooldown)`
+                : '';
         return `⏱️ Slow down! Try again in ${seconds}s${tierNote}`;
     }
 
@@ -72,12 +80,18 @@ class RateLimiter {
                 inline: false
             });
 
+        const basicCd = PRICING.formatDuration(PRICING.TIERS.basic.cooldownMs);
+        const proCd = PRICING.formatDuration(PRICING.TIERS.pro.cooldownMs);
         if (isPro) {
-            embed.addFields({ name: '👑 Pro Benefit', value: 'Cooldown: 1 minute', inline: false });
+            embed.addFields({ name: '👑 Pro Benefit', value: `Cooldown: nur ${proCd}`, inline: false });
         } else if (isPremium) {
-            embed.addFields({ name: '💎 Premium Benefit', value: 'Cooldown: 3 minutes', inline: false });
+            embed.addFields({ name: '💎 Premium Benefit', value: `Cooldown: nur ${basicCd}`, inline: false });
         } else {
-            embed.addFields({ name: '💡 Tipp', value: 'Mit **💎 Premium** nur 3 Min, mit **👑 Pro** nur 1 Min Cooldown!', inline: false });
+            embed.addFields({
+                name: '💡 Tipp',
+                value: `Mit **💎 Premium** nur ${basicCd}, mit **👑 Pro** nur ${proCd} Cooldown!`,
+                inline: false,
+            });
         }
 
         return embed;
@@ -145,8 +159,19 @@ class RateLimiter {
         const now = Date.now();
         let cleaned = 0;
 
+        // check() applies the tier-based cooldowns above, not this.cooldownMs —
+        // using this.cooldownMs here (default 500ms) would prune entries that are
+        // still actively on cooldown and let users bypass the limiter early.
+        // Use the longest possible cooldown as the floor.
+        const maxCooldownMs = Math.max(
+            RateLimiter.COOLDOWNS.normal,
+            RateLimiter.COOLDOWNS.premium,
+            RateLimiter.COOLDOWNS.pro,
+            this.cooldownMs
+        );
+
         for (const [key, lastUsed] of this.cooldowns.entries()) {
-            if (now - lastUsed > this.cooldownMs * 2) {
+            if (now - lastUsed > maxCooldownMs) {
                 this.cooldowns.delete(key);
                 cleaned++;
             }

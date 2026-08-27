@@ -1,6 +1,7 @@
 <?php
 $page_title = 'Server Plans';
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/pricing.php';
 requireLogin();
 
 $user     = getUser();
@@ -18,6 +19,17 @@ $daysLeft  = ($isPremium && $expiresAt > time()) ? ceil(($expiresAt - time()) / 
 $guildsRaw     = getAPI('/voice/guilds', 6);
 $guilds        = $guildsRaw['data']['guilds'] ?? [];
 $guildId       = dashboardSelectedGuildId($guilds);
+
+// dashboardSelectedGuildId() only validates against guilds the BOT is in, not
+// guilds THIS user administers — without this any logged-in dashboard user
+// could look up another server's premium tier/plan. (The Node API's
+// /guilds/:guildId/premium route now also enforces this, but check here too
+// so the page degrades gracefully instead of silently showing empty data.)
+if ($guildId && !isAdmin() && !isServerAdmin($guildId)) {
+    header('Location: ' . BASE_URL . '/pages/portal.php');
+    exit();
+}
+
 $guildPremium  = [];
 $guildHasPrem  = false;
 $guildTier     = 'free';
@@ -263,7 +275,7 @@ function planLimit(int $val): string {
             <div class="sp-plan-icon">💎</div>
             <div class="sp-plan-name">Premium</div>
         </div>
-        <div class="sp-plan-price">4,99€ <span>/ Monat</span></div>
+        <div class="sp-plan-price"><?= esc(pricingFormat(pricingTier('basic')['priceMonthly'])) ?> <span>/ Monat</span></div>
         <ul class="sp-feat-list">
             <li class="inc"><span class="icon">✅</span> Alles aus Free</li>
             <li class="inc"><span class="icon">✅</span> Social Alerts (3 Feeds)</li>
@@ -278,7 +290,7 @@ function planLimit(int $val): string {
         <?php if ($guildTier === 'basic'): ?>
             <span class="sp-cta disabled" style="font-size:1rem;">✓ Dein aktueller Plan</span>
         <?php else: ?>
-            <a href="https://discord.gg/zfzDHKcWDx" target="_blank" rel="noopener" class="sp-cta primary-gold" style="font-size:1rem; padding:.85rem 1rem;">💎 Premium anfragen</a>
+            <a href="<?= esc(pricingCheckoutUrl('basic', 'monthly', getUser()['id'] ?? null)) ?>" rel="noopener" class="sp-cta primary-gold" style="font-size:1rem; padding:.85rem 1rem;">💎 Premium holen</a>
         <?php endif; ?>
     </div>
 
@@ -291,7 +303,7 @@ function planLimit(int $val): string {
             <div class="sp-plan-icon">👑</div>
             <div class="sp-plan-name">Pro</div>
         </div>
-        <div class="sp-plan-price">9,99€ <span>/ Monat</span></div>
+        <div class="sp-plan-price"><?= esc(pricingFormat(pricingTier('pro')['priceMonthly'])) ?> <span>/ Monat</span></div>
         <ul class="sp-feat-list">
             <li class="inc"><span class="icon">✅</span> Alles aus Premium</li>
             <li class="inc"><span class="icon">✅</span> Social Alerts (10 Feeds)</li>

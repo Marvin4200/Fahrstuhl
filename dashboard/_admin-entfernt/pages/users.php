@@ -164,7 +164,7 @@ function avatarHtml($u) {
         <td style="text-align:center;"><?php echo $guilds ?: '<span style="color:#444;">—</span>'; ?></td>
         <td>
             <?php if ($isPremium): ?>
-            <span style="color:#FFD700; font-weight:600;">⭐ Aktiv</span>
+            <span class="status-badge premium">⭐ Aktiv</span>
             <?php if ($premExpiry): ?>
             <div style="color:#888; font-size:0.75em;">bis <?php echo date('d.m.Y', strtotime($premExpiry)); ?></div>
             <?php endif; ?>
@@ -172,13 +172,13 @@ function avatarHtml($u) {
             <span style="color:#444;">—</span>
             <?php endif; ?>
             <div style="margin-top:4px; display:flex; gap:4px;">
-                <button onclick="premiumAction('<?php echo $isPremium ? 'extend' : 'activate'; ?>','<?= $uid ?>','<?= esc($uname ?? $uid) ?>')"
-                    style="background:#FFD70022; color:#FFD700; border:1px solid #FFD70044; border-radius:4px; padding:2px 7px; font-size:0.75em; cursor:pointer;">
+                <button onclick="premiumAction('<?php echo $isPremium ? 'extend' : 'activate'; ?>','<?= $uid ?>',<?= jsAttr($uname ?? $uid) ?>)"
+                    class="pill-btn pill-btn-warning">
                     <?php echo $isPremium ? '+ Verlängern' : '⭐ Aktivieren'; ?>
                 </button>
                 <?php if ($isPremium): ?>
                 <button onclick="deactivatePremium('<?= $uid ?>')"
-                    style="background:#ED424522; color:#ED4245; border:1px solid #ED424544; border-radius:4px; padding:2px 7px; font-size:0.75em; cursor:pointer;">
+                    class="pill-btn pill-btn-danger">
                     Deaktivieren
                 </button>
                 <?php endif; ?>
@@ -186,28 +186,27 @@ function avatarHtml($u) {
         </td>
         <td>
             <?php if ($shActive): ?>
-            <span style="color:#57F287; font-weight:600;">🛡️ Aktiv</span>
+            <span class="status-badge ok">🛡️ Aktiv</span>
             <?php if ($shExpiry): ?>
             <div style="color:#888; font-size:0.75em;">bis <?php echo date('d.m.Y H:i', strtotime($shExpiry)); ?></div>
             <?php endif; ?>
             <button onclick="clearShield('<?= $uid ?>')" title="Aktiven Shield entfernen"
-                style="margin-top:4px; background:#ED424522; color:#ED4245; border:1px solid #ED424544; border-radius:4px; padding:2px 7px; font-size:0.75em; cursor:pointer;">✕ Clear</button>
+                class="pill-btn pill-btn-danger" style="margin-top:4px;">✕ Clear</button>
             <?php elseif ($shOwned > 0): ?>
             <span style="color:#888;">🛡️ <?php echo $shOwned; ?>x</span>
             <?php else: ?>
             <span style="color:#444;">—</span>
             <?php endif; ?>
             <div style="margin-top:4px; display:flex; gap:4px;">
-                <button onclick="shieldAction('give','<?= $uid ?>','<?= esc($uname ?? $uid) ?>')"
-                    style="background:#57F28722; color:#57F287; border:1px solid #57F28744; border-radius:4px; padding:2px 7px; font-size:0.75em; cursor:pointer;">+ Geben</button>
-                <button onclick="shieldAction('take','<?= $uid ?>','<?= esc($uname ?? $uid) ?>')"
-                    style="background:#FEE75C22; color:#FEE75C; border:1px solid #FEE75C44; border-radius:4px; padding:2px 7px; font-size:0.75em; cursor:pointer;">− Nehmen</button>
+                <button onclick="shieldAction('give','<?= $uid ?>',<?= jsAttr($uname ?? $uid) ?>)"
+                    class="pill-btn pill-btn-success">+ Geben</button>
+                <button onclick="shieldAction('take','<?= $uid ?>',<?= jsAttr($uname ?? $uid) ?>)"
+                    class="pill-btn pill-btn-warning">− Nehmen</button>
             </div>
         </td>
         <td>
             <?php if ($isBlack): ?>
-            <span style="background:#ED424522; color:#ED4245; border:1px solid #ED424544;
-                  border-radius:4px; padding:2px 6px; font-size:0.78em;">🚫 Blacklist</span>
+            <span class="status-badge danger">🚫 Blacklist</span>
             <?php foreach (($u['blacklistEntries'] ?? []) as $bl): ?>
             <div style="color:#888; font-size:0.72em; margin-top:2px;" title="<?php echo esc($bl['reason'] ?? ''); ?>">
                 <?php echo esc($bl['type']); ?><?php echo $bl['guildId'] ? ' (Guild)' : ''; ?>
@@ -215,8 +214,7 @@ function avatarHtml($u) {
             <?php endforeach; ?>
             <?php endif; ?>
             <?php if ($notif): ?>
-            <span style="background:#5865F222; color:#7289da; border:1px solid #5865F244;
-                  border-radius:4px; padding:2px 6px; font-size:0.78em; display:inline-block; margin-top:2px;">🔔 Notif</span>
+            <span class="status-badge info" style="display:inline-block; margin-top:2px;">🔔 Notif</span>
             <?php endif; ?>
             <?php if (!$isBlack && !$notif): ?><span style="color:#444;">—</span><?php endif; ?>
         </td>

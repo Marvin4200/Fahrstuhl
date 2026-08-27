@@ -121,147 +121,104 @@ if (!function_exists('sidebar_item_active')) {
     }
 }
 
+// ── Navigation ───────────────────────────────────────────────────────────────
+//
+// Struktur bewusst flach gehalten: vorher 28 Admin-Einträge in 9 Gruppen, was
+// niemand mehr überblickt hat. Jetzt 16 in 5. Es ist KEINE Seite entfernt
+// worden — die selteneren liegen hinter ihrem Hub und sind über 'aliases'
+// weiterhin korrekt in der Navigation markiert, wenn man sie geöffnet hat.
+//
+// Beim Verschieben einer Seite hinter einen Hub gilt: der Hub MUSS sie
+// verlinken, sonst ist sie nur noch per URL erreichbar.
+
 $adminGroups = [
     [
-      'title' => 'Übersicht',
+      'title' => 'Überblick',
       'description' => 'Admin entry points',
       'items' => [
-        ['page' => 'cockpit', 'icon' => '🎛️', 'label' => 'Cockpit', 'description' => 'Live-Status und Alerts'],
-        ['page' => 'status', 'icon' => '🟢', 'label' => 'Live Status', 'description' => 'Service Health'],
+        ['page' => 'cockpit', 'icon' => '🎛️', 'label' => 'Cockpit', 'description' => 'Live-Status, Alerts und Aktivität', 'aliases' => ['status', 'activity']],
         ['page' => 'analytics', 'icon' => '📊', 'label' => 'Analytics', 'description' => 'Plattform-Metriken'],
-        ['page' => 'activity', 'icon' => '⚡', 'label' => 'Activity', 'description' => 'Aktuelle Events'],
+      ],
+    ],
+    [
+      'title' => 'Server',
+      'description' => 'Guilds, members and moderation',
+      'items' => [
+        ['page' => 'guilds', 'icon' => '🏰', 'label' => 'Server', 'description' => 'Alle Guilds', 'aliases' => ['guild-detail']],
+        ['page' => 'members-hub', 'icon' => '👥', 'label' => 'Mitglieder', 'description' => 'Profile und Stats', 'aliases' => ['users', 'user-detail', 'voice-time']],
+        ['page' => 'moderation-hub', 'icon' => '🛡️', 'label' => 'Moderation', 'description' => 'Cases, AutoMod, Blacklist und Logs', 'aliases' => ['moderation', 'automod', 'logging', 'blacklist', 'audit']],
+        ['page' => 'tickets', 'icon' => '🎫', 'label' => 'Tickets', 'description' => 'Panels und Workflows'],
+        ['page' => 'server-backup', 'icon' => '💾', 'label' => 'Discord-Server sichern', 'description' => 'Guild-Backup und Restore'],
+      ],
+    ],
+    [
+      'title' => 'Premium',
+      'description' => 'Plans, revenue and rewards',
+      'items' => [
+        ['page' => 'premium-hub', 'icon' => '💎', 'label' => 'Premium', 'description' => 'Pläne, Revenue, Promos und Health', 'aliases' => ['premium', 'monetization', 'monetization-health', 'guild-premium', 'redeem', 'premium-info']],
+        ['page' => 'rewards-hub', 'icon' => '🎁', 'label' => 'Rewards', 'description' => 'Votes, Shields und Rewards'],
       ],
     ],
     [
       'title' => 'Betrieb',
       'description' => 'Infrastructure and operations',
       'items' => [
-        ['page' => 'operations', 'icon' => '🛠️', 'label' => 'Operations', 'description' => 'Deployments und Jobs', 'aliases' => ['deploys', 'webhooks', 'flags', 'ueberwachung', 'ops-health']],
-        ['page' => 'backups', 'icon' => '🗄️', 'label' => 'Backups', 'description' => 'Datensicherung'],
-        ['page' => 'server-backup', 'icon' => '💾', 'label' => 'Server Backup', 'description' => 'Guild Backups und Restore'],
-        ['page' => 'security', 'icon' => '🔐', 'label' => 'Security', 'description' => 'Sicherheitschecks'],
-      ],
-    ],
-    [
-      'title' => 'Server & Mitglieder',
-      'description' => 'Guild and member management',
-      'items' => [
-        ['page' => 'guilds', 'icon' => '🏰', 'label' => 'Server', 'description' => 'Alle Guilds', 'aliases' => ['guild-detail']],
-        ['page' => 'members-hub', 'icon' => '👥', 'label' => 'Mitglieder', 'description' => 'Profile und Stats', 'aliases' => ['users', 'user-detail', 'voice-time']],
-      ],
-    ],
-    [
-      'title' => 'Moderation',
-      'description' => 'Moderation and policy tools',
-      'items' => [
-        ['page' => 'moderation-hub', 'icon' => '🛡️', 'label' => 'Moderation', 'description' => 'Cases und Aktionen', 'aliases' => ['moderation']],
-        ['page' => 'automod', 'icon' => '🚨', 'label' => 'AutoMod', 'description' => 'Filter und Schutz'],
-        ['page' => 'logging', 'icon' => '🧾', 'label' => 'Logging', 'description' => 'Audit Feeds'],
-        ['page' => 'blacklist', 'icon' => '🚫', 'label' => 'Blacklist', 'description' => 'Gesperrte User'],
-        ['page' => 'audit', 'icon' => '📄', 'label' => 'Audit Log', 'description' => 'Admin-Aktionen'],
-      ],
-    ],
-    [
-      'title' => 'Tickets',
-      'description' => 'Support workflows',
-      'items' => [
-        ['page' => 'tickets', 'icon' => '🎫', 'label' => 'Tickets', 'description' => 'Panels und Workflows'],
-      ],
-    ],
-    [
-      'title' => 'EselMusic',
-      'description' => 'Music bot monitoring',
-      'items' => [
-        ['page' => 'eselmusic', 'icon' => '🎵', 'label' => 'EselMusic', 'description' => 'Musikbot Status & Guilds', 'href' => BASE_URL . '/eselmusic'],
-      ],
-    ],
-    [
-      'title' => 'Monetization / Premium',
-      'description' => 'Plans, billing and rewards',
-      'items' => [
-        ['page' => 'guild-premium', 'icon' => '👑', 'label' => 'Server-Plan vergeben', 'description' => 'Premium aktivieren'],
-        ['page' => 'premium-hub', 'icon' => '💎', 'label' => 'Premium Hub', 'description' => 'Übersicht und Billing'],
-        ['page' => 'monetization', 'icon' => '💰', 'label' => 'Monetization', 'description' => 'Revenue und Promos'],
-        ['page' => 'monetization-health', 'icon' => '🩺', 'label' => 'Monetization Health', 'description' => 'Read-only Health und Warnungen'],
-        ['page' => 'rewards-hub', 'icon' => '🎁', 'label' => 'Rewards', 'description' => 'Votes, Shields und Rewards'],
-      ],
-    ],
-    [
-      'title' => 'Tools / Fun',
-      'description' => 'Utilities and fun controls',
-      'items' => [
-        ['page' => 'tools', 'icon' => '🧰', 'label' => 'Tools', 'description' => 'Utilities'],
-        ['page' => 'fun-hub', 'icon' => '🎭', 'label' => 'Fun Hub', 'description' => 'Fun-Tools und Troll-Befehle', 'aliases' => ['voicetroll']],
-        ['page' => 'commands', 'icon' => '⌨️', 'label' => 'Commands', 'description' => 'Slash Commands'],
-        ['page' => 'botinfo', 'icon' => '🤖', 'label' => 'Bot Info', 'description' => 'Fähigkeiten'],
+        ['page' => 'operations', 'icon' => '🛠️', 'label' => 'Operations', 'description' => 'Deployments, Backups, Security und Jobs', 'aliases' => ['deploys', 'webhooks', 'flags', 'ueberwachung', 'ops-health', 'backups', 'security']],
+        ['page' => 'logs', 'icon' => '📋', 'label' => 'App-Logs', 'description' => 'Laufzeit-Logs des Bots'],
       ],
     ],
     [
       'title' => 'System',
-      'description' => 'System logs and console',
+      'description' => 'Utilities and reference',
       'items' => [
-        ['page' => 'logs', 'icon' => '📋', 'label' => 'Logs', 'description' => 'App-Logs'],
         ['page' => 'console', 'icon' => '💻', 'label' => 'Console', 'description' => 'Admin-Konsole'],
+        ['page' => 'tools', 'icon' => '🧰', 'label' => 'Tools', 'description' => 'Utilities'],
+        ['page' => 'fun-hub', 'icon' => '🎭', 'label' => 'Fun', 'description' => 'Fun-Tools und Troll-Befehle', 'aliases' => ['voicetroll']],
+        ['page' => 'botinfo', 'icon' => '🤖', 'label' => 'Bot Info', 'description' => 'Commands und Fähigkeiten', 'aliases' => ['commands']],
+        ['page' => 'eselmusic', 'icon' => '🎵', 'label' => 'EselMusic', 'description' => 'Musikbot Status & Guilds', 'href' => BASE_URL . '/eselmusic'],
       ],
     ],
   ];
 
 $userGroups = [
     [
-      'title' => 'Overview',
-      'description' => 'Entry points and setup',
+      'title' => 'Start',
+      'description' => 'Server entry points',
       'items' => [
-        ['page' => 'portal', 'icon' => '🏠', 'label' => 'Portal', 'description' => 'Server start page', 'aliases' => ['guild-detail']],
-        ['page' => 'setup', 'icon' => '🚀', 'label' => 'Setup Assistant', 'description' => 'Guided first-time setup wizard'],
-        ['page' => 'command-center', 'icon' => '⌨️', 'label' => 'Command Center', 'description' => 'Live feed and quick actions'],
-        ['page' => 'serverconfig', 'icon' => '⚙️', 'label' => 'Server Config', 'description' => 'Roles, access and health'],
-        ['page' => 'modules', 'icon' => '🧩', 'label' => 'Modules', 'description' => 'Enable and open features'],
+        ['page' => 'portal', 'icon' => '🏠', 'label' => 'Portal', 'description' => 'Startseite deines Servers', 'aliases' => ['guild-detail', 'command-center']],
+        ['page' => 'setup', 'icon' => '🚀', 'label' => 'Setup', 'description' => 'Geführte Einrichtung'],
+        ['page' => 'serverconfig', 'icon' => '⚙️', 'label' => 'Einstellungen', 'description' => 'Rollen, Zugriff und Health'],
+        ['page' => 'modules', 'icon' => '🧩', 'label' => 'Module', 'description' => 'Features an- und ausschalten'],
       ],
     ],
     [
-      'title' => 'Community',
-      'description' => 'Member experience and engagement',
+      'title' => 'Features',
+      'description' => 'Community features',
       'items' => [
-        ['page' => 'welcome', 'icon' => '👋', 'label' => 'Welcome', 'description' => 'Greetings and verification'],
-        ['page' => 'leveling', 'icon' => '📈', 'label' => 'Leveling', 'description' => 'XP and rewards'],
-        ['page' => 'reaction-roles', 'icon' => '🎭', 'label' => 'Reaction Roles', 'description' => 'Self-assign roles'],
-        ['page' => 'social', 'icon' => '📣', 'label' => 'Social Alerts', 'description' => 'YouTube, Twitch and RSS'],
-        ['page' => 'freegames', 'icon' => '🎮', 'label' => 'Free Games', 'description' => 'Kostenlose Spiele-Benachrichtigungen'],
-        ['page' => 'temp-voice', 'icon' => '🔊', 'label' => 'Temp Voice', 'description' => 'Dynamic voice channels'],
+        ['page' => 'welcome', 'icon' => '👋', 'label' => 'Welcome', 'description' => 'Begrüßung und Verifizierung'],
+        ['page' => 'leveling', 'icon' => '📈', 'label' => 'Leveling', 'description' => 'XP und Rewards'],
+        ['page' => 'reaction-roles', 'icon' => '🎭', 'label' => 'Reaction Roles', 'description' => 'Rollen zum Selbstvergeben'],
+        ['page' => 'social', 'icon' => '📣', 'label' => 'Social Alerts', 'description' => 'YouTube, Twitch und RSS'],
+        ['page' => 'freegames', 'icon' => '🎮', 'label' => 'Free Games', 'description' => 'Benachrichtigungen zu Gratis-Spielen'],
+        ['page' => 'temp-voice', 'icon' => '🔊', 'label' => 'Temp Voice', 'description' => 'Dynamische Sprachkanäle'],
       ],
     ],
     [
-      'title' => 'Moderation',
-      'description' => 'Safety, logs and cases',
+      'title' => 'Moderation & Support',
+      'description' => 'Moderation and tickets',
       'items' => [
-        ['page' => 'moderation-hub', 'icon' => '🛡️', 'label' => 'Moderation', 'description' => 'Cases and actions', 'aliases' => ['moderation']],
-        ['page' => 'automod', 'icon' => '🚨', 'label' => 'AutoMod', 'description' => 'Filters and protection'],
-        ['page' => 'logging', 'icon' => '🧾', 'label' => 'Logging', 'description' => 'Audit feeds'],
+        ['page' => 'moderation-hub', 'icon' => '🛡️', 'label' => 'Moderation', 'description' => 'Cases, AutoMod und Logs', 'aliases' => ['moderation', 'automod', 'logging']],
+        ['page' => 'tickets', 'icon' => '🎫', 'label' => 'Tickets', 'description' => 'Panels und Workflows'],
       ],
     ],
     [
-      'title' => 'Support',
-      'description' => 'Support workflows',
+      'title' => 'Server & Premium',
+      'description' => 'Stats, plans and profile tools',
       'items' => [
-        ['page' => 'tickets', 'icon' => '🎫', 'label' => 'Tickets', 'description' => 'Panels and workflows'],
-      ],
-    ],
-    [
-      'title' => 'Tools',
-      'description' => 'Operations and monitoring',
-      'items' => [
-        ['page' => 'activity', 'icon' => '⚡', 'label' => 'Activity', 'description' => 'Recent server events'],
-        ['page' => 'stats', 'icon' => '📊', 'label' => 'Server Stats', 'description' => 'Analytics and health'],
-      ],
-    ],
-    [
-      'title' => 'Premium / Product',
-      'description' => 'Plans and profile tools',
-      'items' => [
-        ['page' => 'server-plans', 'icon' => '🗂️', 'label' => 'Server Plans', 'description' => 'Limits and tiers'],
-        ['page' => 'botinfo', 'icon' => '🤖', 'label' => 'Bot Info', 'description' => 'Capabilities and support'],
-        ['page' => 'premium-info', 'icon' => '💎', 'label' => 'Premium', 'description' => 'User benefits'],
-        ['page' => 'redeem', 'icon' => '🎟️', 'label' => 'Redeem Code', 'description' => 'Activate purchases'],
+        ['page' => 'stats', 'icon' => '📊', 'label' => 'Server Stats', 'description' => 'Analytics und Aktivität', 'aliases' => ['activity']],
+        ['page' => 'server-plans', 'icon' => '🗂️', 'label' => 'Server Plans', 'description' => 'Limits und Stufen'],
+        ['page' => 'premium-info', 'icon' => '💎', 'label' => 'Premium', 'description' => 'Deine Vorteile', 'aliases' => ['redeem']],
+        ['page' => 'botinfo', 'icon' => '🤖', 'label' => 'Bot Info', 'description' => 'Commands und Support'],
       ],
     ],
   ];

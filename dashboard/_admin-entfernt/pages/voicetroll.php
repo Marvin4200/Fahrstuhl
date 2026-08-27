@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 <div style="max-width:680px;">
 
 <!-- Warning banner -->
-<div style="background:#ED424518; border:1px solid #ED424555; border-radius:8px; padding:12px 18px; margin-bottom:22px; color:#ED4245; font-size:0.9em;">
+<div class="alert alert-warning" style="margin-bottom:22px; font-size:0.9em;">
     ⚠️ <strong>Dev-Only.</strong> Dieser Bereich ist nicht für normale User sichtbar.
     Stelle sicher dass <code>ffmpeg</code> und <code>gtts</code> auf dem Server installiert sind.
 </div>
@@ -124,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
     <!-- Submit -->
     <button id="sayBtn" onclick="sendTTS()"
-        style="width:100%; padding:12px; background:#5865F2; color:#fff; border:none; border-radius:7px;
+        style="width:100%; padding:12px; background:var(--primary); color:#fff; border:none; border-radius:7px;
                font-size:1em; font-weight:600; cursor:pointer; transition:background 0.2s;">
         🔊 Abspielen
     </button>
@@ -143,6 +143,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 <script>
 const DASHBOARD_CSRF_TOKEN = '<?php echo esc(dashboardCsrfToken()); ?>';
+
+// Channel/guild names come back from the API and are attacker-controllable
+// (any member who can rename a Discord channel/server sets this string), so
+// they must be escaped before going into innerHTML below.
+function escapeHtml(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
 
 let guildsData = [];
 const history = [];
@@ -229,11 +241,11 @@ async function sendTTS() {
         const d = await r.json();
 
         if (d?.success) {
-            showStatus('success', `✅ Erfolgreich abgespielt in <strong>${d.data?.channel ?? channelId}</strong>!`);
+            showStatus('success', `✅ Erfolgreich abgespielt in <strong>${escapeHtml(d.data?.channel ?? channelId)}</strong>!`);
             addHistory(text, d.data?.guild, d.data?.channel, lang, true);
         } else {
             const msg = d?.message ?? 'Unbekannter Fehler';
-            showStatus('error', `❌ Fehler: ${msg}`);
+            showStatus('error', `❌ Fehler: ${escapeHtml(msg)}`);
             addHistory(text, '?', '?', lang, false, msg);
         }
     } catch (e) {
@@ -263,9 +275,9 @@ function addHistory(text, guild, channel, lang, ok, err = '') {
         <div style="padding:7px 0; border-bottom:1px solid #1a1a2e; display:flex; gap:10px; align-items:flex-start;">
             <span style="flex-shrink:0; color:${h.ok ? '#57F287' : '#ED4245'};">${h.ok ? '✅' : '❌'}</span>
             <div style="flex:1; min-width:0;">
-                <span style="color:#e0e0e0;">"${h.text}"</span>
-                <span style="color:#555; margin-left:8px;">${h.guild} / #${h.channel} [${h.lang}]</span>
-                ${h.err ? `<span style="color:#ED4245; margin-left:6px; font-size:0.9em;">${h.err}</span>` : ''}
+                <span style="color:#e0e0e0;">"${escapeHtml(h.text)}"</span>
+                <span style="color:#555; margin-left:8px;">${escapeHtml(h.guild)} / #${escapeHtml(h.channel)} [${escapeHtml(h.lang)}]</span>
+                ${h.err ? `<span style="color:#ED4245; margin-left:6px; font-size:0.9em;">${escapeHtml(h.err)}</span>` : ''}
             </div>
             <span style="flex-shrink:0; color:#444;">${h.time}</span>
         </div>

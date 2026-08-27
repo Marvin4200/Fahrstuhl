@@ -174,8 +174,52 @@ function saveGlobalStop(val) {
 
 const globalState = { stop: loadGlobalStop() };
 const usageStats = new Map();
+const PRICING = require('./utils/pricing');
 const activeIntervals = [];
+// Timeouts that must be cancelled on shutdown, same as activeIntervals.
+const activeTimeouts = [];
 const rateLimiter = new RateLimiter();
+
+// ── Premium XP multiplier, cached ───────────────────────────────────────────
+// addMessageXp runs on every eligible message, so the premium lookup has to be
+// cheap. Values are cached for a few minutes and swept periodically — an
+// unbounded Map keyed by user id is the exact leak pattern fixed elsewhere in
+// this file, so this one gets a sweep from the start.
+const PREMIUM_XP_CACHE_TTL_MS = 5 * 60 * 1000;
+const premiumXpCache = new Map(); // userId -> { multiplier, ts }
+
+async function resolvePremiumXpMultiplier(userId) {
+    if (!userId) return 1;
+
+    const cached = premiumXpCache.get(userId);
+    const now = Date.now();
+    if (cached && now - cached.ts < PREMIUM_XP_CACHE_TTL_MS) return cached.multiplier;
+
+    let multiplier = 1;
+    try {
+        const premiumManager = require('./utils/premiumManager');
+        const isPremium = await premiumManager.isPremium(userId);
+        const isPro = isPremium ? await premiumManager.isPro(userId) : false;
+        multiplier = PRICING.tierFor(isPremium, isPro).xpMultiplier || 1;
+    } catch (_) {
+        multiplier = 1; // never cost someone their XP because of a lookup failure
+    }
+
+    premiumXpCache.set(userId, { multiplier, ts: now });
+    return multiplier;
+}
+
+function cleanupPremiumXpCache() {
+    const now = Date.now();
+    let removed = 0;
+    for (const [key, entry] of premiumXpCache.entries()) {
+        if (now - entry.ts > PREMIUM_XP_CACHE_TTL_MS) {
+            premiumXpCache.delete(key);
+            removed++;
+        }
+    }
+    return removed;
+}
 const auditLogger = new AuditLogger();
 const voiceTracker = new VoiceConnectionTracker();
 const voiceUsageTracker = createVoiceUsageTracker();
@@ -1245,6 +1289,87 @@ client.once(Events.ClientReady, async () => {
     }, 300000); // Every 5 minutes
     activeIntervals.push(cooldownCleanup);
 
+    // Cleanup stale per-command rateLimiter cooldowns (this Map was never pruned
+    // before, so it grew unbounded for the process lifetime)
+    const rateLimiterCleanup = setInterval(() => {
+        const removed = rateLimiter.cleanup();
+        if (removed > 0) {
+            console.log(`🧹 Cleaned up ${removed} expired rate-limiter entries`);
+        }
+    }, 300000); // Every 5 minutes
+    activeIntervals.push(rateLimiterCleanup);
+
+    // Cleanup stale leveling cooldown/dedup maps (same unbounded-growth bug
+    // class as above — every user who ever sent a message or earned voice XP
+    // otherwise stayed tracked for the process lifetime)
+    const levelingMapsCleanup = setInterval(() => {
+        const removed = levelingManager.cleanupStaleEntries();
+        if (removed > 0) {
+            console.log(`🧹 Cleaned up ${removed} expired leveling cooldown entries`);
+        }
+    }, 1800000); // Every 30 minutes
+    activeIntervals.push(levelingMapsCleanup);
+
+    // Sweep the premium XP lookup cache (see resolvePremiumXpMultiplier).
+    const premiumXpCacheCleanup = setInterval(() => {
+        const removed = cleanupPremiumXpCache();
+        if (removed > 0) {
+            console.log(`🧹 Cleaned up ${removed} expired premium XP cache entries`);
+        }
+    }, 600000); // Every 10 minutes
+    activeIntervals.push(premiumXpCacheCleanup);
+
+    // ── Premium expiry reminders ────────────────────────────────────────────
+    // The endpoint for this existed but nothing ever called it, so reminders
+    // only went out if an admin happened to click a button. With manual renewal
+    // and no reminder, plans simply lapse. Milestone dedup lives in the DB, so
+    // running this repeatedly is safe — each milestone fires once per period.
+    let premiumReminderRunning = false;
+    const runPremiumReminders = async () => {
+        if (!apiServer || typeof apiServer.sendDuePremiumReminders !== 'function') return;
+        // Guard against overlapping runs: sending DMs is rate-limited by Discord,
+        // so with enough customers a run could still be going when the next tick
+        // fires. Two concurrent runs would race on the dedup check and could
+        // double-send.
+        if (premiumReminderRunning) {
+            console.log('📬 Premium-Erinnerungen: vorheriger Lauf noch aktiv, überspringe');
+            return;
+        }
+        premiumReminderRunning = true;
+        try {
+            const summary = await apiServer.sendDuePremiumReminders({ actor: 'scheduler' });
+            if (summary.due > 0) {
+                console.log(
+                    `📬 Premium-Erinnerungen: ${summary.sent} verschickt, `
+                    + `${summary.failed} fehlgeschlagen (${summary.checked} Pläne geprüft)`
+                );
+            }
+        } catch (error) {
+            console.error('Premium reminder run failed:', error.message);
+        } finally {
+            premiumReminderRunning = false;
+        }
+    };
+
+    // First run shortly after startup so a restart can't skip a day's window,
+    // then every 6h. Dedup makes the extra runs free, and it means a bot that
+    // restarts often still delivers reminders on time.
+    const premiumReminderKickoff = setTimeout(runPremiumReminders, 120000); // 2 min
+    activeTimeouts.push(premiumReminderKickoff);
+
+    const premiumReminderInterval = setInterval(runPremiumReminders, 6 * 60 * 60 * 1000);
+    activeIntervals.push(premiumReminderInterval);
+
+    // Housekeeping: reminder_log rows for long-past expiries serve no purpose.
+    const reminderLogPrune = setInterval(async () => {
+        try {
+            const premiumManager = require('./utils/premiumManager');
+            const removed = await premiumManager.pruneReminderLog(120);
+            if (removed > 0) console.log(`🧹 Pruned ${removed} old reminder-log rows`);
+        } catch (_) { /* non-critical */ }
+    }, 24 * 60 * 60 * 1000);
+    activeIntervals.push(reminderLogPrune);
+
     // Cleanup stale fallback data
     const gracefulDegradationCleanup = setInterval(() => {
         gracefulDegradation.cleanupStale();
@@ -1316,6 +1441,7 @@ client.once(Events.ClientReady, async () => {
                             guildId,
                             userId: member.id,
                             config,
+                            premiumMultiplier: await resolvePremiumXpMultiplier(member.id),
                         }).catch(() => null);
                         if (!voiceResult || voiceResult.skipped) continue;
 
@@ -1605,10 +1731,10 @@ client.on("guildCreate", async (guild) => {
                 },
                 {
                     name: "🛡️ SHIELD SYSTEM (Free Protection!)",
-                    value: "Join **Unique Bots** (`/claim`) to get **free shields every 2.5 hours**!\n" +
-                        "→ Use `/shield` to activate 2-hour immunity\n" +
+                    value: `Join **Unique Bots** (\`/claim\`) to get **free shields every ${PRICING.formatDuration(PRICING.TIERS.free.shieldClaimCooldownMs)}**!\n` +
+                        `→ Use \`/shield\` to activate ${PRICING.formatDuration(PRICING.TIERS.free.shieldDurationMs)} immunity\n` +
                         "→ Use `/checkshield` to see your status\n" +
-                        "→ **Server boosters get 10 bonus shields/month!**",
+                        `→ **${PRICING.TIERS.basic.emoji} ${PRICING.TIERS.basic.label}/${PRICING.TIERS.pro.emoji} ${PRICING.TIERS.pro.label}: schneller nachladen, länger geschützt, +${PRICING.TIERS.basic.monthlyBonusShields}/+${PRICING.TIERS.pro.monthlyBonusShields} Bonus-Shields pro Monat**`,
                     inline: false
                 },
                 {
@@ -2363,6 +2489,11 @@ client.on("messageCreate", async (message) => {
             if (message.member?.roles.cache.some(r => levelSettings.ignoredRoles.includes(r.id))) return;
         }
 
+        // Premium XP boost — resolved per message. premiumManager reads from a
+        // local SQLite file, so this is cheap; failures fall back to 1x rather
+        // than costing the user their XP.
+        const msgPremiumMultiplier = await resolvePremiumXpMultiplier(message.author.id);
+
         const result = await levelingManager.addMessageXp({
             guildId: message.guild.id,
             userId: message.author.id,
@@ -2370,6 +2501,7 @@ client.on("messageCreate", async (message) => {
             roleIds: message.member?.roles?.cache ? Array.from(message.member.roles.cache.keys()) : [],
             config,
             content: message.content,
+            premiumMultiplier: msgPremiumMultiplier,
         });
 
         if (result?.skipped) return;
@@ -2969,10 +3101,21 @@ client.on("interactionCreate", async (interaction) => {
                         .setTitle('🛡️ SHIELD SYSTEM (Free Protection!)')
                         .setDescription('Protect yourself from trolling!')
                         .addFields(
-                            { name: '📎 /claim', value: '🎁 Get 1 free shield every 2.5 hours\n*(Requires: Unique Bots member)*\n💎 Boosters: +10 bonus shields/month' },
-                            { name: '🛡️ /shield', value: '⏱️ Activate shield for 2 hours immunity' },
+                            {
+                                name: '📎 /claim',
+                                value: `🎁 Ein kostenloses Shield alle ${PRICING.formatDuration(PRICING.TIERS.free.shieldClaimCooldownMs)}`
+                                     + `\n💎 Booster: +10 Bonus-Shields/Monat`
+                                     + `\n${PRICING.TIERS.basic.emoji} ${PRICING.TIERS.basic.label} alle ${PRICING.formatDuration(PRICING.TIERS.basic.shieldClaimCooldownMs)} · `
+                                     + `${PRICING.TIERS.pro.emoji} ${PRICING.TIERS.pro.label} alle ${PRICING.formatDuration(PRICING.TIERS.pro.shieldClaimCooldownMs)}`,
+                            },
+                            {
+                                name: '🛡️ /shield',
+                                value: `⏱️ Schützt ${PRICING.formatDuration(PRICING.TIERS.free.shieldDurationMs)} `
+                                     + `(${PRICING.TIERS.basic.emoji} ${PRICING.formatDuration(PRICING.TIERS.basic.shieldDurationMs)} · `
+                                     + `${PRICING.TIERS.pro.emoji} ${PRICING.formatDuration(PRICING.TIERS.pro.shieldDurationMs)})`,
+                            },
                             { name: '📊 /checkshield', value: '📈 Check your shield status & inventory' },
-                            { name: '💡 How Shields Work', value: '✅ Active shield = Can\'t be trolled\n✅ Share with friends\n✅ Recharge for free every 2.5h' }
+                            { name: '💡 How Shields Work', value: '✅ Aktives Shield = du kannst nicht getrollt werden\n✅ Mit Freunden teilbar\n✅ Lädt sich kostenlos wieder auf' }
                         ),
                     other: new EmbedBuilder()
                         .setColor(0x57F287)
@@ -3094,6 +3237,7 @@ async function shutdown() {
     }
 
     activeIntervals.forEach((interval) => clearInterval(interval));
+    activeTimeouts.forEach((timeout) => clearTimeout(timeout));
     activeMoves.forEach((interval) => clearInterval(interval));
     activeMoveEnds.clear();
     activeGhosts.forEach((entry) => clearStoredTimeout(entry));

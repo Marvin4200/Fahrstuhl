@@ -26,7 +26,7 @@ if (isset($_SESSION['user']) && isset($_GET['refresh_guilds'])) {
 }
 
 if (isset($_SESSION['user'])) {
-    header('Location: ' . BASE_URL . (isAdmin() ? '/pages/cockpit.php' : '/pages/portal.php'));
+    header('Location: ' . BASE_URL . (isAdmin() ? '/ui/' : '/pages/portal.php'));
     exit();
 }
 
@@ -99,7 +99,7 @@ if (isset($_GET['code'])) {
             $_SESSION['user_guilds'] = is_array($guilds_data) ? $guilds_data : [];
             $_SESSION['user_guilds_fetched_at'] = time();
 
-            header('Location: ' . BASE_URL . (isAdmin() ? '/pages/cockpit.php' : '/pages/portal.php'));
+            header('Location: ' . BASE_URL . (isAdmin() ? '/ui/' : '/pages/portal.php'));
             exit();
         } else {
             http_response_code(502);

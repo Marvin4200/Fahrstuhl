@@ -1,18 +1,43 @@
 <?php
 $page_title = 'Premium';
 require_once __DIR__ . '/../includes/config.php';
-requireLogin();
+require_once __DIR__ . '/../includes/pricing.php';
 
-$user = getUser();
-$userId = $user['id'];
+// NO requireLogin() here on purpose.
+//
+// The bot's upgrade embed links straight to this page. Gating it behind Discord
+// OAuth meant a curious user hit a login wall BEFORE ever seeing a price — the
+// single worst place in the funnel to ask for a commitment. The page now renders
+// for everyone; only the "your current plan" badge needs a session.
+$isLoggedIn = isLoggedIn();
+$user       = $isLoggedIn ? getUser() : null;
+$userId     = $user['id'] ?? null;
 
-$premRes = getAPI('/premium/user/' . $userId, 5);
-$isPremium = $premRes['data']['isPremium'] ?? false;
-$isPro     = $premRes['data']['isPro'] ?? false;
-$premUser  = $premRes['data']['user'] ?? null;
-$expiresAt = $premUser ? strtotime($premUser['expires_at']) : 0;
-$daysLeft  = $isPremium && $expiresAt > time() ? ceil(($expiresAt - time()) / 86400) : 0;
-$userTier  = $premUser['tier'] ?? 'basic';
+$isPremium = false;
+$isPro     = false;
+$daysLeft  = 0;
+
+if ($userId) {
+    $premRes   = getAPI('/premium/user/' . urlencode($userId), 5);
+    $isPremium = $premRes['data']['isPremium'] ?? false;
+    $isPro     = $premRes['data']['isPro'] ?? false;
+    $premUser  = $premRes['data']['user'] ?? null;
+    $expiresAt = $premUser ? strtotime($premUser['expires_at']) : 0;
+    $daysLeft  = $isPremium && $expiresAt > time() ? (int)ceil(($expiresAt - time()) / 86400) : 0;
+}
+
+$freeTier  = pricingTier('free');
+$basicTier = pricingTier('basic');
+$proTier   = pricingTier('pro');
+$supportUrl = $GLOBALS['PRICING_SUPPORT_INVITE'];
+$hasCheckout = (bool)($GLOBALS['PRICING_CHECKOUT']['basicMonthly'] ?? null);
+$loginUrl   = BASE_URL . '/index.php';
+
+/** Buy button: real checkout when configured, login first when logged out. */
+function premiumBuyUrl($tierKey, $interval, $isLoggedIn, $userId, $loginUrl) {
+    if (!$isLoggedIn) return $loginUrl;
+    return pricingCheckoutUrl($tierKey, $interval, $userId);
+}
 ?>
 <?php require_once __DIR__ . '/../includes/header.php'; ?>
 <?php require_once __DIR__ . '/../includes/sidebar.php'; ?>
@@ -33,6 +58,9 @@ $userTier  = $premUser['tier'] ?? 'basic';
 .plan-card .plan-name { font-size: 1.15rem; font-weight: 700; }
 .plan-card .plan-price { font-size: 2.2rem; font-weight: 800; color: var(--primary); }
 .plan-card .plan-price span { font-size: .9rem; color: var(--text-secondary); font-weight: 400; }
+.plan-card .plan-lifetime { font-size: .82rem; color: var(--text-secondary); margin-top: .2rem; }
+.plan-card .plan-lifetime strong { color: var(--text-primary); }
+.btn-buy + .btn-buy { margin-top: .5rem; }
 .plan-card .badge-featured { background: #ffd700; color: #000; font-size: .7rem; font-weight: 700; padding: .2rem .6rem; border-radius: 999px; margin-left: .5rem; text-transform: uppercase; }
 .feature-list { list-style: none; display: flex; flex-direction: column; gap: .55rem; }
 .feature-list li { display: flex; align-items: center; gap: .6rem; font-size: .9rem; color: var(--text-secondary); }
@@ -65,11 +93,13 @@ $userTier  = $premUser['tier'] ?? 'basic';
     <h1>Fahrstuhl Premium</h1>
     <p>Mehr Power, mehr Trolls, mehr Spaß</p>
     <?php if ($isPro): ?>
-        <div class="status-badge status-active">👑 Pro aktiv — noch <?= $daysLeft ?> Tage</div>
+        <div class="status-badge status-active">👑 Pro aktiv — noch <?= (int)$daysLeft ?> Tage</div>
     <?php elseif ($isPremium): ?>
-        <div class="status-badge status-active">✅ Premium aktiv — noch <?= $daysLeft ?> Tage</div>
-    <?php else: ?>
+        <div class="status-badge status-active">✅ Premium aktiv — noch <?= (int)$daysLeft ?> Tage</div>
+    <?php elseif ($isLoggedIn): ?>
         <div class="status-badge status-inactive">🔒 Kein aktives Premium</div>
+    <?php else: ?>
+        <div class="status-badge status-inactive">Melde dich mit Discord an, um zu kaufen</div>
     <?php endif; ?>
 </div>
 
@@ -82,66 +112,90 @@ $userTier  = $premUser['tier'] ?? 'basic';
         </div>
         <ul class="feature-list">
             <li class="included"><span class="icon">✅</span> Alle Basis-Troll-Commands</li>
-            <li class="included"><span class="icon">✅</span> Ghost, Mute, Mirror, Deafen laufen 1 Minute</li>
+            <li class="included"><span class="icon">✅</span> Ghost, Mute, Mirror, Deafen laufen <?= esc(pricingDuration($freeTier['trollDurationMs'])) ?></li>
+            <li class="included"><span class="icon">✅</span> <?= esc(pricingDuration($freeTier['cooldownMs'])) ?> Cooldown</li>
+            <li class="included"><span class="icon">✅</span> Shield alle <?= esc(pricingDuration($freeTier['shieldClaimCooldownMs'])) ?>, schützt <?= esc(pricingDuration($freeTier['shieldDurationMs'])) ?></li>
             <li class="included"><span class="icon">✅</span> Shield-System</li>
             <li class="included"><span class="icon">✅</span> Daily Claim</li>
             <li class="included"><span class="icon">✅</span> Vote Rewards (top.gg)</li>
-            <li><span class="icon">❌</span> /notifysettings</li>
-            <li><span class="icon">❌</span> Reduzierte Cooldowns</li>
-            <li><span class="icon">❌</span> Prioritäts-Support</li>
+            <li><span class="icon">❌</span> Keine Bonus-Shields</li>
+            <li><span class="icon">❌</span> Kein XP-Boost</li>
+            <li><span class="icon">❌</span> /claim nur mit Support-Server-Mitgliedschaft</li>
         </ul>
         <?php if (!$isPremium): ?>
             <span class="btn-buy btn-outline" style="cursor:default; opacity:.5;">Aktueller Plan</span>
         <?php else: ?>
-            <a href="https://discord.gg/zfzDHKcWDx" target="_blank" class="btn-buy btn-outline">💬 Support</a>
+            <a href="<?= esc($supportUrl) ?>" target="_blank" rel="noopener" class="btn-buy btn-outline">💬 Support</a>
         <?php endif; ?>
     </div>
 
     <div class="plan-card featured">
         <div>
             <div class="plan-name">💎 Premium <span class="badge-featured">Popular</span></div>
-            <div class="plan-price">4,99€ <span>/ Monat</span></div>
+            <div class="plan-price"><?= esc(pricingFormat($basicTier['priceMonthly'])) ?> <span>/ Monat</span></div>
+            <div class="plan-lifetime">oder <strong><?= esc(pricingFormat($basicTier['priceLifetime'])) ?></strong> einmalig — läuft nie ab</div>
         </div>
         <ul class="feature-list">
             <li class="included"><span class="icon">✅</span> Alles aus Free</li>
-            <li class="included"><span class="icon">✅</span> Ghost, Mute, Mirror, Deafen laufen 5 Minuten</li>
+            <li class="included"><span class="icon">✅</span> Ghost, Mute, Mirror, Deafen laufen <?= esc(pricingDuration($basicTier['trollDurationMs'])) ?></li>
             <li class="included"><span class="icon">✅</span> /notifysettings (DM-Alerts)</li>
-            <li class="included"><span class="icon">✅</span> 50% reduzierte Cooldowns</li>
+            <li class="included"><span class="icon">✅</span> Nur <?= esc(pricingDuration($basicTier['cooldownMs'])) ?> Cooldown (<?= (int)pricingCooldownSaving('basic') ?>% kürzer)</li>
+            <li class="included"><span class="icon">🛡️</span> Shield alle <?= esc(pricingDuration($basicTier['shieldClaimCooldownMs'])) ?> statt <?= esc(pricingDuration($freeTier['shieldClaimCooldownMs'])) ?></li>
+            <li class="included"><span class="icon">🛡️</span> Ein Shield schützt <?= esc(pricingDuration($basicTier['shieldDurationMs'])) ?> statt <?= esc(pricingDuration($freeTier['shieldDurationMs'])) ?></li>
+            <li class="included"><span class="icon">🎁</span> +<?= (int)$basicTier['monthlyBonusShields'] ?> Bonus-Shields jeden Monat</li>
+            <li class="included"><span class="icon">📈</span> <?= esc(rtrim(rtrim(number_format($basicTier['xpMultiplier'], 1, ',', ''), '0'), ',')) ?>× XP im Leveling</li>
+            <li class="included"><span class="icon">✅</span> /claim ohne Pflicht-Mitgliedschaft</li>
+            <li class="included"><span class="icon">🎨</span> Eigene Farbe für deine Troll-Embeds</li>
             <li class="included"><span class="icon">✅</span> Prioritäts-Support</li>
             <li class="included"><span class="icon">✅</span> 💎 Premium-Badge im Bot</li>
-            <li class="included"><span class="icon">✅</span> Längere Chaos-Phasen ohne Toggle</li>
-            <li><span class="icon">❌</span> /settrollmessage</li>
-            <li><span class="icon">❌</span> Monatliche Bonus-Shields</li>
+            <li><span class="icon">❌</span> Eigene Troll-Nachricht</li>
+            <li><span class="icon">❌</span> Multi-Target Elevator</li>
         </ul>
         <?php if ($isPro): ?>
-            <a href="https://discord.gg/zfzDHKcWDx" target="_blank" class="btn-buy btn-gold">💬 Support</a>
+            <a href="<?= esc($supportUrl) ?>" target="_blank" rel="noopener" class="btn-buy btn-outline">💬 Support</a>
         <?php elseif ($isPremium): ?>
-            <span class="btn-buy btn-gold" style="cursor:default;">✅ Aktiv (<?= $daysLeft ?>d)</span>
+            <span class="btn-buy btn-gold" style="cursor:default;">✅ Aktiv (noch <?= (int)$daysLeft ?> Tage)</span>
+            <a href="<?= esc(premiumBuyUrl('basic', 'monthly', $isLoggedIn, $userId, $loginUrl)) ?>" class="btn-buy btn-outline">🔄 Verlängern</a>
         <?php else: ?>
-            <a href="https://discord.gg/zfzDHKcWDx" target="_blank" class="btn-buy btn-gold">💎 Jetzt kaufen</a>
+            <a href="<?= esc(premiumBuyUrl('basic', 'monthly', $isLoggedIn, $userId, $loginUrl)) ?>" class="btn-buy btn-gold">
+                <?= $isLoggedIn ? '💎 Monatlich holen' : '💎 Mit Discord anmelden & kaufen' ?>
+            </a>
+            <?php if ($isLoggedIn): ?>
+                <a href="<?= esc(premiumBuyUrl('basic', 'lifetime', $isLoggedIn, $userId, $loginUrl)) ?>" class="btn-buy btn-outline">♾️ Lifetime <?= esc(pricingFormat($basicTier['priceLifetime'])) ?></a>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 
     <div class="plan-card">
         <div>
             <div class="plan-name">👑 Pro</div>
-            <div class="plan-price">9,99€ <span>/ Monat</span></div>
+            <div class="plan-price"><?= esc(pricingFormat($proTier['priceMonthly'])) ?> <span>/ Monat</span></div>
+            <div class="plan-lifetime">oder <strong><?= esc(pricingFormat($proTier['priceLifetime'])) ?></strong> einmalig — läuft nie ab</div>
         </div>
         <ul class="feature-list">
             <li class="included"><span class="icon">✅</span> Alles aus Premium</li>
-            <li class="included"><span class="icon">✅</span> Ghost, Mute, Mirror, Deafen laufen 10 Minuten</li>
+            <li class="included"><span class="icon">✅</span> Ghost, Mute, Mirror, Deafen laufen <?= esc(pricingDuration($proTier['trollDurationMs'])) ?></li>
+            <li class="included"><span class="icon">✅</span> Nur <?= esc(pricingDuration($proTier['cooldownMs'])) ?> Cooldown (<?= (int)pricingCooldownSaving('pro') ?>% kürzer)</li>
+            <li class="included"><span class="icon">🛡️</span> Shield alle <?= esc(pricingDuration($proTier['shieldClaimCooldownMs'])) ?> — schützt <?= esc(pricingDuration($proTier['shieldDurationMs'])) ?></li>
+            <li class="included"><span class="icon">🎁</span> +<?= (int)$proTier['monthlyBonusShields'] ?> Bonus-Shields jeden Monat</li>
+            <li class="included"><span class="icon">📈</span> <?= esc(rtrim(rtrim(number_format($proTier['xpMultiplier'], 1, ',', ''), '0'), ',')) ?>× XP im Leveling</li>
             <li class="included"><span class="icon">✅</span> 👑 Pro-Badge im Bot</li>
             <li class="included"><span class="icon">✅</span> /settrollmessage (Custom Text)</li>
             <li class="included"><span class="icon">✅</span> Custom Nachricht auf allen Trolls</li>
-            <li class="included"><span class="icon">✅</span> Multi-Target Elevator für bis zu 3 User</li>
-            <li class="included"><span class="icon">✅</span> +10 Bonus-Shields pro Monat</li>
+            <li class="included"><span class="icon">✅</span> Multi-Target Elevator für bis zu <?= (int)$proTier['maxElevatorTargets'] ?> User</li>
             <li class="included"><span class="icon">✅</span> Multi-Server Admin-Zugang</li>
             <li class="included"><span class="icon">✅</span> Direkter Admin-Kontakt</li>
         </ul>
         <?php if ($isPro): ?>
-            <span class="btn-buy btn-outline" style="cursor:default; border-color:#ffd700; color:#ffd700;">👑 Aktiv (<?= $daysLeft ?>d)</span>
+            <span class="btn-buy btn-gold" style="cursor:default;">👑 Aktiv (noch <?= (int)$daysLeft ?> Tage)</span>
+            <a href="<?= esc(premiumBuyUrl('pro', 'monthly', $isLoggedIn, $userId, $loginUrl)) ?>" class="btn-buy btn-outline">🔄 Verlängern</a>
         <?php else: ?>
-            <a href="https://discord.gg/zfzDHKcWDx" target="_blank" class="btn-buy btn-outline">👑 Anfragen</a>
+            <a href="<?= esc(premiumBuyUrl('pro', 'monthly', $isLoggedIn, $userId, $loginUrl)) ?>" class="btn-buy btn-gold">
+                <?= $isLoggedIn ? '👑 Monatlich holen' : '👑 Mit Discord anmelden & kaufen' ?>
+            </a>
+            <?php if ($isLoggedIn): ?>
+                <a href="<?= esc(premiumBuyUrl('pro', 'lifetime', $isLoggedIn, $userId, $loginUrl)) ?>" class="btn-buy btn-outline">♾️ Lifetime <?= esc(pricingFormat($proTier['priceLifetime'])) ?></a>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 </div>
@@ -160,18 +214,26 @@ $userTier  = $premUser['tier'] ?? 'basic';
                 </tr>
             </thead>
             <tbody>
+                <?php
+                $xpLabel = fn($t) => rtrim(rtrim(number_format($t['xpMultiplier'], 1, ',', ''), '0'), ',') . '×';
+                $yn = fn($v) => $v ? '<td class="check">✅</td>' : '<td class="cross">❌</td>';
+                ?>
                 <tr class="highlight-row"><td>Troll-Commands (/elevator, /ghost, etc.)</td><td class="check">✅</td><td class="check">✅</td><td class="check">✅</td></tr>
-                <tr><td>Ghost / Mute / Mirror / Deafen Dauer</td><td>1 Minute</td><td>5 Minuten</td><td>10 Minuten</td></tr>
+                <tr><td>Ghost / Mute / Mirror / Deafen Dauer</td><td><?= esc(pricingDuration($freeTier['trollDurationMs'])) ?></td><td><?= esc(pricingDuration($basicTier['trollDurationMs'])) ?></td><td><?= esc(pricingDuration($proTier['trollDurationMs'])) ?></td></tr>
+                <tr><td>Command-Cooldown</td><td><?= esc(pricingDuration($freeTier['cooldownMs'])) ?></td><td><?= esc(pricingDuration($basicTier['cooldownMs'])) ?></td><td><?= esc(pricingDuration($proTier['cooldownMs'])) ?></td></tr>
+                <tr class="highlight-row"><td>🛡️ Neues Shield alle</td><td><?= esc(pricingDuration($freeTier['shieldClaimCooldownMs'])) ?></td><td><?= esc(pricingDuration($basicTier['shieldClaimCooldownMs'])) ?></td><td><?= esc(pricingDuration($proTier['shieldClaimCooldownMs'])) ?></td></tr>
+                <tr class="highlight-row"><td>🛡️ Ein Shield schützt</td><td><?= esc(pricingDuration($freeTier['shieldDurationMs'])) ?></td><td><?= esc(pricingDuration($basicTier['shieldDurationMs'])) ?></td><td><?= esc(pricingDuration($proTier['shieldDurationMs'])) ?></td></tr>
+                <tr><td>🎁 Bonus-Shields pro Monat</td><td>—</td><td>+<?= (int)$basicTier['monthlyBonusShields'] ?></td><td>+<?= (int)$proTier['monthlyBonusShields'] ?></td></tr>
+                <tr><td>📈 XP-Boost im Leveling</td><td><?= esc($xpLabel($freeTier)) ?></td><td><?= esc($xpLabel($basicTier)) ?></td><td><?= esc($xpLabel($proTier)) ?></td></tr>
+                <tr><td>/claim ohne Pflicht-Mitgliedschaft im Support-Server</td><?= $yn(!$freeTier['claimRequiresDevServer']) ?><?= $yn(!$basicTier['claimRequiresDevServer']) ?><?= $yn(!$proTier['claimRequiresDevServer']) ?></tr>
                 <tr><td>Shield-System & Daily Claim</td><td class="check">✅</td><td class="check">✅</td><td class="check">✅</td></tr>
                 <tr><td>top.gg Vote Rewards</td><td class="check">✅</td><td class="check">✅</td><td class="check">✅</td></tr>
-                <tr class="highlight-row"><td>/notifysettings (DM wenn du getrollt wirst)</td><td class="cross">❌</td><td class="check">✅</td><td class="check">✅</td></tr>
-                <tr><td>50% reduzierte Command-Cooldowns</td><td class="cross">❌</td><td class="check">✅</td><td class="check">✅</td></tr>
+                <tr class="highlight-row"><td>/notifysettings (DM wenn du getrollt wirst)</td><?= $yn($freeTier['notifySettings']) ?><?= $yn($basicTier['notifySettings']) ?><?= $yn($proTier['notifySettings']) ?></tr>
+                <tr><td>🎨 Eigene Farbe für Troll-Embeds (/trollcolor)</td><?= $yn($freeTier['customEmbedColor']) ?><?= $yn($basicTier['customEmbedColor']) ?><?= $yn($proTier['customEmbedColor']) ?></tr>
                 <tr><td>Prioritäts-Support im Discord</td><td class="cross">❌</td><td class="check">✅</td><td class="check">✅</td></tr>
                 <tr><td>Premium-Badge (💎 / 👑) in /status</td><td class="cross">❌</td><td class="check">✅</td><td class="check">✅</td></tr>
-                <tr><td>Elevator Multi-Target (bis zu 3 User)</td><td class="cross">❌</td><td class="cross">❌</td><td class="check">✅</td></tr>
-                <tr class="highlight-row"><td>/settrollmessage (Custom Troll-Nachricht)</td><td class="cross">❌</td><td class="cross">❌</td><td class="check">✅</td></tr>
-                <tr><td>Custom Nachricht auf ALLEN Troll-Commands</td><td class="cross">❌</td><td class="cross">❌</td><td class="check">✅</td></tr>
-                <tr><td>Monatliche Bonus-Shields (+10)</td><td class="cross">❌</td><td class="cross">❌</td><td class="check">✅</td></tr>
+                <tr><td>Elevator Multi-Target</td><td><?= (int)$freeTier['maxElevatorTargets'] ?> User</td><td><?= (int)$basicTier['maxElevatorTargets'] ?> User</td><td><?= (int)$proTier['maxElevatorTargets'] ?> User</td></tr>
+                <tr class="highlight-row"><td>/settrollmessage (Custom Troll-Nachricht)</td><?= $yn($freeTier['customTrollMessage']) ?><?= $yn($basicTier['customTrollMessage']) ?><?= $yn($proTier['customTrollMessage']) ?></tr>
                 <tr><td>Multi-Server Admin-Zugang</td><td class="cross">❌</td><td class="cross">❌</td><td class="check">✅</td></tr>
             </tbody>
         </table>
@@ -181,22 +243,47 @@ $userTier  = $premUser['tier'] ?? 'basic';
 <!-- FAQ -->
 <div class="faq-section">
     <h2>❓ Häufige Fragen</h2>
+    <?php if ($hasCheckout): ?>
     <div class="faq-item">
         <div class="q">Wie kaufe ich Premium?</div>
-        <div class="a">Tritt unserem Support-Server bei und schreib uns. Wir aktivieren Premium manuell nach Bezahlung.</div>
+        <div class="a">Oben auf den Plan klicken, mit Discord anmelden und bezahlen. Die Freischaltung passiert automatisch, direkt nach der Zahlung — du bekommst eine DM vom Bot.</div>
     </div>
     <div class="faq-item">
         <div class="q">Welche Zahlungsmethoden gibt es?</div>
-        <div class="a">PayPal, Paysafecard und weitere — frag einfach im Support-Server nach.</div>
+        <div class="a">Kreditkarte, PayPal, Apple&nbsp;Pay, Google&nbsp;Pay und Klarna — je nachdem, was in deinem Land verfügbar ist. Die Zahlung läuft über Stripe, wir sehen deine Zahlungsdaten nie.</div>
+    </div>
+    <?php else: ?>
+    <div class="faq-item">
+        <div class="q">Wie kaufe ich Premium?</div>
+        <div class="a">Der Online-Checkout ist gerade nicht aktiv. Tritt so lange unserem Support-Server bei und schreib uns — wir schalten dich manuell frei.</div>
+    </div>
+    <?php endif; ?>
+    <div class="faq-item">
+        <div class="q">Monatlich oder Lifetime — was ist der Unterschied?</div>
+        <div class="a">Monatlich läuft nach 30 Tagen aus und wird nicht automatisch abgebucht — es ist kein Abo, du entscheidest jedes Mal neu. Lifetime zahlst du einmal und behältst den Plan dauerhaft.</div>
     </div>
     <div class="faq-item">
-        <div class="q">Kann ich Premium kündigen?</div>
-        <div class="a">Ja, Premium läuft nach dem gebuchten Zeitraum automatisch aus. Es gibt kein Abo.</div>
+        <div class="q">Was passiert, wenn ich verlängere, bevor mein Plan abläuft?</div>
+        <div class="a">Die neuen Tage werden auf deine Restlaufzeit <strong>draufgerechnet</strong>. Du verlierst nichts, wenn du früh verlängerst.</div>
     </div>
     <div class="faq-item">
-        <div class="q">Was passiert wenn Premium abläuft?</div>
+        <div class="q">Kann ich kündigen?</div>
+        <div class="a">Es gibt nichts zu kündigen — es wird nie automatisch abgebucht. Der Plan läuft einfach aus, wenn du ihn nicht verlängerst.</div>
+    </div>
+    <div class="faq-item">
+        <div class="q">Was passiert, wenn Premium abläuft?</div>
         <div class="a">Dein Account wechselt zurück zum Free-Plan. Alle gespeicherten Daten (Shields etc.) bleiben erhalten.</div>
     </div>
+    <div class="faq-item">
+        <div class="q">Gilt Premium für mich oder für meinen Server?</div>
+        <div class="a">Die Pläne hier gelten für <strong>dich persönlich</strong> — auf jedem Server, auf dem der Bot ist. Server-Pläne, die für alle Mitglieder eines Servers gelten, vergeben wir separat; frag dafür im Support-Server nach.</div>
+    </div>
 </div>
+
+<?php if (!$isLoggedIn): ?>
+<div class="faq-section">
+    <a href="<?= esc($loginUrl) ?>" class="btn-buy btn-gold" style="max-width:340px;margin:0 auto;">Mit Discord anmelden</a>
+</div>
+<?php endif; ?>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

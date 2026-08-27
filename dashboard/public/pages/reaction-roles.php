@@ -406,6 +406,15 @@ $panelMessageId = $settings['messageId'] ?? ($settings['lastPanelMessageId'] ?? 
 </div>
 
 <script>
+function escapeHtml(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 function updatePreview() {
     const title = document.getElementById('rrTitle').value || 'Reaction Roles';
     const desc = document.getElementById('rrDesc').value || 'Select a role below.';
@@ -507,7 +516,7 @@ document.addEventListener('DOMContentLoaded', updatePreview);
                 <div class="ulc-icon">🚫</div>
                 <div class="ulc-body">
                     <div class="ulc-title">Du hast dein Limit erreicht</div>
-                    <div class="ulc-hint">💎 ${featureName}: ${current ?? '?'}/${limit ?? '?'} genutzt. Upgrade auf Premium für mehr Kapazität.</div>
+                    <div class="ulc-hint">💎 ${escapeHtml(featureName)}: ${escapeHtml(current ?? '?')}/${escapeHtml(limit ?? '?')} genutzt. Upgrade auf Premium für mehr Kapazität.</div>
                 </div>
                 <a href="${plansUrl}" class="ulc-cta">Jetzt upgraden</a>
             </div>`;
@@ -554,11 +563,15 @@ document.addEventListener('DOMContentLoaded', updatePreview);
 
     function setActionResult(message, type = 'info', data = null) {
         if (!actionResult) return;
+        // message comes from the API response and the channel name comes
+        // from a <select> option's textContent (already HTML-decoded by the
+        // DOM) — both must be re-escaped before going back into innerHTML.
+        const channelLabel = sendForm?.querySelector('[name="channelId"] option:checked')?.textContent?.replace(/^#/, '') || data?.channelId || '';
         const link = data?.messageId && data?.channelId
-            ? `<br>Message gespeichert in <strong>#${sendForm?.querySelector('[name="channelId"] option:checked')?.textContent?.replace(/^#/, '') || data.channelId}</strong>.`
+            ? `<br>Message gespeichert in <strong>#${escapeHtml(channelLabel)}</strong>.`
             : '';
         actionResult.className = `rr-action-result ${type}`;
-        actionResult.innerHTML = `${message}${link}`;
+        actionResult.innerHTML = `${escapeHtml(message)}${link}`;
     }
 
     configForm.addEventListener('input', syncSaveBar);

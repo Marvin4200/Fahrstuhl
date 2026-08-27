@@ -1,6 +1,7 @@
 <?php
 $page_title = 'Monetization';
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/pricing.php';
 requireAdmin();
 
 $message = '';
@@ -274,19 +275,19 @@ usort($sourceRows, fn($a, $b) => $b['amount'] <=> $a['amount']);
 <div class="plan-lab">
     <div class="plan-box">
         <h3>Free → Premium</h3>
-        <div class="plan-price">4,99€ <span>/ month</span></div>
+        <div class="plan-price"><?= esc(pricingFormat(pricingTier('basic')['priceMonthly'])) ?> <span>/ month</span></div>
         <ul class="mini-list">
-            <li><span>✅</span><span>5 minute troll effects as first obvious upgrade</span></li>
+            <li><span>✅</span><span><?= esc(pricingDuration(pricingTier('basic')['trollDurationMs'])) ?> troll effects as first obvious upgrade</span></li>
             <li><span>✅</span><span>DM alerts via /notifysettings</span></li>
             <li><span>✅</span><span>Premium badge and priority support</span></li>
         </ul>
     </div>
     <div class="plan-box featured">
         <h3>Premium → Pro</h3>
-        <div class="plan-price">9,99€ <span>/ month</span></div>
+        <div class="plan-price"><?= esc(pricingFormat(pricingTier('pro')['priceMonthly'])) ?> <span>/ month</span></div>
         <ul class="mini-list">
             <li><span>👑</span><span>Custom troll messages as Pro anchor</span></li>
-            <li><span>👑</span><span>10 minute effects and multi-target elevator</span></li>
+            <li><span>👑</span><span><?= esc(pricingDuration(pricingTier('pro')['trollDurationMs'])) ?> effects and multi-target elevator</span></li>
             <li><span>👑</span><span>+10 monthly shields for retention</span></li>
         </ul>
     </div>

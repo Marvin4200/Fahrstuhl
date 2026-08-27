@@ -96,30 +96,57 @@ function randomXp(min, max) {
     return low + Math.floor(Math.random() * (high - low + 1));
 }
 
-function resolveMultiplier(settings = {}, { roleIds = [], channelId = null } = {}) {
+/**
+ * Clamp a configured multiplier into [0, 5].
+ *
+ * Deliberately NOT `Number(x) || 1`: that turns a configured 0 into 1, so
+ * setting a channel or role multiplier to 0 to switch XP off did nothing —
+ * even though the dashboard offers min="0" and addMessageXp has an explicit
+ * "multiplier-zero" skip path for exactly that case.
+ */
+function clampMultiplier(raw) {
+    const value = Number(raw);
+    if (!Number.isFinite(value)) return 1;
+    return Math.max(0, Math.min(5, value));
+}
+
+function resolveMultiplier(settings = {}, { roleIds = [], channelId = null, premiumMultiplier = 1 } = {}) {
     const roleSet = new Set(Array.isArray(roleIds) ? roleIds : []);
     let roleMultiplier = 1;
     if (Array.isArray(settings.roleMultipliers)) {
         for (const entry of settings.roleMultipliers) {
             if (!entry?.roleId || !roleSet.has(entry.roleId)) continue;
-            roleMultiplier = Math.max(roleMultiplier, Math.max(0, Math.min(5, Number(entry.multiplier) || 1)));
+            roleMultiplier = Math.max(roleMultiplier, clampMultiplier(entry.multiplier));
         }
     }
 
     let channelMultiplier = 1;
     if (channelId && Array.isArray(settings.channelMultipliers)) {
         const entry = settings.channelMultipliers.find(item => item?.channelId === channelId);
-        if (entry) channelMultiplier = Math.max(0, Math.min(5, Number(entry.multiplier) || 1));
+        if (entry) channelMultiplier = clampMultiplier(entry.multiplier);
     }
+
+    // Premium XP boost. Kept as a separate factor from the guild's own role and
+    // channel multipliers so a server owner's configuration and a user's
+    // purchase stack instead of overriding each other.
+    const premium = Math.max(1, Math.min(5, Number(premiumMultiplier) || 1));
+
+    // The 10x ceiling applies to the GUILD's own configuration. Premium is then
+    // applied on top of that capped value: folding it in before the cap meant a
+    // server already at 10x silently swallowed the boost, so a user could pay
+    // for "2x XP", see it advertised everywhere, and receive nothing.
+    const guildMultiplier = Math.max(0, Math.min(10, roleMultiplier * channelMultiplier));
 
     return {
         roleMultiplier,
         channelMultiplier,
-        totalMultiplier: Math.max(0, Math.min(10, roleMultiplier * channelMultiplier)),
+        premiumMultiplier: premium,
+        guildMultiplier,
+        totalMultiplier: guildMultiplier * premium,
     };
 }
 
-async function addMessageXp({ guildId, userId, config = {}, channelId = null, roleIds = [], content = '' }) {
+async function addMessageXp({ guildId, userId, config = {}, channelId = null, roleIds = [], content = '', premiumMultiplier = 1 }) {
     const settings = getLevelSettings(config);
 
     // Anti-farm: min message length
@@ -149,7 +176,7 @@ async function addMessageXp({ guildId, userId, config = {}, channelId = null, ro
     }
     messageCooldowns.set(key, now);
 
-    const multipliers = resolveMultiplier(settings, { roleIds, channelId });
+    const multipliers = resolveMultiplier(settings, { roleIds, channelId, premiumMultiplier });
     if (multipliers.totalMultiplier <= 0) {
         return { skipped: true, reason: "multiplier-zero", multiplier: 0 };
     }
@@ -187,6 +214,7 @@ async function addMessageXp({ guildId, userId, config = {}, channelId = null, ro
         xp: newXp,
         roleMultiplier: multipliers.roleMultiplier,
         channelMultiplier: multipliers.channelMultiplier,
+        premiumMultiplier: multipliers.premiumMultiplier,
         multiplier: multipliers.totalMultiplier,
         oldLevel,
         level: progress.level,
@@ -197,7 +225,7 @@ async function addMessageXp({ guildId, userId, config = {}, channelId = null, ro
     };
 }
 
-async function addVoiceXp({ guildId, userId, config = {} }) {
+async function addVoiceXp({ guildId, userId, config = {}, premiumMultiplier = 1 }) {
     const settings = getLevelSettings(config);
     if (!settings.voiceXpEnabled) return { skipped: true, reason: 'voice-xp-disabled' };
 
@@ -207,7 +235,8 @@ async function addVoiceXp({ guildId, userId, config = {} }) {
     if (now - last < 55_000) return { skipped: true, reason: 'voice-cooldown' };
     voiceXpCooldowns.set(key, now);
 
-    const amount = Math.max(1, settings.voiceXpPerMinute);
+    const premium = Math.max(1, Math.min(5, Number(premiumMultiplier) || 1));
+    const amount = Math.max(1, Math.round(settings.voiceXpPerMinute * premium));
     const pool = getPool();
     const [rows] = await pool.query(
         'SELECT xp, level, voice_xp FROM guild_user_levels WHERE guild_id = ? AND user_id = ?',
@@ -343,6 +372,28 @@ async function resetGuildXp(guildId) {
     return Number(result.affectedRows || 0);
 }
 
+// messageCooldowns/lastMessageMap/voiceXpCooldowns only ever get entries
+// removed via resetUserXp/resetGuildXp (an explicit admin reset) — for every
+// other user who ever sends a message or earns voice XP, the entry lives for
+// the process lifetime. Same unbounded-growth class of bug already fixed for
+// rateLimiter.js/guildAwareCooldown.js/AutoMod's tracking maps; this one was
+// missed. Call this periodically (index.js wires it up alongside the others).
+const STALE_MS = 2 * 60 * 60 * 1000; // 2h — generous vs. the max configurable cooldown (1h)
+function cleanupStaleEntries() {
+    const now = Date.now();
+    let removed = 0;
+    for (const [key, ts] of messageCooldowns.entries()) {
+        if (now - ts > STALE_MS) { messageCooldowns.delete(key); removed++; }
+    }
+    for (const [key, entry] of lastMessageMap.entries()) {
+        if (now - (entry?.ts || 0) > STALE_MS) { lastMessageMap.delete(key); removed++; }
+    }
+    for (const [key, ts] of voiceXpCooldowns.entries()) {
+        if (now - ts > STALE_MS) { voiceXpCooldowns.delete(key); removed++; }
+    }
+    return removed;
+}
+
 module.exports = {
     addMessageXp,
     addVoiceXp,
@@ -355,4 +406,5 @@ module.exports = {
     resolveMultiplier,
     levelFromXp,
     xpForLevel,
+    cleanupStaleEntries,
 };

@@ -5,6 +5,16 @@ requireLogin();
 
 $guildId = trim($_GET['id'] ?? '');
 if ($guildId === '') { header('Location: ' . BASE_URL . '/pages/guilds.php'); exit(); }
+
+// The Node API independently re-checks access on /guilds/:guildId and its
+// sub-routes, so this isn't currently exploitable — but add the same
+// PHP-side gate as every other guild-scoped page for defense-in-depth, so a
+// future API route that forgets the check doesn't become a live IDOR here.
+if (!isAdmin() && !isServerAdmin($guildId)) {
+    header('Location: ' . BASE_URL . '/pages/portal.php');
+    exit();
+}
+
 $_SESSION['selected_guild_id'] = $guildId;
 
 $raw = getAPI('/guilds/' . urlencode($guildId));

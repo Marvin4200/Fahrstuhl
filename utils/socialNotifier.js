@@ -289,10 +289,26 @@ class SocialNotifier {
         if (payload.game) embed.addFields({ name: "Kategorie", value: String(payload.game).slice(0, 1024), inline: true });
         if (payload.viewerCount) embed.addFields({ name: "Zuschauer", value: String(payload.viewerCount), inline: true });
 
+        // `content` mixes in payload.title/source, which come straight from
+        // an external RSS/YouTube/Twitch feed the bot doesn't control — a
+        // feed author could name a video "@everyone free nitro" and trigger
+        // a mass ping. Blanket-enabling parse:["everyone","roles","users"]
+        // (like this used to) honors any mention pattern anywhere in the
+        // final string, feed-sourced or not. Instead, only allow exactly the
+        // mention the guild admin configured via settings.mentionText, by
+        // extracting it into an explicit allow-list — everything else is
+        // inert text even if it looks like a mention.
+        const allowedMentions = { parse: [], roles: [], users: [] };
+        if (settings.mentionText) {
+            if (/@everyone|@here/.test(settings.mentionText)) allowedMentions.parse.push("everyone");
+            for (const m of settings.mentionText.matchAll(/<@&(\d+)>/g)) allowedMentions.roles.push(m[1]);
+            for (const m of settings.mentionText.matchAll(/<@!?(\d+)>/g)) allowedMentions.users.push(m[1]);
+        }
+
         await channel.send({
             content: content || undefined,
             embeds: [embed],
-            allowedMentions: { parse: ["everyone", "roles", "users"] },
+            allowedMentions,
         });
     }
 }

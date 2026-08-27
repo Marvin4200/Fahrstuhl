@@ -17,6 +17,17 @@ $guildsRaw = getAPI('/voice/guilds', 8);
 $guilds = $guildsRaw['data']['guilds'] ?? [];
 $guildId = dashboardSelectedGuildId($guilds);
 
+// dashboardSelectedGuildId() only validates against guilds the BOT is in, not
+// guilds THIS user administers — without this any logged-in dashboard user
+// could pass an arbitrary guildId and enable/disable modules on it.
+if ($guildId && !isAdmin() && !isServerAdmin($guildId)) {
+    if ($isAjaxRequest) {
+        $sendJson(['success' => false, 'message' => 'No access to this guild'], 403);
+    }
+    header('Location: ' . BASE_URL . '/pages/portal.php');
+    exit();
+}
+
 // ============ POST: enable-core action ============
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
     $action = trim($_POST['action'] ?? '');

@@ -526,9 +526,9 @@ $totalPages = max(1, (int)($leaderboardRaw['data']['totalPages'] ?? ceil($totalM
         
         <?php if ($totalPages > 1): ?>
             <div style="display:flex; justify-content:center; gap:0.5rem; margin-top:1rem;">
-                <?php if ($page > 1): ?><a href="?guildId=<?php echo $guildId; ?>&page=<?php echo $page-1; ?>" class="btn-icon" style="padding:0.4rem 0.8rem;">« Prev</a><?php endif; ?>
+                <?php if ($page > 1): ?><a href="?guildId=<?php echo esc(urlencode($guildId)); ?>&page=<?php echo $page-1; ?>" class="btn-icon" style="padding:0.4rem 0.8rem;">« Prev</a><?php endif; ?>
                 <span style="padding:0.4rem 1rem; background:rgba(0,0,0,0.2); border-radius:8px; font-size:0.9rem;">Page <?php echo $page; ?> of <?php echo $totalPages; ?></span>
-                <?php if ($page < $totalPages): ?><a href="?guildId=<?php echo $guildId; ?>&page=<?php echo $page+1; ?>" class="btn-icon" style="padding:0.4rem 0.8rem;">Next »</a><?php endif; ?>
+                <?php if ($page < $totalPages): ?><a href="?guildId=<?php echo esc(urlencode($guildId)); ?>&page=<?php echo $page+1; ?>" class="btn-icon" style="padding:0.4rem 0.8rem;">Next »</a><?php endif; ?>
             </div>
         <?php endif; ?>
     </div>

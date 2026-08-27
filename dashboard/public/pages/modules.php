@@ -560,6 +560,15 @@ input:checked + .slider:before { transform: translateX(20px); }
 </div>
 
 <script>
+function escapeHtml(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 (function() {
   const tiles = Array.from(document.querySelectorAll('.md-tile'));
   const typeChips = Array.from(document.querySelectorAll('.md-chip[data-type]'));
@@ -598,7 +607,7 @@ input:checked + .slider:before { transform: translateX(20px); }
                 <div class="ulc-icon">🚫</div>
                 <div class="ulc-body">
                     <div class="ulc-title">Du hast dein Limit erreicht</div>
-                    <div class="ulc-hint">${hint || '💎 Upgrade auf Premium für mehr Kapazität.'}</div>
+                    <div class="ulc-hint">${escapeHtml(hint) || '💎 Upgrade auf Premium für mehr Kapazität.'}</div>
                 </div>
                 <a href="${plansUrl}" class="ulc-cta">Jetzt upgraden</a>
             </div>`;

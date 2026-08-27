@@ -668,11 +668,36 @@ async function createServerBackup(guild, botConfig = null, createdBy = null, exi
     await mark('Bereinige alte Backups');
     const maxBackups = Math.max(1, Number(runOptions?.maxBackups) || MAX_BACKUPS_PER_GUILD);
     const [all] = await pool.execute(
-        'SELECT id FROM discord_backups WHERE guild_id = ? ORDER BY created_at ASC',
+        'SELECT id, parent_backup_id FROM discord_backups WHERE guild_id = ? ORDER BY created_at ASC',
         [guild.id]
     );
     if (all.length > maxBackups) {
-        const toDelete = all.slice(0, all.length - maxBackups).map(r => r.id);
+        // getSection() resolves an incremental backup's unchanged sections by
+        // walking parent_backup_id back through the chain (see getBackupChain
+        // above). Naively deleting the N oldest rows can delete a full/base
+        // backup that a surviving incremental backup still depends on —
+        // getBackupChain() then silently stops early (`if (!row) break`) and
+        // the restore permanently loses every section that hadn't changed
+        // since that missing ancestor. Instead: keep the newest maxBackups
+        // rows, then walk each kept row's ancestor chain and protect every
+        // backup still referenced along the way, however old it is. Only
+        // truly-unreferenced backups are deleted. A chain a scheduler keeps
+        // extending incrementally forever won't shrink until a fresh full
+        // backup resets it — that's a storage tradeoff, not a data-loss bug.
+        const byId = new Map(all.map(r => [Number(r.id), r]));
+        const kept = all.slice(all.length - maxBackups);
+        const protectedIds = new Set(kept.map(r => Number(r.id)));
+        for (const row of kept) {
+            let cur = byId.get(Number(row.id));
+            let depth = 0;
+            while (cur && cur.parent_backup_id && depth < 40) {
+                const parentId = Number(cur.parent_backup_id);
+                protectedIds.add(parentId);
+                cur = byId.get(parentId);
+                depth += 1;
+            }
+        }
+        const toDelete = all.filter(r => !protectedIds.has(Number(r.id))).map(r => r.id);
         for (const oldId of toDelete) {
             await pool.execute('DELETE FROM discord_backup_sections WHERE backup_id = ?', [oldId]);
             await pool.execute('DELETE FROM discord_backups WHERE id = ?', [oldId]);

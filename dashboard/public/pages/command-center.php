@@ -13,6 +13,21 @@ function commandCenterJson($payload, $statusCode = 200) {
 $guildsRaw = getAPI('/voice/guilds', 8);
 $guilds = $guildsRaw['data']['guilds'] ?? [];
 $guildId = dashboardSelectedGuildId($guilds);
+
+// dashboardSelectedGuildId() only validates against guilds the BOT is in, not
+// guilds THIS user administers. The Node API independently re-checks access
+// on every route this page calls, so this isn't currently exploitable — but
+// add the same PHP-side gate as every other guild-scoped page for
+// defense-in-depth, so a future API route that forgets the check doesn't
+// become a live IDOR through this page.
+if ($guildId && !isAdmin() && !isServerAdmin($guildId)) {
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+        commandCenterJson(['success' => false, 'message' => 'No access to this guild'], 403);
+    }
+    header('Location: ' . BASE_URL . '/pages/portal.php');
+    exit();
+}
+
 $selectedGuild = null;
 foreach ($guilds as $guildRow) {
     if (($guildRow['id'] ?? '') === $guildId) {

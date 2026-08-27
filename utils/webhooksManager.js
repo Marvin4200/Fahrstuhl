@@ -20,16 +20,32 @@ function validateWebhookUrl(rawUrl) {
     }
 
     const host = parsed.hostname.toLowerCase();
-    const blockedHosts = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1']);
+    const blockedHosts = new Set(['localhost', '0.0.0.0']);
     if (
         blockedHosts.has(host) ||
         host.startsWith('10.') ||
         host.startsWith('192.168.') ||
-        /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+        /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+        /^127\./.test(host) ||
+        // 169.254.0.0/16 link-local — includes 169.254.169.254, the AWS/GCP/
+        // Azure cloud metadata endpoint. Without this, a registered webhook
+        // could make the bot server SSRF into its own metadata service and
+        // leak instance IAM credentials.
+        /^169\.254\./.test(host) ||
+        host === '::1' ||
+        host === '::' ||
+        // IPv6 unique-local (fc00::/7) and link-local (fe80::/10)
+        /^f[cd][0-9a-f]{0,2}:/.test(host) ||
+        /^fe[89ab][0-9a-f]:/.test(host)
     ) {
         throw new Error('Webhook URL must not point to a private or local address');
     }
 
+    // Note: this only validates the hostname at registration time. axios
+    // re-resolves DNS on every delivery, so a hostname that resolves to a
+    // public IP now but a private/metadata IP later (DNS rebinding) is not
+    // caught here — closing that fully requires resolving+pinning the IP at
+    // delivery time, which is a larger change left for a follow-up.
     return parsed.toString();
 }
 

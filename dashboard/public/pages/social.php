@@ -22,6 +22,17 @@ $sendJson = function ($payload, $statusCode = 200) {
 function social_checked($value) { return !empty($value) ? 'checked' : ''; }
 function social_selected($a, $b) { return (string)$a === (string)$b ? 'selected' : ''; }
 
+// dashboardSelectedGuildId() only validates against guilds the BOT is in, not
+// guilds THIS user administers — without this any logged-in dashboard user
+// could read/write another server's Social Alerts config.
+if ($guildId && !isAdmin() && !isServerAdmin($guildId)) {
+    if ($isAjaxRequest) {
+        $sendJson(['success' => false, 'message' => 'No access to this guild'], 403);
+    }
+    header('Location: ' . BASE_URL . '/pages/portal.php');
+    exit();
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
     $feeds = [];
     $ids = $_POST['feedId'] ?? [];

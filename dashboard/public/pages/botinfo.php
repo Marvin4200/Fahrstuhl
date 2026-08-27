@@ -1,6 +1,7 @@
 <?php
 $page_title = 'Bot Info';
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/pricing.php';
 requireLogin();
 
 $statsRaw = getAPI('/stats');
@@ -109,11 +110,11 @@ $githubUrl  = 'https://github.com/Marvin4200/Fahrstuhl';
         <div style="display:flex; flex-direction:column; gap:10px;">
             <div>
                 <div style="color:#aaa; font-size:0.8em; margin-bottom:var(--sp-1);">🔒 Privacy Policy</div>
-                <a href="<?= BASE_URL ?>/pages/privacy.php" style="color:#5865F2; font-size:0.9em;"><?php echo $_SERVER['HTTP_HOST'] ?? 'your-domain.com'; ?>/pages/privacy.php</a>
+                <a href="<?= BASE_URL ?>/pages/privacy.php" style="color:#5865F2; font-size:0.9em;"><?php echo esc($_SERVER['HTTP_HOST'] ?? 'your-domain.com'); ?>/pages/privacy.php</a>
             </div>
             <div>
                 <div style="color:#aaa; font-size:0.8em; margin-bottom:var(--sp-1);">📜 Terms of Service</div>
-                <a href="<?= BASE_URL ?>/pages/terms.php" style="color:#5865F2; font-size:0.9em;"><?php echo $_SERVER['HTTP_HOST'] ?? 'your-domain.com'; ?>/pages/terms.php</a>
+                <a href="<?= BASE_URL ?>/pages/terms.php" style="color:#5865F2; font-size:0.9em;"><?php echo esc($_SERVER['HTTP_HOST'] ?? 'your-domain.com'); ?>/pages/terms.php</a>
             </div>
             <div>
                 <div style="color:#aaa; font-size:0.8em; margin-bottom:var(--sp-1);">➕ Invite Link</div>
@@ -142,8 +143,8 @@ $githubUrl  = 'https://github.com/Marvin4200/Fahrstuhl';
             ['📞', 'deafen', '@user', 'Timed deafen bursts: 1m Free, 5m Premium, 10m Pro', '🎭 Troll'],
             ['💥', 'preset', '@user', 'Activate random combination of troll effects', '🎭 Troll'],
             ['🛑', 'presetstop', '@user', 'Stop ALL active trolls on a user immediately', '🎭 Troll'],
-            ['🛡️', 'shield', '', 'Activate 2-hour troll immunity', '🛡️ Shield'],
-            ['🎁', 'claim', '', 'Claim free shields (every 2.5h)', '🛡️ Shield'],
+            ['🛡️', 'shield', '', 'Troll-Immunität aktivieren (' . pricingDuration(pricingTier('free')['shieldDurationMs']) . ', mit Premium länger)', '🛡️ Shield'],
+            ['🎁', 'claim', '', 'Kostenlose Shields holen (alle ' . pricingDuration(pricingTier('free')['shieldClaimCooldownMs']) . ')', '🛡️ Shield'],
             ['🔍', 'checkshield', '@user?', 'Check shield status', '🛡️ Shield'],
             ['⚙️', 'settrollrole', '@role', 'Set which role can use troll commands (admin)', '⚙️ Admin'],
             ['⚙️', 'setrole', '@role', 'Set auto-move role (admin)', '⚙️ Admin'],

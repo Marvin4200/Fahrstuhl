@@ -124,6 +124,26 @@ function isLoggedIn() { return isset($_SESSION['user']); }
 function requireLogin() { if (!isLoggedIn()) { header('Location: ' . BASE_URL . '/index.php'); exit(); } }
 function getUser() { return $_SESSION['user'] ?? null; }
 function esc($s) { return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
+
+// Safely embed a PHP string as a JS string literal inside an HTML attribute
+// (e.g. an onclick attribute built as: onclick="fn(  jsAttr($username)  )" —
+// written without PHP tags here on purpose, see the note at the end of this
+// comment). esc()/htmlspecialchars alone
+// is NOT sufficient here: the browser HTML-decodes an attribute value before
+// handing it to the JS parser, so esc()'s &#039; for a single quote decodes
+// back to a real ' and breaks out of a JS string literal. json_encode with
+// the JSON_HEX_* flags escapes both JS-special and HTML-special characters
+// (', ", <, >, &) into \uXXXX sequences, which survive HTML attribute
+// decoding intact and can never break out of either context. This matters
+// because Discord usernames/nicknames/guild names are attacker-controlled.
+//
+// NOTE: never write a PHP closing tag inside a // comment in this file. PHP
+// leaves script mode at the closing tag even inside a single-line comment, so
+// everything below it would stop being parsed as code and get echoed as raw
+// text instead — which both breaks every page and leaks this file's source.
+function jsAttr($s) {
+    return json_encode((string)($s ?? ''), JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP);
+}
 function formatNum($n) { return number_format((int)$n, 0, ',', '.'); }
 function formatDate($ts) { return $ts ? date('d.m.Y H:i', strtotime($ts)) : 'N/A'; }
 
@@ -137,8 +157,10 @@ function dashboardViewMode() {
     return $_SESSION['dashboard_view_mode'] ?? 'admin';
 }
 
+// Admin-Modus entfernt � das Dashboard verh�lt sich f�r jedes Konto gleich.
+// Wiederherstellen mit:  node admin-modus-entfernen.js --zurueck
 function isAdmin() {
-    return isOwner() && dashboardViewMode() === 'admin';
+    return false;
 }
 
 function requireAdmin() {
@@ -303,12 +325,22 @@ function api($endpoint, $method = 'GET', $data = null, $timeout = 10) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
     curl_setopt($ch, CURLOPT_HTTPHEADER, dashboardHeaders(true));
-    
+
+    $method = strtoupper($method);
     if ($method === 'POST') {
         curl_setopt($ch, CURLOPT_POST, 1);
         if ($data) curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    } elseif ($method !== 'GET') {
+        // DELETE / PUT / PATCH etc. — without this, curl silently falls back
+        // to GET for anything that isn't CURLOPT_POST, so e.g. the "delete
+        // backup" call ('DELETE' method) was actually sending a GET request.
+        // The Node API registers DELETE and GET as separate Express routes
+        // on the same path, so that GET hit a completely different (read)
+        // route and never deleted anything.
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+        if ($data) curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
     }
-    
+
     $r = curl_exec($ch);
     $s = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $err = curl_error($ch);

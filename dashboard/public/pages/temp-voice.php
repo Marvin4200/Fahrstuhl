@@ -19,6 +19,17 @@ $sendJson = function ($payload, $statusCode = 200) {
     exit();
 };
 
+// dashboardSelectedGuildId() only validates against guilds the BOT is in, not
+// guilds THIS user administers — without this any logged-in dashboard user
+// could read/write another server's TempVoice config.
+if ($guildId && !isAdmin() && !isServerAdmin($guildId)) {
+    if ($isAjaxRequest) {
+        $sendJson(['success' => false, 'message' => 'No access to this guild'], 403);
+    }
+    header('Location: ' . BASE_URL . '/pages/portal.php');
+    exit();
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
     $result = api('/guilds/' . urlencode($guildId) . '/tempvoice', 'POST', [
         'enabled' => ($_POST['enabled'] ?? '0') === '1',

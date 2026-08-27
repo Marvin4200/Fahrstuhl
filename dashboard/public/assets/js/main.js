@@ -11,7 +11,17 @@ console.log('✓ Fahrstuhl Dashboard loaded');
         const toast = document.createElement('div');
         const icons = { success: '✅', error: '❌', info: 'ℹ️' };
         toast.className = `toast toast-${type}`;
-        toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span><span>${message}</span>`;
+        // Built with DOM nodes rather than innerHTML: `message` regularly
+        // comes straight from an API JSON response (e.g. submitFormAjax's
+        // json.message), which can contain attacker-controlled text (a
+        // Discord username, guild name, or an error message that echoes
+        // back submitted input). innerHTML would let that execute as HTML/JS.
+        const iconSpan = document.createElement('span');
+        iconSpan.textContent = icons[type] || 'ℹ️';
+        const msgSpan = document.createElement('span');
+        msgSpan.textContent = message;
+        toast.appendChild(iconSpan);
+        toast.appendChild(msgSpan);
         container.appendChild(toast);
         setTimeout(() => {
             toast.classList.add('toast-out');

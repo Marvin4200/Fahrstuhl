@@ -20,6 +20,18 @@ $sendJson = function ($payload, $statusCode = 200) {
     exit();
 };
 
+// dashboardSelectedGuildId() only validates against guilds the BOT is in, not
+// guilds THIS user administers — without this any logged-in dashboard user
+// could pass an arbitrary guildId and rewrite another server's welcome/
+// goodbye/verification config, or trigger its channel lockdown.
+if ($guildId && !isAdmin() && !isServerAdmin($guildId)) {
+    if ($isAjaxRequest) {
+        $sendJson(['success' => false, 'message' => 'No access to this guild'], 403);
+    }
+    header('Location: ' . BASE_URL . '/pages/portal.php');
+    exit();
+}
+
 function publishableDashboardImage($value) {
     $raw = trim((string)$value);
     if (preg_match('/^https?:\/\//i', $raw)) {

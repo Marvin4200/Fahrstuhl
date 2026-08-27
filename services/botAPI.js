@@ -1091,7 +1091,17 @@ class BotAPIServer {
     }
 
     setupMiddleware() {
-        this.app.use(express.json({ limit: '6mb' }));
+        // Stripe webhook signatures are computed over the RAW bytes, so stash them
+        // before express.json() discards the buffer. Only for that one path —
+        // keeping every 6mb request body in memory twice would be wasteful.
+        this.app.use(express.json({
+            limit: '6mb',
+            verify: (req, _res, buf) => {
+                if (req.originalUrl && req.originalUrl.startsWith('/stripe/webhook')) {
+                    req.rawBody = Buffer.from(buf);
+                }
+            },
+        }));
         
         // CORS für Dashboard
         const corsOrigin = process.env.CORS_ORIGIN || process.env.DASHBOARD_URL || 'http://localhost:3001';
@@ -1106,7 +1116,9 @@ class BotAPIServer {
 
         // Auth Middleware for dashboard/internal API access.
         this.app.use((req, res, next) => {
-            if (req.path === '/health' || req.path === '/topgg/webhook' || req.path === '/guild/team') return next();
+            // /stripe/webhook is authenticated by its Stripe signature, not by the
+            // dashboard bearer token — Stripe has no way to send that token.
+            if (req.path === '/health' || req.path === '/topgg/webhook' || req.path === '/guild/team' || req.path === '/stripe/webhook') return next();
 
             const expectedToken = process.env.BOT_API_TOKEN;
             const remote = req.ip || req.socket?.remoteAddress || '';
@@ -1148,7 +1160,9 @@ class BotAPIServer {
 
         this.app.use((req, res, next) => {
             const shouldAudit = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)
-                && req.path !== '/topgg/webhook';
+                && req.path !== '/topgg/webhook'
+                // Stripe payloads carry customer email/address — not audit-log material.
+                && req.path !== '/stripe/webhook';
 
             if (!shouldAudit) return next();
 
@@ -1729,6 +1743,9 @@ class BotAPIServer {
                 if (!validation.valid) {
                     return res.status(400).json(APIResponse.validationError('Invalid input', validation.errors));
                 }
+
+                const access = await this.getDashboardGuildAccess(req, guildId);
+                if (!access.allowed) return res.status(403).json(APIResponse.forbidden('No access to this guild'));
 
                 console.log(`🔵 /execute called: ${command} in guild ${guildId}`);
 
@@ -2862,7 +2879,8 @@ class BotAPIServer {
                     moduleKey,
                     allowed: !!access.allowed,
                     reason: access.reason || null,
-                    moduleRoles: dashboardAccess.moduleRoles,
+                    // Only leak the role->module permission map to callers who already have access
+                    moduleRoles: access.allowed ? dashboardAccess.moduleRoles : {},
                     modules: DASHBOARD_PERMISSION_MODULES,
                 }, 'Dashboard access fetched', 'DASHBOARD_ACCESS_OK'));
             } catch (error) {
@@ -5881,12 +5899,20 @@ class BotAPIServer {
         // ============ PREMIUM MANAGEMENT ============
         this.app.post('/premium/activate', async (req, res) => {
             try {
-                const { userId, daysValid = 365, tier = 'basic' } = req.body;
+                // 30, not 365: the advertised price is per month, so a call that
+                // omits daysValid must not hand out a year for a month's money.
+                const { userId, daysValid = 30, tier = 'basic' } = req.body;
                 if (!userId) return res.status(400).json({ error: 'userId required' });
                 if (!['basic', 'pro'].includes(tier)) return res.status(400).json({ error: 'tier must be basic or pro' });
+                // 36500 ceiling, matching stripeManager.LIFETIME_DAYS — a lifetime
+                // grant issued from the dashboard must not silently become 10 years.
+                const days = Math.max(1, Math.min(36500, Number(daysValid) || 30));
+                // 'set' = absolute term (admin "activate for N days");
+                // 'extend' (default) = top up whatever time is left.
+                const mode = req.body.mode === 'set' ? 'set' : 'extend';
 
                 const premiumManager = require('../utils/premiumManager');
-                await premiumManager.activatePremium(userId, daysValid, tier);
+                await premiumManager.activatePremium(userId, days, tier, mode);
                 const info = await premiumManager.getUserInfo(userId);
 
                 // Log to Discord
@@ -5905,7 +5931,7 @@ class BotAPIServer {
                             .setDescription(`You now have **${tierLabel}** access!`)
                             .addFields(
                                 { name: 'Tier', value: tierLabel },
-                                { name: 'Days', value: String(daysValid) },
+                                { name: 'Days', value: String(days) },
                                 { name: 'Expires', value: expiresAt.toLocaleString() }
                             )
                             .setTimestamp();
@@ -5913,7 +5939,7 @@ class BotAPIServer {
                         user.send({ embeds: [embed] }).catch(() => {});
                     }
 
-                    console.log(`[Premium] ✅ ${username} (${userId}) activated as ${tier} for ${daysValid} days, expires: ${expiresAt.toISOString()}`);
+                    console.log(`[Premium] ✅ ${username} (${userId}) activated as ${tier} for ${days} days, expires: ${expiresAt.toISOString()}`);
                 } catch (dmError) {
                     console.error('Error sending DM or logging:', dmError.message);
                 }
@@ -5923,7 +5949,7 @@ class BotAPIServer {
                     tier: info.tier,
                     isPremium: info.is_premium,
                     expiresAt: info.expires_at
-                }, `${tier} activated for ${daysValid} days`, 'PREMIUM_ACTIVATED'));
+                }, `${tier} activated for ${days} days`, 'PREMIUM_ACTIVATED'));
             } catch (error) {
                 console.error('Premium activation error:', error);
                 res.status(500).json(APIResponse.error(error.message, 'PREMIUM_ACTIVATION_FAILED'));
@@ -6000,28 +6026,199 @@ class BotAPIServer {
                 const { guildId } = req.params;
                 const guild = this.client.guilds.cache.get(guildId);
                 if (!guild) return res.status(404).json(APIResponse.notFound('Guild not found'));
+                const access = await this.getDashboardGuildAccess(req, guild.id);
+                if (!access.allowed) return res.status(403).json(APIResponse.forbidden('No access to this guild'));
 
                 const premiumManager = require('../utils/premiumManager');
-                // Check guild owner's premium — owners carry the premium for their server
-                const ownerId = guild.ownerId;
-                const isPremium = await premiumManager.isPremium(ownerId);
-                const isPro = isPremium ? await premiumManager.isPro(ownerId) : false;
-                const info = isPremium ? await premiumManager.getUserInfo(ownerId) : null;
-
-                const tier = isPro ? 'pro' : (isPremium ? 'basic' : 'free');
-                const limits = FEATURE_LIMITS[tier] || FEATURE_LIMITS.free;
+                // The guild's own plan wins; the owner's personal premium is only a
+                // fallback so servers entitled under the old owner-coupled model
+                // keep working. `source` tells the dashboard which one applied.
+                const plan = await premiumManager.getGuildTier(guild.id, guild.ownerId);
+                const limits = FEATURE_LIMITS[plan.tier] || FEATURE_LIMITS.free;
 
                 res.json(APIResponse.success({
-                    hasPremium: isPremium,
-                    isPro,
-                    tier,
+                    hasPremium: plan.hasPremium,
+                    isPro: plan.isPro,
+                    tier: plan.tier,
                     planName: limits.planName,
-                    premiumUntil: info ? info.expires_at : null,
+                    premiumUntil: plan.expiresAt,
+                    planSource: plan.source,
+                    purchasedBy: plan.purchasedBy,
                     featureLimits: limits,
                 }, 'Guild premium status fetched', 'GUILD_PREMIUM'));
             } catch (error) {
                 console.error('Failed to get guild premium status:', error);
                 res.status(500).json(APIResponse.error(error.message, 'GUILD_PREMIUM_FAILED'));
+            }
+        });
+
+        // ── Stripe checkout webhook ───────────────────────────────────────────
+        // Authenticated by Stripe's signature (see the auth middleware exemption),
+        // NOT by the dashboard bearer token.
+        this.app.post('/stripe/webhook', async (req, res) => {
+            const stripeManager = require('../utils/stripeManager');
+
+            try {
+                const secret = process.env.STRIPE_WEBHOOK_SECRET;
+                if (!secret) {
+                    console.warn('[Stripe] Webhook hit but STRIPE_WEBHOOK_SECRET is not set — ignoring.');
+                    return res.status(503).json(APIResponse.error('Stripe is not configured', 'STRIPE_NOT_CONFIGURED'));
+                }
+
+                const signature = req.get('stripe-signature');
+                const verdict = stripeManager.verifySignature(req.rawBody, signature, secret);
+                if (!verdict.valid) {
+                    console.warn(`[Stripe] Rejected webhook: ${verdict.reason}`);
+                    return res.status(400).json(APIResponse.error('Invalid signature', 'STRIPE_BAD_SIGNATURE', 400));
+                }
+
+                // Body is already parsed by express.json(); rawBody was only needed
+                // for the signature.
+                const event = req.body;
+
+                const result = await stripeManager.handleEvent(event, {
+                    // Idempotency guards: activation extends remaining time, so a
+                    // Stripe retry of an already-applied event must not grant a
+                    // second term or book the revenue twice.
+                    wasProcessed: async (eventId) => {
+                        const premiumManager = require('../utils/premiumManager');
+                        return premiumManager.wasEventProcessed(eventId);
+                    },
+                    markProcessed: async (eventId) => {
+                        const premiumManager = require('../utils/premiumManager');
+                        return premiumManager.markEventProcessed(eventId, 'stripe');
+                    },
+                    activatePremium: async (userId, days, tier) => {
+                        const premiumManager = require('../utils/premiumManager');
+                        // 'extend' so a renewal tops up whatever time is left.
+                        return premiumManager.activatePremium(userId, days, tier, 'extend');
+                    },
+                    onActivated: async (userId, purchase) => {
+                        try {
+                            const { EmbedBuilder } = require('discord.js');
+                            const PRICING = require('../utils/pricing');
+                            const user = await this.client.users.fetch(userId).catch(() => null);
+                            if (!user) return;
+
+                            const tierDef = purchase.tier === 'pro' ? PRICING.TIERS.pro : PRICING.TIERS.basic;
+                            const isLifetime = purchase.days >= stripeManager.LIFETIME_DAYS;
+                            const premiumManager = require('../utils/premiumManager');
+                            const info = await premiumManager.getUserInfo(userId).catch(() => null);
+
+                            const embed = new EmbedBuilder()
+                                .setColor(purchase.tier === 'pro' ? 0xFFD700 : 0x4CAF50)
+                                .setTitle(`${tierDef.emoji} ${tierDef.label} ist aktiv!`)
+                                .setDescription('Danke für deinen Kauf — dein Plan wurde sofort freigeschaltet.')
+                                .addFields(
+                                    { name: 'Plan', value: `${tierDef.emoji} ${tierDef.label}`, inline: true },
+                                    {
+                                        name: 'Laufzeit',
+                                        value: isLifetime
+                                            ? '♾️ Lifetime'
+                                            : (info && info.expires_at
+                                                ? `bis <t:${Math.floor(new Date(info.expires_at).getTime() / 1000)}:D>`
+                                                : `${purchase.days} Tage`),
+                                        inline: true,
+                                    },
+                                    { name: 'Cooldown', value: PRICING.formatDuration(tierDef.cooldownMs), inline: true }
+                                )
+                                .setTimestamp();
+
+                            await user.send({ embeds: [embed] }).catch(() => {});
+                        } catch (dmError) {
+                            console.error('[Stripe] Failed to DM buyer:', dmError.message);
+                        }
+                    },
+                });
+
+                if (result.handled) {
+                    console.log(`[Stripe] ✅ ${result.tier} (${result.days}d) ${result.renewal ? 'renewed' : 'activated'} for ${result.userId}`);
+                    try {
+                        const session = event?.data?.object || {};
+                        monetizationStore.addRevenue({
+                            userId: result.userId,
+                            username: session.customer_details?.name || '',
+                            amount: (session.amount_total || 0) / 100,
+                            currency: session.currency || 'eur',
+                            source: 'stripe',
+                            tier: result.tier,
+                            note: `Stripe checkout · ${result.days} Tage`,
+                            createdBy: 'stripe-webhook',
+                        });
+                    } catch (revError) {
+                        console.error('[Stripe] Failed to record revenue:', revError.message);
+                    }
+                } else {
+                    console.log(`[Stripe] Event not actioned: ${result.reason}`);
+                }
+
+                // Always 200 on a verified event — a non-2xx makes Stripe retry,
+                // and retrying an event we deliberately ignored achieves nothing.
+                res.json(APIResponse.success(result, 'Webhook processed', 'STRIPE_WEBHOOK_OK'));
+            } catch (error) {
+                console.error('[Stripe] Webhook handler error:', error);
+                // 500 here IS worth retrying — activation may have genuinely failed.
+                res.status(500).json(APIResponse.error(error.message, 'STRIPE_WEBHOOK_FAILED'));
+            }
+        });
+
+        // ── Guild plans (a server's own entitlement, not the owner's) ─────────
+        this.app.post('/premium/guild/activate', async (req, res) => {
+            try {
+                const { guildId, tier = 'basic', purchasedBy = null } = req.body;
+                if (!guildId) return res.status(400).json(APIResponse.badRequest('guildId required'));
+                if (!['basic', 'pro'].includes(tier)) {
+                    return res.status(400).json(APIResponse.badRequest('tier must be basic or pro'));
+                }
+                const days = Math.max(1, Math.min(36500, Number(req.body.daysValid) || 30));
+                const mode = req.body.mode === 'set' ? 'set' : 'extend';
+
+                const premiumManager = require('../utils/premiumManager');
+                const result = await premiumManager.activateGuildPlan(guildId, days, tier, purchasedBy, mode);
+
+                const guild = this.client.guilds.cache.get(String(guildId));
+                console.log(`[Premium] ✅ Guild plan ${tier} for ${guild ? guild.name : guildId} (${guildId}), ${days} days`);
+
+                res.json(APIResponse.success({
+                    guildId,
+                    guildName: guild ? guild.name : null,
+                    tier,
+                    daysAdded: days,
+                    extended: result.extended,
+                    expiresAt: result.expiresAt,
+                }, `Guild plan ${tier} activated for ${days} days`, 'GUILD_PLAN_ACTIVATED'));
+            } catch (error) {
+                console.error('Guild plan activation error:', error);
+                res.status(500).json(APIResponse.error(error.message, 'GUILD_PLAN_ACTIVATION_FAILED'));
+            }
+        });
+
+        this.app.post('/premium/guild/deactivate', async (req, res) => {
+            try {
+                const { guildId } = req.body;
+                if (!guildId) return res.status(400).json(APIResponse.badRequest('guildId required'));
+
+                const premiumManager = require('../utils/premiumManager');
+                await premiumManager.deactivateGuildPlan(guildId);
+
+                res.json(APIResponse.success({ guildId }, 'Guild plan deactivated', 'GUILD_PLAN_DEACTIVATED'));
+            } catch (error) {
+                console.error('Guild plan deactivation error:', error);
+                res.status(500).json(APIResponse.error(error.message, 'GUILD_PLAN_DEACTIVATION_FAILED'));
+            }
+        });
+
+        this.app.get('/premium/guild-plans', async (req, res) => {
+            try {
+                const premiumManager = require('../utils/premiumManager');
+                const plans = await premiumManager.getAllGuildPlans();
+                const enriched = plans.map(plan => {
+                    const guild = this.client.guilds.cache.get(String(plan.guild_id));
+                    return { ...plan, guild_name: guild ? guild.name : null };
+                });
+                res.json(APIResponse.success({ plans: enriched }, 'Guild plans fetched', 'GUILD_PLANS'));
+            } catch (error) {
+                res.status(500).json(APIResponse.error(error.message, 'GUILD_PLANS_FAILED'));
             }
         });
 
@@ -6039,61 +6236,20 @@ class BotAPIServer {
 
         this.app.post('/premium/reminders/send', async (req, res) => {
             try {
-                const daysBefore = Math.min(Math.max(parseInt(req.body.daysBefore, 10) || 3, 1), 90);
-                const requestedUserIds = Array.isArray(req.body.userIds)
-                    ? new Set(req.body.userIds.map(id => String(id).trim()).filter(Boolean))
-                    : new Set();
-                const calendar = await this.buildPremiumCalendar(daysBefore);
-                const candidates = calendar.users.filter(user => {
-                    if (requestedUserIds.size && !requestedUserIds.has(user.userId)) return false;
-                    return !user.expired && Number.isFinite(user.daysRemaining) && user.daysRemaining <= daysBefore;
+                // Now shares its logic with the scheduled job, so the dashboard
+                // button and the nightly run can never drift apart. `force`
+                // bypasses milestone dedup for a deliberate manual re-send.
+                const userIds = Array.isArray(req.body.userIds) ? req.body.userIds : null;
+                const force = req.body.force === true || req.body.force === 'true';
+
+                const summary = await this.sendDuePremiumReminders({
+                    userIds,
+                    force,
+                    actor: dashboardActor(req),
                 });
 
-                const results = [];
-                for (const premiumUser of candidates) {
-                    try {
-                        const discordUser = await this.client.users.fetch(premiumUser.userId);
-                        await discordUser.send({
-                            embeds: [{
-                                color: 0xFFD43B,
-                                title: '⏳ Premium läuft bald ab',
-                                description: `Dein **${premiumUser.tier === 'pro' ? 'Pro' : 'Premium'}** Zugang läuft in **${premiumUser.daysRemaining} Tag(en)** ab.`,
-                                fields: [
-                                    { name: 'Ablaufdatum', value: new Date(premiumUser.expiresAt).toLocaleString('de-DE'), inline: true },
-                                    { name: 'Hinweis', value: 'Melde dich beim Team, wenn du verlängern möchtest.', inline: false },
-                                ],
-                                timestamp: new Date().toISOString(),
-                            }],
-                        });
-                        monetizationStore.recordReminder({
-                            userId: premiumUser.userId,
-                            tier: premiumUser.tier,
-                            expiresAt: premiumUser.expiresAt,
-                            daysBefore,
-                            success: true,
-                            sentBy: dashboardActor(req),
-                        });
-                        results.push({ userId: premiumUser.userId, success: true });
-                    } catch (sendError) {
-                        monetizationStore.recordReminder({
-                            userId: premiumUser.userId,
-                            tier: premiumUser.tier,
-                            expiresAt: premiumUser.expiresAt,
-                            daysBefore,
-                            success: false,
-                            error: sendError.message,
-                            sentBy: dashboardActor(req),
-                        });
-                        results.push({ userId: premiumUser.userId, success: false, error: sendError.message });
-                    }
-                }
-
                 res.json(APIResponse.success({
-                    daysBefore,
-                    sent: results.filter(row => row.success).length,
-                    failed: results.filter(row => !row.success).length,
-                    skipped: Math.max(0, calendar.users.length - candidates.length),
-                    results,
+                    ...summary,
                     reminders: monetizationStore.listReminders({ limit: 100 }),
                 }, 'Premium reminders processed', 'PREMIUM_REMINDERS_SENT'));
             } catch (error) {
@@ -6708,6 +6864,8 @@ class BotAPIServer {
 
                 const guild = this.client.guilds.cache.get(guildId);
                 if (!guild) return res.status(404).json(APIResponse.error('Guild not found', 'GUILD_NOT_FOUND'));
+                const access = await this.getDashboardGuildAccess(req, guild.id);
+                if (!access.allowed) return res.status(403).json(APIResponse.forbidden('No access to this guild'));
 
                 const channel = guild.channels.cache.get(channelId)
                     || await guild.channels.fetch(channelId).catch(() => null);
@@ -6731,7 +6889,7 @@ class BotAPIServer {
                 const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, getVoiceConnection } = voiceModule;
 
                 // Generate TTS mp3 to temp file using Google TTS HTTP endpoint
-                const tmpFile = path.join(os.tmpdir(), `tts_${Date.now()}.mp3`);
+                const tmpFile = path.join(os.tmpdir(), `tts_${Date.now()}_${Math.random().toString(36).slice(2, 10)}.mp3`);
                 try {
                     const audioBuffer = await fetchGoogleTtsMp3Buffer(text, lang);
                     fs.writeFileSync(tmpFile, audioBuffer);
@@ -7068,9 +7226,13 @@ class BotAPIServer {
         const guild = this.client.guilds.cache.get(guildId);
         if (!guild) return FEATURE_LIMITS.free;
         const premiumManager = require('../utils/premiumManager');
-        const isPremium = await premiumManager.isPremium(guild.ownerId).catch(() => false);
-        const isPro = isPremium ? await premiumManager.isPro(guild.ownerId).catch(() => false) : false;
-        const tier = isPro ? 'pro' : (isPremium ? 'basic' : 'free');
+        // Guild's own plan first, owner's personal premium as fallback.
+        const guildPlan = await premiumManager
+            .getGuildTier(guild.id, guild.ownerId)
+            .catch(() => ({ tier: 'free', hasPremium: false, isPro: false }));
+        const isPremium = guildPlan.hasPremium;
+        const isPro = guildPlan.isPro;
+        const tier = guildPlan.tier;
         return FEATURE_LIMITS[tier] || FEATURE_LIMITS.free;
     }
 
@@ -7349,22 +7511,22 @@ class BotAPIServer {
                 FROM command_executions
                 WHERE guild_id='${safeGuildId}'
                 GROUP BY command
-                    return { allowed: false, reason: 'not_guild_admin' };
-                }
-
-                async getGuildPremiumLimits(guildId) {
-                    const guild = this.client.guilds.cache.get(guildId);
-                    if (!guild) return FEATURE_LIMITS.free;
-                    const premiumManager = require('../utils/premiumManager');
-                    const isPremium = await premiumManager.isPremium(guild.ownerId).catch(() => false);
-                    const isPro = isPremium ? await premiumManager.isPro(guild.ownerId).catch(() => false) : false;
-                    const tier = isPro ? 'pro' : (isPremium ? 'basic' : 'free');
-                    return FEATURE_LIMITS[tier] || FEATURE_LIMITS.free;
-                }
-
-                async createModerationCase({ guild, userId, moderatorId = null, type, reason = '', durationMs = null, expiresAt = null, status = 'active' }) {
-                    const pool = getPool();
-                    const now = Date.now();
+                ORDER BY count DESC
+                LIMIT 10
+            `);
+            const recentResult = db.db.exec(`
+                SELECT command, user_id, timestamp, success
+                FROM command_executions
+                WHERE guild_id='${safeGuildId}'
+                ORDER BY timestamp DESC
+                LIMIT 20
+            `);
+            const totalsResult = db.db.exec(`
+                SELECT COUNT(*) AS commands,
+                       COUNT(DISTINCT user_id) AS users,
+                       SUM(CASE WHEN success=0 THEN 1 ELSE 0 END) AS errors
+                FROM command_executions
+                WHERE guild_id='${safeGuildId}'
             `);
 
             return {
@@ -8491,6 +8653,103 @@ class BotAPIServer {
             activeTrolls,
             blacklistedInGuild: blacklist.filter(entry => entry.guildId === guild.id).length,
             analytics,
+        };
+    }
+
+    /**
+     * Send expiry reminders that are actually due.
+     *
+     * Shared by the scheduled job and the dashboard button, so both behave
+     * identically. Milestone dedup lives in premiumDatabase, which is what makes
+     * this safe to run on a timer — the old endpoint blasted everyone inside a
+     * flat `daysBefore` window and would have DM'd the same person daily.
+     *
+     * @param {object} opts
+     * @param {string[]} [opts.userIds] restrict to these users (dashboard use)
+     * @param {boolean} [opts.force] ignore dedup (manual re-send)
+     * @param {string} [opts.actor] who triggered this, for the audit trail
+     */
+    async sendDuePremiumReminders({ userIds = null, force = false, actor = 'scheduler' } = {}) {
+        const premiumManager = require('../utils/premiumManager');
+        const reminders = require('../utils/premiumReminders');
+        const PRICING = require('../utils/pricing');
+
+        const rows = await premiumManager.getAllPremium();
+        const restrict = Array.isArray(userIds) && userIds.length
+            ? new Set(userIds.map(id => String(id).trim()).filter(Boolean))
+            : null;
+
+        const plans = rows
+            .filter(row => !restrict || restrict.has(String(row.user_id)))
+            .map(row => ({
+                userId: String(row.user_id),
+                tier: row.tier === 'pro' ? 'pro' : 'basic',
+                expiresAt: row.expires_at,
+            }));
+
+        const wasSent = force
+            ? async () => false
+            : (userId, expiresAt, milestone) => premiumManager.wasReminderSent(userId, expiresAt, milestone);
+
+        const due = await reminders.selectDueReminders(plans, wasSent);
+        const results = [];
+
+        for (const item of due) {
+            try {
+                const discordUser = await this.client.users.fetch(item.userId);
+                await discordUser.send(
+                    reminders.buildReminderMessage({
+                        tier: item.tier,
+                        expiresAt: item.expiresAt,
+                        milestone: item.milestone,
+                        pricing: PRICING,
+                    })
+                );
+
+                await premiumManager.markReminderSent(item.userId, item.expiresAt, item.milestone.key);
+                monetizationStore.recordReminder({
+                    userId: item.userId,
+                    tier: item.tier,
+                    expiresAt: item.expiresAt,
+                    daysBefore: item.daysRemaining,
+                    success: true,
+                    sentBy: actor,
+                });
+                results.push({ userId: item.userId, milestone: item.milestone.key, success: true });
+            } catch (sendError) {
+                // Mark closed DMs as sent anyway: retrying every single day for a
+                // user who blocks DMs is pure noise and never succeeds. Anything
+                // else (a transient API blip) is left un-marked so it retries.
+                const dmClosed = sendError?.code === 50007;
+                if (dmClosed) {
+                    await premiumManager.markReminderSent(item.userId, item.expiresAt, item.milestone.key);
+                }
+
+                monetizationStore.recordReminder({
+                    userId: item.userId,
+                    tier: item.tier,
+                    expiresAt: item.expiresAt,
+                    daysBefore: item.daysRemaining,
+                    success: false,
+                    error: sendError.message,
+                    sentBy: actor,
+                });
+                results.push({
+                    userId: item.userId,
+                    milestone: item.milestone.key,
+                    success: false,
+                    error: sendError.message,
+                    dmClosed,
+                });
+            }
+        }
+
+        return {
+            checked: plans.length,
+            due: due.length,
+            sent: results.filter(r => r.success).length,
+            failed: results.filter(r => !r.success).length,
+            results,
         };
     }
 

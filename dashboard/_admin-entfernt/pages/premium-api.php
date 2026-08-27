@@ -36,20 +36,21 @@ if (!preg_match('/^\d{17,20}$/', $userId)) {
 }
 
 switch ($action) {
+    // The API decides the resulting expiry now, so always report the value it
+    // sends back rather than recomputing it here — the two used to drift apart.
     case 'extend':
-        // Get current expiry, add days on top
-        $info = getAPI("/premium/user/$userId");
-        $daysValid = $days;
-        if (!empty($info['data']['user']['expires_at'])) {
-            $expiresAt = strtotime($info['data']['user']['expires_at']);
-            $remaining = max(0, (int)ceil(($expiresAt - time()) / 86400));
-            $daysValid = $remaining + $days;
-        }
-        $result = api('/premium/activate', 'POST', ['userId' => $userId, 'daysValid' => $daysValid, 'tier' => $tier]);
-        $newExpiry = (new DateTime())->modify("+$daysValid days")->format('Y-m-d');
+        // mode 'extend': the API adds these days ON TOP of any remaining time.
+        // This used to read the current expiry and pre-sum it, which double-counted
+        // the remainder once the API started extending by itself (100 days left +
+        // 30 bought came out as 230).
+        $result = api('/premium/activate', 'POST', [
+            'userId' => $userId, 'daysValid' => $days, 'tier' => $tier, 'mode' => 'extend',
+        ]);
+        $payload   = $result['data']['data'] ?? [];
+        $newExpiry = !empty($payload['expiresAt']) ? date('Y-m-d', strtotime($payload['expiresAt'])) : null;
         echo json_encode([
             'success' => $result['data']['success'] ?? false,
-            'message' => "Premium extended by $days days",
+            'message' => "Premium um $days Tage verlängert",
             'userId' => $userId,
             'newExpiresAt' => $newExpiry,
             'tier' => $tier,
@@ -57,24 +58,19 @@ switch ($action) {
         break;
 
     case 'renew':
-        $result = api('/premium/activate', 'POST', ['userId' => $userId, 'daysValid' => $days, 'tier' => $tier]);
-        $newExpiry = (new DateTime())->modify("+$days days")->format('Y-m-d');
+    case 'activate':
+        // mode 'set': an absolute term of exactly $days from now, which is what
+        // "activate for N days" means for an admin — not a top-up.
+        $result = api('/premium/activate', 'POST', [
+            'userId' => $userId, 'daysValid' => $days, 'tier' => $tier, 'mode' => 'set',
+        ]);
+        $payload   = $result['data']['data'] ?? [];
+        $newExpiry = !empty($payload['expiresAt']) ? date('Y-m-d', strtotime($payload['expiresAt'])) : null;
         echo json_encode([
             'success' => $result['data']['success'] ?? false,
-            'message' => "Premium renewed for $days days",
+            'message' => "Premium für $days Tage gesetzt",
             'userId' => $userId,
             'newExpiresAt' => $newExpiry,
-            'tier' => $tier,
-        ]);
-        break;
-
-    case 'activate':
-        $result = api('/premium/activate', 'POST', ['userId' => $userId, 'daysValid' => $days, 'tier' => $tier]);
-        $newExpiry = (new DateTime())->modify("+$days days")->format('Y-m-d');
-        echo json_encode([
-            'success' => $result['data']['success'] ?? false,
-            'message' => "Premium activated for $days days",
-            'userId' => $userId,
             'expiresAt' => $newExpiry,
             'daysValid' => $days,
             'tier' => $tier,

@@ -21,14 +21,14 @@ $verLevels = ['None', 'Low', 'Medium', 'High', 'Very High'];
 $boostTiers = ['No Boost', 'Tier 1', 'Tier 2', 'Tier 3'];
 
 function permBadge($ok, $label) {
-    $color = $ok ? '#57F287' : '#ED4245';
-    $icon  = $ok ? '✅' : '❌';
-    return '<span style="display:inline-block;background:' . $color . '22;color:' . $color . ';border:1px solid ' . $color . '44;border-radius:4px;padding:2px 7px;font-size:0.75em;margin:2px;">' . $icon . ' ' . htmlspecialchars($label) . '</span>';
+    $cls  = $ok ? 'ok' : 'danger';
+    $icon = $ok ? '✅' : '❌';
+    return '<span class="status-badge ' . $cls . '" style="margin:2px;">' . $icon . ' ' . htmlspecialchars($label) . '</span>';
 }
 
 function trollBadge($count, $label, $emoji) {
     if ($count === 0) return '';
-    return '<span style="display:inline-block;background:#ed424522;color:#ED4245;border:1px solid #ED424544;border-radius:4px;padding:2px 8px;font-size:0.78em;margin:2px;">' . $emoji . ' ' . htmlspecialchars($label) . ': ' . $count . '</span>';
+    return '<span class="status-badge danger" style="margin:2px;">' . $emoji . ' ' . htmlspecialchars($label) . ': ' . $count . '</span>';
 }
 ?>
 <?php include '../includes/header.php'; ?>
@@ -38,13 +38,13 @@ function trollBadge($count, $label, $emoji) {
     <h1>🔍 Überwachung</h1>
     <p class="subtitle"><?php echo $total; ?> Server · <?php echo number_format($totalMembers); ?> Mitglieder
         <?php if ($totalTrolls > 0): ?>
-        · <span style="color:#ED4245;">⚡ <?php echo $totalTrolls; ?> aktive Trolls</span>
+        · <span style="color:var(--danger);">⚡ <?php echo $totalTrolls; ?> aktive Trolls</span>
         <?php endif; ?>
     </p>
 </div>
 
 <?php if ($offline): ?>
-<div class="section" style="color:#ED4245; padding:20px;">⚠️ Bot-API nicht erreichbar.</div>
+<div class="section" style="color:var(--danger); padding:20px;">⚠️ Bot-API nicht erreichbar.</div>
 <?php include '../includes/footer.php'; exit; ?>
 <?php endif; ?>
 
@@ -59,7 +59,7 @@ function trollBadge($count, $label, $emoji) {
         <div class="stat-label">Mitglieder</div>
     </div>
     <div class="stat-card" style="flex:1; min-width:120px;">
-        <div class="stat-value" style="color:<?php echo $totalTrolls > 0 ? '#ED4245' : 'inherit'; ?>"><?php echo $totalTrolls; ?></div>
+        <div class="stat-value" style="color:<?php echo $totalTrolls > 0 ? 'var(--danger)' : 'inherit'; ?>"><?php echo $totalTrolls; ?></div>
         <div class="stat-label">Aktive Trolls</div>
     </div>
     <div class="stat-card" style="flex:1; min-width:120px;">
@@ -87,7 +87,7 @@ function trollBadge($count, $label, $emoji) {
         <option value="joined">Sortieren: Beitritt</option>
     </select>
     <span id="countLabel" style="color:#aaa; font-size:0.9em;"></span>
-    <button onclick="refreshData()" style="margin-left:auto; padding:var(--sp-2) var(--sp-4); background:#5865F2; color:#fff; border:none; border-radius:6px; cursor:pointer;">🔄 Aktualisieren</button>
+    <button onclick="refreshData()" style="margin-left:auto; padding:var(--sp-2) var(--sp-4); background:var(--primary); color:#fff; border:none; border-radius:6px; cursor:pointer;">🔄 Aktualisieren</button>
 </div>
 
 <!-- Server Cards -->
@@ -142,9 +142,9 @@ function trollBadge($count, $label, $emoji) {
         </div>
         <!-- Troll indicator -->
         <?php if ($trollTotal > 0): ?>
-        <div style="text-align:center; background:#ED424522; border:1px solid #ED424544; border-radius:8px; padding:8px 14px;">
-            <div style="color:#ED4245; font-size:1.4em; font-weight:800; line-height:1;"><?php echo $trollTotal; ?></div>
-            <div style="color:#ED4245; font-size:0.7em; margin-top:2px;">AKTIVE TROLLS</div>
+        <div style="text-align:center; background:rgba(242,63,67,0.13); border:1px solid rgba(242,63,67,0.27); border-radius:8px; padding:8px 14px;">
+            <div style="color:var(--danger); font-size:1.4em; font-weight:800; line-height:1;"><?php echo $trollTotal; ?></div>
+            <div style="color:var(--danger); font-size:0.7em; margin-top:2px;">AKTIVE TROLLS</div>
         </div>
         <?php endif; ?>
         <!-- Expand toggle -->
@@ -188,7 +188,7 @@ function trollBadge($count, $label, $emoji) {
                     <tr><td style="color:#888; padding:3px 0;">Beigetreten</td><td><?php echo $joinedAt ? date('d.m.Y', strtotime($joinedAt)) : 'N/A'; ?></td></tr>
                     <tr><td style="color:#888; padding:3px 0;">Verifikation</td><td><?php echo esc($verifLabel); ?></td></tr>
                     <tr><td style="color:#888; padding:3px 0;">Boost-Level</td><td><?php echo esc($boostLabel); ?> (<?php echo (int)($g['premiumSubscriptionCount'] ?? 0); ?> Boosts)</td></tr>
-                    <tr><td style="color:#888; padding:3px 0;">Blacklisted</td><td><?php echo $blaclkistedCount > 0 ? '<span style="color:#ED4245;">'.$blaclkistedCount.' User</span>' : '0'; ?></td></tr>
+                    <tr><td style="color:#888; padding:3px 0;">Blacklisted</td><td><?php echo $blacklistedCount > 0 ? '<span style="color:var(--danger);">'.$blacklistedCount.' User</span>' : '0'; ?></td></tr>
                     <tr><td style="color:#888; padding:3px 0;">Bot-Rang</td><td>#<?php echo (int)($g['permissions']['botRolePosition'] ?? 0); ?></td></tr>
                 </table>
             </div>
@@ -228,7 +228,7 @@ function trollBadge($count, $label, $emoji) {
                         <td><?php if ($cfg['trollRoleId']): ?>
                             <span style="color:#57F287;"><?php echo esc($cfg['trollRoleName'] ?? $cfg['trollRoleId']); ?></span>
                         <?php else: ?>
-                            <span style="color:#ED4245;">Nicht gesetzt</span>
+                            <span style="color:var(--danger);">Nicht gesetzt</span>
                         <?php endif; ?></td>
                     </tr>
                     <tr>

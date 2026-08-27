@@ -247,6 +247,31 @@ services:
     networks:
       - marvin_internal
 
+  deploy-extra:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: deploy-extra-phase1
+    user: root
+    restart: unless-stopped
+    mem_limit: 128m
+    mem_reservation: 32m
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      NODE_ENV: production
+      EXTRA_DEPLOY_PORT: 9012
+      COMPOSE_FILE: /home/marvin/fahrstuhl/docker-compose.yml
+    ports:
+      - "127.0.0.1:9102:9012"
+    command: ["node", "scripts/deploy-extra.js"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/marvin:/home/marvin
+    networks:
+      - marvin_internal
+
   lavalink-docker:
     image: fredboat/lavalink:4
     container_name: lavalink-docker-phase1

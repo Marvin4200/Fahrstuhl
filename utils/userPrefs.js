@@ -25,9 +25,14 @@ function save() {
 
 load();
 
+// Read-only: does NOT create a cache entry for userId if one doesn't exist.
+// getCustomTrollMessage() (and therefore getPrefs) runs on every invocation
+// of /fahrstuhl, /geist, /stillepost, /spiegel, /toteleitung for the
+// invoking user — the old version wrote an entry into the module-level
+// `cache` object on every such read, even for users who never set any
+// preference, growing it forever for the life of the process.
 function getPrefs(userId) {
-    if (!cache[userId]) cache[userId] = {};
-    return cache[userId];
+    return cache[userId] || {};
 }
 
 function setPrefs(userId, prefs) {
@@ -43,6 +48,23 @@ function setCustomTrollMessage(userId, message) {
     setPrefs(userId, { customTrollMessage: message || null });
 }
 
+/** Custom embed colour for a user's own troll embeds (paid tiers only). */
+function getTrollColor(userId) {
+    const raw = getPrefs(userId).trollColor;
+    // Must reject null/'' explicitly BEFORE Number(): Number(null) is 0, which
+    // is a perfectly valid integer in range, so a reset colour would come back
+    // as 0x000000 and render every troll embed pure black with no way to undo.
+    if (raw === null || raw === undefined || raw === '') return null;
+    const value = Number(raw);
+    return Number.isInteger(value) && value >= 0 && value <= 0xFFFFFF ? value : null;
+}
+
+function setTrollColor(userId, color) {
+    setPrefs(userId, {
+        trollColor: (Number.isInteger(color) && color >= 0 && color <= 0xFFFFFF) ? color : null,
+    });
+}
+
 function getLastPremiumMonthlyBonus(userId) {
     return Number(getPrefs(userId).lastPremiumMonthlyBonus || 0);
 }
@@ -51,4 +73,8 @@ function setLastPremiumMonthlyBonus(userId, ts) {
     setPrefs(userId, { lastPremiumMonthlyBonus: ts });
 }
 
-module.exports = { getCustomTrollMessage, setCustomTrollMessage, getLastPremiumMonthlyBonus, setLastPremiumMonthlyBonus };
+module.exports = {
+    getCustomTrollMessage, setCustomTrollMessage,
+    getTrollColor, setTrollColor,
+    getLastPremiumMonthlyBonus, setLastPremiumMonthlyBonus,
+};

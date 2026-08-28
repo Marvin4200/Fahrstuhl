@@ -75,6 +75,8 @@ services:
       NODE_ENV: production
       PORT: 3014
       FAHRSTUHL_API_URL: ${TEAM_FAHRSTUHL_API_URL:-http://fahrstuhl-docker:3002}
+      ADMIN_LOG_URL: http://admin-dashboard:3021
+      LOG_INGEST_TOKEN: ${LOG_INGEST_TOKEN}
     ports:
       - "127.0.0.1:3114:3014"
     extra_hosts:
@@ -130,6 +132,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3015
+      ADMIN_LOG_URL: http://admin-dashboard:3021
+      LOG_INGEST_TOKEN: ${LOG_INGEST_TOKEN}
     ports:
       - "127.0.0.1:3115:3015"
     healthcheck:
@@ -480,6 +484,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3016
+      ADMIN_LOG_URL: http://admin-dashboard:3021
+      LOG_INGEST_TOKEN: ${LOG_INGEST_TOKEN}
     ports:
       - "127.0.0.1:3116:3016"
     healthcheck:
@@ -571,6 +577,8 @@ services:
       NODE_ENV: production
       PORT: 3000
       NODE_OPTIONS: "--max-old-space-size=256"
+      ADMIN_LOG_URL: http://admin-dashboard:3021
+      LOG_INGEST_TOKEN: ${LOG_INGEST_TOKEN}
     ports:
       - "127.0.0.1:3100:3000"
     volumes:

@@ -5,6 +5,43 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
+// ── Admin-Log ────────────────────────────────────────────────────────────────
+// PHP-Fehler landeten bisher nur im Container-Log. set_error_handler/
+// set_exception_handler fangen ab, was sonst unbemerkt geblieben waere, und
+// schicken es zusaetzlich an admin.eselbande.com. Kurzes Timeout, Fehler
+// werden verschluckt - ein Log-Sendefehler darf nie eine Seite kaputt machen.
+function logAdmin(string $type, string $title, string $description, int $color = 0xED4245): void {
+    $url = rtrim((string)(getenv('ADMIN_LOG_URL') ?: ''), '/');
+    $token = (string)(getenv('LOG_INGEST_TOKEN') ?: '');
+    if ($url === '' || $token === '') return;
+    $ch = curl_init($url . '/api/logs/ingest');
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode([
+            'source' => 'dashboard-php', 'type' => $type,
+            'title' => $title, 'description' => mb_substr($description, 0, 4000), 'color' => $color,
+        ]),
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'X-Log-Token: ' . $token],
+        CURLOPT_TIMEOUT_MS => 2500,
+        CURLOPT_RETURNTRANSFER => true,
+    ]);
+    @curl_exec($ch);
+    curl_close($ch);
+}
+
+set_exception_handler(function (Throwable $e) {
+    error_log('[uncaught] ' . $e);
+    logAdmin('ERRORS', "\u{1F4A5} Uncaught Exception", $e->getMessage() . "\n```" . mb_substr($e->getTraceAsString(), 0, 1200) . "```");
+});
+set_error_handler(function ($severity, $message, $file, $line) {
+    if (!(error_reporting() & $severity)) return false; // per @-Operator unterdrueckte Fehler ignorieren
+    if (in_array($severity, [E_ERROR, E_WARNING, E_USER_ERROR, E_USER_WARNING], true)) {
+        logAdmin('ERRORS', $severity === E_WARNING || $severity === E_USER_WARNING ? "\u{26A0}\u{FE0F} PHP Warning" : "\u{1F4A5} PHP Error",
+            "$message\n$file:$line", 0xF59E0B);
+    }
+    return false; // an PHPs eigene Fehlerbehandlung weiterreichen
+});
+
 // Load dashboard-local env first, then repo-root env for shared bot secrets.
 foreach ([__DIR__ . '/../../.env', __DIR__ . '/../../../.env'] as $env_file) {
     if (!file_exists($env_file)) continue;

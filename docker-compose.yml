@@ -278,7 +278,7 @@ services:
     restart: unless-stopped
     environment:
       JAVA_TOOL_OPTIONS: "-Xms128m -Xmx384m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
-    mem_limit: 640m
+    mem_limit: 900m
     mem_reservation: 256m
     volumes:
       - ../musikbot/application.yml:/opt/Lavalink/application.yml:ro

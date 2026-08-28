@@ -1,4 +1,9 @@
-﻿const { EmbedBuilder } = require("discord.js");
+﻿// Interner Ops-Log — frueher Discord-Kanaele unter "fahrstuhl-logs"
+// (#commands, #trolls, #guilds, #errors, #system), jetzt eine HTTP-Aufnahme
+// bei admin.eselbande.com. Gleiche logToMaster(data, type)-Signatur wie
+// zuvor, damit die ~30 bestehenden Aufrufstellen im Bot unveraendert bleiben.
+const ADMIN_LOG_URL = (process.env.ADMIN_LOG_URL || '').replace(/\/+$/, '');
+const LOG_INGEST_TOKEN = process.env.LOG_INGEST_TOKEN || '';
 
 function trimText(value, limit, fallback = null) {
     const text = String(value ?? "").trim();
@@ -13,110 +18,66 @@ function normalizeField(field) {
     return { name, value, inline: Boolean(field?.inline) };
 }
 
-function createLogger({ client, DEV_GUILD_ID, DEV_CATEGORY_ID, LOG_CHANNELS }) {
-    const activeLogChannels = new Map();
-    let resolvedLogCategoryId = DEV_CATEGORY_ID;
-
-    async function ensureLogCategory(devGuild) {
-        await devGuild.channels.fetch();
-        const existingById = resolvedLogCategoryId
-            ? devGuild.channels.cache.get(resolvedLogCategoryId)
-            : null;
-        if (existingById && existingById.type === 4) {
-            return existingById.id;
-        }
-
-        const categoryName = process.env.DEV_LOG_CATEGORY_NAME || 'fahrstuhl-logs';
-        const existingByName = devGuild.channels.cache.find(c => c.type === 4 && c.name === categoryName);
-        if (existingByName) {
-            resolvedLogCategoryId = existingByName.id;
-            return existingByName.id;
-        }
-
-        const created = await devGuild.channels.create({
-            name: categoryName,
-            type: 4,
-            reason: 'Create missing log channel category safely',
-        });
-        resolvedLogCategoryId = created.id;
-        return created.id;
+// data kommt in drei Formen an: ein String, ein Embed-Objekt
+// ({title,description,color,fields,...}), oder {embeds:[...]} - alle drei
+// werden hier auf dieselbe flache Form gebracht, die die Aufnahme erwartet.
+function normalizeLogPayload(data, type) {
+    if (data && typeof data === "object" && Array.isArray(data.embeds)) {
+        const e = data.embeds[0] || {};
+        return {
+            type,
+            title: trimText(e.title, 256),
+            description: trimText(e.description, 4096),
+            color: typeof e.color === "number" ? e.color : null,
+            fields: Array.isArray(e.fields) ? e.fields.map(normalizeField).filter(Boolean).slice(0, 25) : null,
+        };
     }
+    if (typeof data === "string") {
+        return { type, title: null, description: trimText(data, 4096, "Log"), color: null, fields: null };
+    }
+    const { title, description, color, fields } = data || {};
+    return {
+        type,
+        title: trimText(title, 256),
+        description: trimText(description, 4096),
+        color: typeof color === "number" ? color : null,
+        fields: Array.isArray(fields) ? fields.map(normalizeField).filter(Boolean).slice(0, 25) : null,
+    };
+}
 
+function createLogger() {
     async function logToMaster(data, type = "SYSTEM") {
+        if (!ADMIN_LOG_URL || !LOG_INGEST_TOKEN) return; // Aufnahme nicht konfiguriert - stiller No-Op
+
+        const payload = normalizeLogPayload(data, type);
+        if (!payload.title && !payload.description) return; // nichts Sinnvolles zum Loggen
+
         try {
-            const channelId = activeLogChannels.get(type);
-            if (!channelId) return;
-
-            const logChannel = await client.channels.fetch(channelId).catch(() => null);
-            if (!logChannel || !logChannel.isTextBased()) return;
-
-            if (data && typeof data === "object" && Array.isArray(data.embeds)) {
-                await logChannel.send(data);
-                return;
-            }
-
-            const embed = new EmbedBuilder().setTimestamp();
-
-            if (typeof data === "string") {
-                embed.setDescription(trimText(data, 4096, "Log")).setColor(0x5865F2);
-            } else {
-                const { title, description, color, fields, footer, thumbnail, author } = data || {};
-                if (title) embed.setTitle(trimText(title, 256));
-                if (description) embed.setDescription(trimText(description, 4096));
-                if (color) embed.setColor(color);
-                else embed.setColor(0x2B2D31);
-
-                if (Array.isArray(fields)) {
-                    const safeFields = fields.map(normalizeField).filter(Boolean).slice(0, 25);
-                    if (safeFields.length) embed.addFields(safeFields);
-                }
-                if (footer) {
-                    const footerObject = typeof footer === "object" ? footer : {};
-                    embed.setFooter({ ...footerObject, text: trimText(footerObject.text ?? footer, 2048, "Log") });
-                }
-                if (thumbnail) embed.setThumbnail(thumbnail);
-                if (author && typeof author === "object") embed.setAuthor({ ...author, name: trimText(author.name, 256, "Fahrstuhl") });
-            }
-
-            await logChannel.send({ embeds: [embed] });
-        } catch (err) {
-            console.error("Error logging to master channel:", err);
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 5000);
+            await fetch(`${ADMIN_LOG_URL}/api/logs/ingest`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-Log-Token": LOG_INGEST_TOKEN },
+                body: JSON.stringify(payload),
+                signal: controller.signal,
+            }).catch(() => {}); // best effort - ein Logging-Ausfall darf den Bot nie stoeren
+            clearTimeout(timer);
+        } catch {
+            // siehe oben
         }
     }
 
+    // Bleiben als No-Ops bestehen: die alte Discord-Kanal-Verwaltung
+    // (Kategorie/Kanaele automatisch anlegen) gibt es nicht mehr.
     async function setupLogChannels() {
-        const devGuild = await client.guilds.fetch(DEV_GUILD_ID).catch(() => null);
-        if (!devGuild) return null;
-
-        let categoryId = null;
-        try {
-            categoryId = await ensureLogCategory(devGuild);
-        } catch (error) {
-            console.warn('Failed to ensure log category, creating channels without parent:', error.message);
-        }
-
-        for (const [key, channelName] of Object.entries(LOG_CHANNELS)) {
-            let channel = devGuild.channels.cache.find(c => c.name === channelName && c.parentId === categoryId);
-
-            if (!channel) {
-                channel = await devGuild.channels.create({
-                    name: channelName,
-                    type: 0,
-                    ...(categoryId ? { parent: categoryId } : {}),
-                    reason: "Automatisches Log-System"
-                });
-            }
-            activeLogChannels.set(key, channel.id);
-        }
-
-        return { devGuild, logCategoryId: categoryId };
+        return { devGuild: null, logCategoryId: null };
     }
 
     function getLogCategoryId() {
-        return resolvedLogCategoryId;
+        return null;
     }
 
-    return { logToMaster, setupLogChannels, activeLogChannels, getLogCategoryId };
+    return { logToMaster, setupLogChannels, activeLogChannels: new Map(), getLogCategoryId };
 }
 
 module.exports = {

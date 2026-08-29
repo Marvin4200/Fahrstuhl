@@ -45,9 +45,26 @@ function normalizeLogPayload(data, type) {
     };
 }
 
+// Ratenbegrenzung: waehrend eines Fehlersturms (z.B. eine haengende
+// Verbindung, die minuetlich denselben Fehler wirft) soll admin-dashboard
+// nicht mit hunderten Anfragen pro Minute geflutet werden. Token-Bucket:
+// 30 Log-Sendungen sofort verfuegbar, danach eine neue alle 2 Sekunden.
+let _logTokens = 30;
+setInterval(() => { _logTokens = Math.min(30, _logTokens + 1); }, 2000);
+let _logSuppressedSince = 0;
+
+let _consoleWrapped = false;
+
 function createLogger() {
     async function logToMaster(data, type = "SYSTEM") {
         if (!ADMIN_LOG_URL || !LOG_INGEST_TOKEN) return; // Aufnahme nicht konfiguriert - stiller No-Op
+        if (_logTokens <= 0) { _logSuppressedSince++; return; }
+        _logTokens--;
+        if (_logSuppressedSince > 0) {
+            const n = _logSuppressedSince;
+            _logSuppressedSince = 0;
+            logToMaster(`${n} weitere Meldungen in kurzer Zeit wurden nicht einzeln gesendet (Ratenbegrenzung).`, "SYSTEM");
+        }
 
         const payload = normalizeLogPayload(data, type);
         if (!payload.title && !payload.description) return; // nichts Sinnvolles zum Loggen
@@ -65,6 +82,30 @@ function createLogger() {
         } catch {
             // siehe oben
         }
+    }
+
+    // console.error/console.warn global umleiten - deckt die vielen
+    // bestehenden try/catch-Stellen im Bot ab, die einen Fehler bisher nur
+    // lokal geloggt haben, ohne jede einzelne Stelle anzufassen. Nur einmal
+    // verdrahten, auch wenn createLogger() mehrfach aufgerufen wird.
+    if (!_consoleWrapped) {
+        _consoleWrapped = true;
+        const origError = console.error.bind(console);
+        const origWarn = console.warn.bind(console);
+        const fmtArgs = (args) => args.map(a => {
+            if (a instanceof Error) return a.stack || a.message;
+            if (a && typeof a === "object") { try { return JSON.stringify(a); } catch { return String(a); } }
+            return String(a);
+        }).join(" ").slice(0, 4096);
+
+        console.error = (...args) => {
+            origError(...args);
+            logToMaster(fmtArgs(args), "ERRORS");
+        };
+        console.warn = (...args) => {
+            origWarn(...args);
+            logToMaster(fmtArgs(args), "WARNINGS");
+        };
     }
 
     // Bleiben als No-Ops bestehen: die alte Discord-Kanal-Verwaltung

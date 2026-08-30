@@ -3,6 +3,26 @@ const { joinVoiceChannel, getVoiceConnection } = require("@discordjs/voice");
 const { errorMessageBuilder } = require("../utils/index");
 const SafeAccessor = require("../utils/safeAccessor");
 
+// ── Drosselung fuer Rechteprobleme ────────────────────────────────────────────
+// Fehlt dem Bot in einem Server das noetige Recht (meist steht seine Rolle zu
+// weit unten in der Rangfolge), scheitert JEDER Versuch dort - und zwar solange,
+// bis der Serverbesitzer das aendert. Ungedrosselt erzeugt das taeglich dutzende
+// identische Eintraege, die den Blick auf echte Fehler verstellen.
+// Deshalb: pro Server und Fehlerart nur einmal pro Stunde melden.
+const RECHTE_MELDE_ABSTAND_MS = 60 * 60 * 1000;
+const rechteZuletztGemeldet = new Map();
+
+function rechteproblemMelden(guildId, art, text) {
+    const schluessel = `${guildId}:${art}`;
+    const jetzt = Date.now();
+    const zuletzt = rechteZuletztGemeldet.get(schluessel) || 0;
+    if (jetzt - zuletzt < RECHTE_MELDE_ABSTAND_MS) return false;
+    rechteZuletztGemeldet.set(schluessel, jetzt);
+    console.error(text);
+    return true;
+}
+
+
 function createTrollManager({
     client,
     logToMaster,
@@ -246,7 +266,14 @@ function createTrollManager({
                         await retryDiscordAPI(() => freshMember.voice.setChannel(channel));
                         incrementGlobalStat("totalMoves");
                     } catch (moveErr) {
-                        console.error(`AutoMove setChannel error for ${freshMember.user.tag}:`, moveErr);
+                        // Nur die Kernaussage protokollieren, nicht die komplette
+                        // Fehlerkette - bei fehlenden Rechten wiederholt sie sich
+                        // ohnehin bei jedem Versuch identisch.
+                        rechteproblemMelden(
+                            freshMember.guild.id,
+                            "automove",
+                            `AutoMove fehlgeschlagen in ${freshMember.guild.name}: ${moveErr?.message || moveErr}`
+                        );
                         stopAutoMove(member.id, member.guild.id);
                         return;
                     }
@@ -315,7 +342,11 @@ function createTrollManager({
                 }
             }
         } catch (err) {
-            console.error("Return to initial channel error:", err);
+            rechteproblemMelden(
+                member?.guild?.id || "unbekannt",
+                "rueckkehr",
+                `Rueckkehr in den Ausgangskanal fehlgeschlagen: ${err?.message || err}`
+            );
         } finally {
             initialChannels.delete(trollKey);
         }
@@ -438,7 +469,11 @@ function createTrollManager({
                         );
                         if (!muteCheck.ok) {
                             const reasonText = buildManageMemberErrorText(muteCheck.reason, "Mute Members", freshMember.voice.channel?.name);
-                            console.error(`❌ Bot cannot mute member ${freshMember.user.tag} in guild ${freshMember.guild.name}: ${reasonText}`);
+                            rechteproblemMelden(
+                                freshMember.guild.id,
+                                "mute",
+                                `❌ Bot kann in ${freshMember.guild.name} niemanden stummschalten: ${reasonText}`
+                            );
                             await logToMaster(`❌ **Error**: ${reasonText} in **${freshMember.guild.name}**`);
                             clearEffectEntry(activeSilentPost, trollKey);
                             return;
@@ -583,7 +618,11 @@ function createTrollManager({
                         );
                         if (!deafCheck.ok) {
                             const reasonText = buildManageMemberErrorText(deafCheck.reason, "Deafen Members", freshMember.voice.channel?.name);
-                            console.error(`❌ Bot cannot deafen member ${freshMember.user.tag} in guild ${freshMember.guild.name}: ${reasonText}`);
+                            rechteproblemMelden(
+                                freshMember.guild.id,
+                                "deafen",
+                                `❌ Bot kann in ${freshMember.guild.name} niemanden taubstellen: ${reasonText}`
+                            );
                             await logToMaster(`❌ **Error**: ${reasonText} in **${freshMember.guild.name}**`);
                             clearEffectEntry(activeDeafTroll, trollKey);
                             return;

@@ -1187,10 +1187,19 @@ class BotAPIServer {
     setupRoutes() {
         // ============ HEALTH CHECK ============
         this.app.get('/health', (req, res) => {
+            // Zusaetzlich der echte Zustand der Discord-Verbindung. Ohne diese
+            // Angabe galt der Bot als gesund, solange nur der HTTP-Server lief -
+            // ein abgerissenes Gateway fiel damit niemandem auf.
+            const discordBereit = this.client.isReady?.() === true && this.client.ws?.status === 0;
             res.json(APIResponse.success({
                 bot: this.client.user ? this.client.user.username : 'offline',
                 uptime: this.client.uptime,
-                guilds: this.client.guilds.cache.size
+                guilds: this.client.guilds.cache.size,
+                discord: {
+                    bereit: discordBereit,
+                    wsStatus: this.client.ws?.status ?? null,
+                    pingMs: this.client.ws?.ping ?? null,
+                },
             }, 'Bot is healthy', 'HEALTH_OK'));
         });
 

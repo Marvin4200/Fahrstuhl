@@ -9,6 +9,7 @@ const {
 } = require("discord.js");
 const { sendServerLog } = require("./serverLogger");
 const ticketStore = require("./ticketStore");
+const { resolveTicketPanelDesign } = require("./ticketPanel");
 const { parseBoolean } = require("./valueParsers");
 
 const PRIORITIES = {
@@ -229,6 +230,16 @@ async function openTicket(interaction, config, options = {}) {
     const typeLabel = cleanText(options.typeLabel, "Support").slice(0, 40);
     const priorityInfo = PRIORITIES[priority];
     const safeName = safeChannelName(interaction.user.username);
+
+    // A ticket category may route to its own Discord category and notify its own
+    // team; both fall back to the guild-wide ticket settings.
+    const parentId = options.categoryId && interaction.guild.channels.cache.get(options.categoryId)?.type === 4
+        ? options.categoryId
+        : settings.categoryId;
+    const staffRoleIds = [options.staffRoleId, settings.staffRoleId]
+        .filter(roleId => roleId && interaction.guild.roles.cache.has(roleId));
+    const uniqueStaffRoleIds = [...new Set(staffRoleIds)];
+
     const overwrites = [
         { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
         ticketMemberOverwrite(interaction.user.id),
@@ -243,24 +254,24 @@ async function openTicket(interaction, config, options = {}) {
             ],
         },
     ];
-    if (settings.staffRoleId && interaction.guild.roles.cache.has(settings.staffRoleId)) {
-        overwrites.push(ticketMemberOverwrite(settings.staffRoleId));
+    for (const roleId of uniqueStaffRoleIds) {
+        overwrites.push(ticketMemberOverwrite(roleId));
     }
 
     const channel = await interaction.guild.channels.create({
         name: `${priorityInfo.prefix}-${safeName}`,
         type: 0,
-        parent: settings.categoryId || undefined,
+        parent: parentId || undefined,
         topic: buildTicketTopic({ user: interaction.user, reason, priority, type: typeLabel }),
         permissionOverwrites: overwrites,
         reason: `Fahrstuhl ticket opened by ${interaction.user.tag}`,
     });
 
-    const staffMention = settings.staffRoleId ? `<@&${settings.staffRoleId}> ` : "";
+    const staffMention = uniqueStaffRoleIds.map(roleId => `<@&${roleId}>`).join(" ");
     const embed = new EmbedBuilder()
         .setColor(priorityInfo.color)
         .setTitle(`${priorityInfo.label} Priority ${typeLabel} Ticket`)
-        .setDescription(`${staffMention}<@${interaction.user.id}> opened a private support ticket.`)
+        .setDescription(`${staffMention ? `${staffMention} ` : ""}<@${interaction.user.id}> opened a private support ticket.`)
         .addFields(
             { name: "Type", value: typeLabel, inline: true },
             { name: "Reason", value: reason, inline: false },
@@ -268,6 +279,7 @@ async function openTicket(interaction, config, options = {}) {
             { name: "Claimed By", value: "Unclaimed", inline: true },
             { name: "Controls", value: "Staff can claim or change priority. Anyone with access can close when resolved.", inline: false }
         )
+        .setFooter({ text: resolveTicketPanelDesign(settings).footerText })
         .setTimestamp();
 
     await channel.send({

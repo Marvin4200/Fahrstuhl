@@ -28,6 +28,15 @@ const { auditNginxSitesEnabled } = require('../utils/serverConfigAudit');
 const { getPool } = require('../utils/db');
 const ticketManager = require('../utils/ticketManager');
 const ticketStore = require('../utils/ticketStore');
+const {
+    buildTicketPanel,
+    colorToHex,
+    countStaffOnline,
+    normalizeTicketPanelInfo,
+    normalizeTicketSlaMinutes,
+    normalizeTicketTypes,
+    resolveTicketPanelDesign,
+} = require('../utils/ticketPanel');
 const { parseBoolean } = require('../utils/valueParsers');
 
 const SERVER_MODULES = [
@@ -115,33 +124,49 @@ const FEATURE_LIMITS = {
     },
 };
 
-function normalizeTicketTypes(rawTypes = []) {
-    const source = Array.isArray(rawTypes) ? rawTypes : [];
-    const fallback = [
-        { key: 'support', label: 'Support', description: 'General help from the team.', priority: 'normal' },
-        { key: 'report', label: 'Report', description: 'Report a member or incident.', priority: 'high' },
-        { key: 'appeal', label: 'Appeal', description: 'Appeal a moderation action.', priority: 'normal' },
-    ];
-    const rows = (source.length ? source : fallback)
-        .map((type, index) => {
-            const label = String(type?.label || '').trim().slice(0, 80);
-            const key = String(type?.key || label || `type-${index + 1}`).toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 40);
-            return {
-                key: key || `type-${index + 1}`,
-                label: label || `Type ${index + 1}`,
-                description: String(type?.description || '').trim().slice(0, 100),
-                priority: ['low', 'normal', 'high'].includes(type?.priority) ? type.priority : 'normal',
-            };
-        })
-        .filter(type => type.label)
-        .slice(0, 5);
-    return rows.length ? rows : fallback;
+function ticketPanelBoolean(bodyValue, existingValue, fallback) {
+    const source = bodyValue === undefined || bodyValue === null ? existingValue : bodyValue;
+    return booleanWithDefault(source, fallback);
 }
 
-function normalizeTicketSlaMinutes(value, fallback = 240) {
-    const minutes = Number(value);
-    if (!Number.isFinite(minutes)) return fallback;
-    return Math.max(0, Math.min(10080, Math.round(minutes)));
+// Panel look & feel lives in the same config blob as the behaviour settings, so
+// both the settings route and the panel-send route resolve it the same way.
+function ticketPanelSettingsFromBody(body = {}, existing = {}) {
+    const current = existing && typeof existing === 'object' ? existing : {};
+    const design = resolveTicketPanelDesign(current);
+    const text = (value, fallbackValue, maxLength) => {
+        const raw = String(value ?? '').trim();
+        return (raw || fallbackValue).slice(0, maxLength);
+    };
+
+    return {
+        panelTitle: text(body?.panelTitle, design.title, 120),
+        panelDescription: text(body?.panelDescription, design.description, 1200),
+        panelButtonLabel: text(body?.panelButtonLabel, design.buttonLabel, 80),
+        panelPlaceholder: text(body?.panelPlaceholder, design.placeholder, 150),
+        panelFooterText: text(body?.panelFooterText, design.footerText, 2048),
+        panelBrandName: text(body?.panelBrandName, design.brandName, 100),
+        panelBannerUrl: discordImageUrl(body?.panelBannerUrl ?? current.panelBannerUrl ?? ''),
+        panelColor: colorToHex(body?.panelColor ?? current.panelColor),
+        panelShowLiveStatus: ticketPanelBoolean(body?.panelShowLiveStatus, current.panelShowLiveStatus, true),
+        panelShowStaffOnline: ticketPanelBoolean(body?.panelShowStaffOnline, current.panelShowStaffOnline, true),
+        panelShowQueue: ticketPanelBoolean(body?.panelShowQueue, current.panelShowQueue, true),
+        panelShowRating: ticketPanelBoolean(body?.panelShowRating, current.panelShowRating, true),
+    };
+}
+
+// Drop references to channels/roles that no longer exist instead of rejecting
+// the whole save when a staff role or category was deleted in Discord.
+function sanitizeTicketCategoriesForGuild(guild, rawCategories) {
+    return normalizeTicketTypes(rawCategories).map(category => ({
+        ...category,
+        categoryId: category.categoryId && guild.channels.cache.get(category.categoryId)?.type === 4
+            ? category.categoryId
+            : null,
+        staffRoleId: category.staffRoleId && guild.roles.cache.has(category.staffRoleId)
+            ? category.staffRoleId
+            : null,
+    }));
 }
 
 function discordImageUrl(value) {
@@ -167,48 +192,6 @@ function dashboardBoolean(value) {
 
 function booleanWithDefault(value, fallback = false) {
     return parseBoolean(value, fallback);
-}
-
-function normalizeTicketPanelInfo(raw = {}) {
-    const source = raw && typeof raw === 'object' ? raw : {};
-    return {
-        enabled: dashboardBoolean(source.enabled),
-        showOpenTickets: dashboardBoolean(source.showOpenTickets),
-        showAverageResolution: dashboardBoolean(source.showAverageResolution),
-        showOverdueTickets: dashboardBoolean(source.showOverdueTickets),
-        showLastUpdated: dashboardBoolean(source.showLastUpdated),
-    };
-}
-
-function appendTicketPanelInfoField(embed, ticketStats, ticketPanelInfo) {
-    const info = normalizeTicketPanelInfo(ticketPanelInfo);
-    if (!info.enabled) return;
-
-    const lines = [];
-    if (info.showOpenTickets) {
-        lines.push(`Offene Tickets: ${Number(ticketStats?.open || 0)}`);
-    }
-    if (info.showAverageResolution) {
-        const avgMinutes = ticketStats?.avgResolutionMinutes;
-        const avgLabel = avgMinutes === null || avgMinutes === undefined
-            ? 'Keine Daten'
-            : `${Math.max(0, Math.round(Number(avgMinutes) || 0))} Min`;
-        lines.push(`Ø Lösungszeit: ${avgLabel}`);
-    }
-    if (info.showOverdueTickets) {
-        lines.push(`Überfällig: ${Number(ticketStats?.overdueOpen || 0)}`);
-    }
-    if (info.showLastUpdated) {
-        lines.push(`Aktualisiert: <t:${Math.floor(Date.now() / 1000)}:R>`);
-    }
-
-    if (lines.length > 0) {
-        embed.addFields({
-            name: '📊 Ticket-Status',
-            value: lines.join('\n'),
-            inline: false,
-        });
-    }
 }
 
 function normalizeDashboardModuleRoleMap(input = {}) {
@@ -3876,6 +3859,8 @@ class BotAPIServer {
                     ticketStore.getRecentTickets(guild.id, 20),
                 ]);
                 const ticketPanelInfo = normalizeTicketPanelInfo(tickets.ticketPanelInfo);
+                const panelDesign = resolveTicketPanelDesign(tickets);
+                const staffPresence = countStaffOnline(guild, tickets);
 
                 res.json(APIResponse.success({
                     guildId: guild.id,
@@ -3901,12 +3886,26 @@ class BotAPIServer {
                         enableClaiming: booleanWithDefault(tickets.enableClaiming, true),
                         enableTicketTypes: booleanWithDefault(tickets.enableTicketTypes, false),
                         ticketTypes: normalizeTicketTypes(tickets.ticketTypes),
-                        panelTitle: tickets.panelTitle ?? 'Need help?',
-                        panelDescription: tickets.panelDescription ?? 'Open a private support ticket and the team will help you.',
-                        panelButtonLabel: tickets.panelButtonLabel ?? 'Open Ticket',
+                        panelTitle: panelDesign.title,
+                        panelDescription: panelDesign.description,
+                        panelButtonLabel: panelDesign.buttonLabel,
+                        panelPlaceholder: panelDesign.placeholder,
+                        panelFooterText: panelDesign.footerText,
+                        panelBrandName: panelDesign.brandName,
+                        panelBannerUrl: panelDesign.bannerUrl,
+                        panelColor: colorToHex(panelDesign.color),
+                        panelShowLiveStatus: panelDesign.showLiveStatus,
+                        panelShowStaffOnline: panelDesign.showStaffOnline,
+                        panelShowQueue: panelDesign.showQueue,
+                        panelShowRating: panelDesign.showRating,
                         panelChannelId: tickets.panelChannelId || null,
                         panelMessageId: tickets.panelMessageId || null,
                         ticketPanelInfo,
+                    },
+                    liveStatus: {
+                        staffOnline: staffPresence.online,
+                        staffTotal: staffPresence.total,
+                        staffTracked: staffPresence.tracked,
                     },
                 }, 'Ticket settings fetched', 'TICKET_SETTINGS_OK'));
             } catch (error) {
@@ -3953,52 +3952,21 @@ class BotAPIServer {
                     requireCloseReason: dashboardBoolean(req.body?.requireCloseReason),
                     enableClaiming: booleanWithDefault(req.body?.enableClaiming, true),
                     enableTicketTypes: dashboardBoolean(req.body?.enableTicketTypes),
-                    ticketTypes: normalizeTicketTypes(req.body?.ticketTypes),
-                    panelTitle: String(req.body?.panelTitle || config.tickets?.panelTitle || 'Need help?').slice(0, 120),
-                    panelDescription: String(req.body?.panelDescription || config.tickets?.panelDescription || 'Open a private support ticket and the team will help you.').slice(0, 1200),
-                    panelButtonLabel: String(req.body?.panelButtonLabel || config.tickets?.panelButtonLabel || 'Open Ticket').slice(0, 80),
+                    ticketTypes: sanitizeTicketCategoriesForGuild(guild, req.body?.ticketTypes),
+                    ...ticketPanelSettingsFromBody(req.body, config.tickets),
                     ticketPanelInfo: normalizeTicketPanelInfo(req.body?.ticketPanelInfo || config.tickets?.ticketPanelInfo),
                 };
                 setGuildConfig(guild.id, { tickets });
 
-                const panelInfo = normalizeTicketPanelInfo(tickets.ticketPanelInfo);
-                if (panelInfo.enabled && tickets.panelChannelId && tickets.panelMessageId) {
+                if (tickets.panelChannelId && tickets.panelMessageId) {
                     const panelChannel = guild.channels.cache.get(tickets.panelChannelId)
                         || await guild.channels.fetch(tickets.panelChannelId).catch(() => null);
                     if (panelChannel?.isTextBased?.()) {
-                        const embed = new EmbedBuilder()
-                            .setColor(0xF0B232)
-                            .setTitle(tickets.panelTitle || 'Need help?')
-                            .setDescription(tickets.panelDescription || 'Open a private support ticket and the team will help you.')
-                            .setFooter({ text: 'Fahrstuhl Tickets' })
-                            .setTimestamp();
-
-                        const panelStats = await ticketStore.getTicketStats(guild.id, { slaMinutes: tickets.slaMinutes });
-                        appendTicketPanelInfoField(embed, panelStats, panelInfo);
-
-                        const components = [];
-                        if (tickets.enableTicketTypes) {
-                            const typeMenu = new StringSelectMenuBuilder()
-                                .setCustomId('ticket:type')
-                                .setPlaceholder('Choose a ticket type')
-                                .addOptions(normalizeTicketTypes(tickets.ticketTypes).map(type => ({
-                                    label: type.label,
-                                    value: type.key,
-                                    description: type.description || `${type.priority} priority`,
-                                })));
-                            components.push(new ActionRowBuilder().addComponents(typeMenu));
-                        } else {
-                            components.push(new ActionRowBuilder().addComponents(
-                                new ButtonBuilder()
-                                    .setCustomId('ticket:open')
-                                    .setLabel(String(tickets.panelButtonLabel || 'Open Ticket').slice(0, 80))
-                                    .setStyle(ButtonStyle.Primary)
-                            ));
-                        }
-
                         const panelMessage = await panelChannel.messages.fetch(tickets.panelMessageId).catch(() => null);
                         if (panelMessage) {
-                            await panelMessage.edit({ embeds: [embed], components }).catch(() => {});
+                            const panelStats = await ticketStore.getTicketStats(guild.id, { slaMinutes: tickets.slaMinutes });
+                            const panel = buildTicketPanel({ guild, settings: tickets, ticketStats: panelStats });
+                            await panelMessage.edit(panel).catch(() => {});
                         }
                     }
                 }
@@ -4039,9 +4007,6 @@ class BotAPIServer {
                     }
                 }
 
-                const title = String(req.body?.panelTitle || 'Need help?').trim().slice(0, 120);
-                const description = String(req.body?.panelDescription || 'Open a private support ticket and the team will help you.').trim().slice(0, 1200);
-                const buttonLabel = String(req.body?.panelButtonLabel || 'Open Ticket').trim().slice(0, 80);
                 const incomingTicketSettings = {
                     categoryId: String(req.body?.categoryId || '').trim() || null,
                     staffRoleId: String(req.body?.staffRoleId || '').trim() || null,
@@ -4052,25 +4017,17 @@ class BotAPIServer {
                     requireCloseReason: dashboardBoolean(req.body?.requireCloseReason),
                     enableClaiming: booleanWithDefault(req.body?.enableClaiming, true),
                     enableTicketTypes: dashboardBoolean(req.body?.enableTicketTypes),
-                    ticketTypes: normalizeTicketTypes(req.body?.ticketTypes),
+                    ticketTypes: sanitizeTicketCategoriesForGuild(guild, req.body?.ticketTypes),
                     ticketPanelInfo: normalizeTicketPanelInfo(req.body?.ticketPanelInfo || config.tickets?.ticketPanelInfo),
                 };
 
-                const embed = new EmbedBuilder()
-                    .setColor(0xF0B232)
-                    .setTitle(title)
-                    .setDescription(description)
-                    .setFooter({ text: 'Fahrstuhl Tickets' })
-                    .setTimestamp();
                 const settings = {
                     ...(config.tickets && typeof config.tickets === 'object' ? config.tickets : {}),
                     ...incomingTicketSettings,
-                    panelTitle: title,
-                    panelDescription: description,
-                    panelButtonLabel: buttonLabel,
+                    ...ticketPanelSettingsFromBody(req.body, config.tickets),
                 };
                 const panelStats = await ticketStore.getTicketStats(guild.id, { slaMinutes: settings.slaMinutes });
-                appendTicketPanelInfoField(embed, panelStats, settings.ticketPanelInfo);
+                const panel = buildTicketPanel({ guild, settings, ticketStats: panelStats });
 
                 const existingPanelMessageId = config.tickets?.panelMessageId;
                 const existingPanelChannelId = config.tickets?.panelChannelId;
@@ -4080,44 +4037,21 @@ class BotAPIServer {
                     return res.status(403).json({ success: false, error: 'Feature limit reached', code: 'LIMIT_REACHED', limitKey: 'ticketPanels', limit: limits.ticketPanels, current: panelCount, upgrade: true });
                 }
 
-                const components = [];
-                if (settings.enableTicketTypes) {
-                    const typeMenu = new StringSelectMenuBuilder()
-                        .setCustomId('ticket:type')
-                        .setPlaceholder('Choose a ticket type')
-                        .addOptions(normalizeTicketTypes(settings.ticketTypes).map(type => ({
-                            label: type.label,
-                            value: type.key,
-                            description: type.description || `${type.priority} priority`,
-                        })));
-                    components.push(new ActionRowBuilder().addComponents(typeMenu));
-                } else {
-                    components.push(new ActionRowBuilder().addComponents(
-                        new ButtonBuilder()
-                            .setCustomId('ticket:open')
-                            .setLabel(buttonLabel)
-                            .setStyle(ButtonStyle.Primary)
-                    ));
-                }
-
                 // Try to edit existing panel message instead of always posting a new one
                 let message = null;
                 if (existingPanelMessageId && existingPanelChannelId === channel.id) {
                     const existingMsg = await channel.messages.fetch(existingPanelMessageId).catch(() => null);
                     if (existingMsg) {
-                        message = await existingMsg.edit({ embeds: [embed], components }).catch(() => null);
+                        message = await existingMsg.edit(panel).catch(() => null);
                     }
                 }
                 if (!message) {
-                    message = await channel.send({ embeds: [embed], components });
+                    message = await channel.send(panel);
                 }
 
                 setGuildConfig(guild.id, {
                     tickets: {
                         ...settings,
-                        panelTitle: title,
-                        panelDescription: description,
-                        panelButtonLabel: buttonLabel,
                         panelChannelId: channel.id,
                         panelMessageId: message.id,
                     },

@@ -157,14 +157,22 @@ async function recordFeedback({ channelId, rating, user, comment = "" }) {
 }
 
 async function getTicketStats(guildId, options = {}) {
+    const rawSla = Number(options.slaMinutes);
+    const slaMinutes = Number.isFinite(rawSla) ? Math.max(0, Math.round(rawSla)) : 0;
+    // slaMinutes of 0 disables the SLA, so nothing counts as overdue.
+    const overdueExpr = slaMinutes > 0
+        ? "SUM(status = 'open' AND opened_at < NOW() - INTERVAL ? MINUTE)"
+        : '0';
+    const baseStatsParams = slaMinutes > 0 ? [slaMinutes, guildId] : [guildId];
+
     const baseStatsQuery = `
-        SELECT 
+        SELECT
             COUNT(*) AS total,
             SUM(status = 'open') AS open,
             SUM(status = 'closed') AS closed,
             SUM(priority = 'high' AND status = 'open') AS highOpen,
             SUM(claimed_by IS NOT NULL AND status = 'open') AS claimedOpen,
-            SUM(status = 'open' AND updated_at < NOW() - INTERVAL 7 DAY) AS overdueOpen,
+            ${overdueExpr} AS overdueOpen,
             AVG(IF(feedback_rating IS NOT NULL, feedback_rating, NULL)) AS feedbackAvg,
             COUNT(IF(feedback_rating IS NOT NULL, 1, NULL)) AS feedbackCount
         FROM ticket_records
@@ -203,7 +211,7 @@ async function getTicketStats(guildId, options = {}) {
     `;
 
     const [baseStats, byStatus, byPriority, topClaimers, resolvedStats] = await Promise.all([
-        safeQuery(pool => pool.query(baseStatsQuery, [guildId])),
+        safeQuery(pool => pool.query(baseStatsQuery, baseStatsParams)),
         safeQuery(pool => pool.query(byStatusQuery, [guildId])),
         safeQuery(pool => pool.query(byPriorityQuery, [guildId])),
         safeQuery(pool => pool.query(topClaimersQuery, [guildId])),

@@ -61,6 +61,9 @@ function ticketTypePayloadFromPost() {
     $typeLabels = $_POST['typeLabels'] ?? [];
     $typeDescriptions = $_POST['typeDescriptions'] ?? [];
     $typePriorities = $_POST['typePriorities'] ?? [];
+    $typeEmojis = $_POST['typeEmojis'] ?? [];
+    $typeCategories = $_POST['typeCategories'] ?? [];
+    $typeStaffRoles = $_POST['typeStaffRoles'] ?? [];
     for ($i = 0; $i < count($typeLabels); $i++) {
         $label = trim($typeLabels[$i] ?? '');
         if ($label === '') continue;
@@ -68,9 +71,29 @@ function ticketTypePayloadFromPost() {
             'label' => $label,
             'description' => trim($typeDescriptions[$i] ?? ''),
             'priority' => $typePriorities[$i] ?? 'normal',
+            'emoji' => trim($typeEmojis[$i] ?? ''),
+            'categoryId' => trim($typeCategories[$i] ?? ''),
+            'staffRoleId' => trim($typeStaffRoles[$i] ?? ''),
         ];
     }
     return $ticketTypes;
+}
+
+function ticketPanelDesignPayloadFromPost() {
+    return [
+        'panelTitle' => $_POST['panelTitle'] ?? '',
+        'panelDescription' => $_POST['panelDescription'] ?? '',
+        'panelButtonLabel' => $_POST['panelButtonLabel'] ?? '',
+        'panelPlaceholder' => $_POST['panelPlaceholder'] ?? '',
+        'panelFooterText' => $_POST['panelFooterText'] ?? '',
+        'panelBrandName' => $_POST['panelBrandName'] ?? '',
+        'panelBannerUrl' => $_POST['panelBannerUrl'] ?? '',
+        'panelColor' => $_POST['panelColor'] ?? '',
+        'panelShowLiveStatus' => isset($_POST['panelShowLiveStatus']),
+        'panelShowStaffOnline' => isset($_POST['panelShowStaffOnline']),
+        'panelShowQueue' => isset($_POST['panelShowQueue']),
+        'panelShowRating' => isset($_POST['panelShowRating']),
+    ];
 }
 
 function ticketPanelInfoPayloadFromPost() {
@@ -98,11 +121,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
             'requireCloseReason' => isset($_POST['requireCloseReason']),
             'enableTicketTypes' => isset($_POST['enableTicketTypes']),
             'ticketTypes' => ticketTypePayloadFromPost(),
-            'panelTitle' => $_POST['panelTitle'] ?? '',
-            'panelDescription' => $_POST['panelDescription'] ?? '',
-            'panelButtonLabel' => $_POST['panelButtonLabel'] ?? '',
             'ticketPanelInfo' => ticketPanelInfoPayloadFromPost(),
-        ], 20);
+        ] + ticketPanelDesignPayloadFromPost(), 20);
         $panelSuccess = ($result['data']['success'] ?? false) === true;
         if ($panelSuccess) {
             $panelMessage = 'Panel gesendet!';
@@ -157,10 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
             'categoryId' => $_POST['categoryId'] ?? '',
             'staffRoleId' => $_POST['staffRoleId'] ?? '',
             'transcriptChannelId' => $_POST['transcriptChannelId'] ?? '',
-            'panelTitle' => $_POST['panelTitle'] ?? '',
-            'panelDescription' => $_POST['panelDescription'] ?? '',
-            'panelButtonLabel' => $_POST['panelButtonLabel'] ?? '',
-        ];
+        ] + ticketPanelDesignPayloadFromPost();
         $payload['defaultPriority'] = $_POST['defaultPriority'] ?? 'normal';
         $payload['closeDelaySeconds'] = intval($_POST['closeDelaySeconds'] ?? 5);
         $payload['slaMinutes'] = intval($_POST['slaMinutes'] ?? 240);
@@ -214,10 +231,27 @@ $priorityLabels = ['low' => 'Low', 'normal' => 'Normal', 'high' => 'High'];
 $feedbackAvg = $ticketStats['feedbackAvg'] ?? null;
 $feedbackLabel = $feedbackAvg === null ? '-' : number_format((float)$feedbackAvg, 1) . '/5';
 $ticketTypes = $settings['ticketTypes'] ?? [
-    ['label' => 'Support', 'description' => 'General help from the team.', 'priority' => 'normal'],
-    ['label' => 'Report', 'description' => 'Report a member or incident.', 'priority' => 'high'],
-    ['label' => 'Appeal', 'description' => 'Appeal a moderation action.', 'priority' => 'normal'],
+    ['label' => 'Support', 'emoji' => '🎫', 'description' => 'Allgemeine Hilfe vom Team.', 'priority' => 'normal'],
+    ['label' => 'Kauf & Zahlung', 'emoji' => '💳', 'description' => 'Fragen zu Käufen, Zahlungen oder Rechnungen.', 'priority' => 'normal'],
+    ['label' => 'Fehler melden', 'emoji' => '🐛', 'description' => 'Melde einen Bug oder ein technisches Problem.', 'priority' => 'high'],
+    ['label' => 'Partnerschaft', 'emoji' => '🤝', 'description' => 'Kooperationen und Partneranfragen.', 'priority' => 'low'],
+    ['label' => 'Sonstiges', 'emoji' => '📋', 'description' => 'Alles, was in keine andere Kategorie passt.', 'priority' => 'normal'],
 ];
+// Das Dashboard laeuft hinter nginx, dort ist $_SERVER['HTTPS'] oft nicht gesetzt.
+$forwardedProto = strtolower(trim(explode(',', $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')[0]));
+$dashboardScheme = $forwardedProto === 'https' || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$dashboardHost = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? 'eselbande.com';
+$defaultBannerUrl = $dashboardScheme . '://' . $dashboardHost . BASE_URL . '/assets/img/eselbande-ticket-banner.png';
+$panelPlaceholder = $settings['panelPlaceholder'] ?? 'Choose a category ...';
+$panelFooterText = $settings['panelFooterText'] ?? 'eselbande.com';
+$panelBrandName = $settings['panelBrandName'] ?? 'Eselbande';
+$panelBannerUrl = $settings['panelBannerUrl'] ?? '';
+$panelColor = $settings['panelColor'] ?? '#667eea';
+$panelShowLiveStatus = $settings['panelShowLiveStatus'] ?? true;
+$panelShowStaffOnline = $settings['panelShowStaffOnline'] ?? true;
+$panelShowQueue = $settings['panelShowQueue'] ?? true;
+$panelShowRating = $settings['panelShowRating'] ?? true;
+$liveStatus = $data['liveStatus'] ?? [];
 $ticketPanelInfo = is_array($settings['ticketPanelInfo'] ?? null) ? $settings['ticketPanelInfo'] : [];
 $panelInfoEnabled = !empty($ticketPanelInfo['enabled']);
 $panelInfoShowOpenTickets = !empty($ticketPanelInfo['showOpenTickets']);
@@ -255,10 +289,20 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
     width: 100%; padding: 0.6rem; border-radius: 6px; border: 1px solid var(--border-light);
     background: var(--bg-tertiary); color: var(--text-primary); font-size: 0.9rem;
 }
-.discord-preview { background: #2b2d31; border-radius: 8px; border-left: 4px solid #5865f2; padding: 1rem; font-family: 'gg sans', sans-serif; font-size: 0.95rem; }
+.discord-preview { background: #2b2d31; border-radius: 8px; border-left: 4px solid #667eea; padding: 1rem; font-family: 'gg sans', sans-serif; font-size: 0.95rem; }
+.discord-brand { display:flex; align-items:center; gap:.4rem; font-size:.78rem; font-weight:600; color:#dbdee1; margin-bottom:.45rem; }
+.discord-brand::before { content:''; width:16px; height:16px; border-radius:50%; background:#667eea; flex:0 0 auto; }
 .discord-title { font-weight: 600; font-size: 1.1rem; margin-bottom: 0.4rem; }
-.discord-desc { color: #dbdee1; white-space: pre-line; margin-bottom: 1rem; }
-.discord-btn { background: #5865f2; color: #fff; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; }
+.discord-desc { color: #dbdee1; white-space: pre-line; margin-bottom: 0.7rem; }
+.discord-banner { width:100%; border-radius:6px; margin-bottom:.7rem; display:block; }
+.discord-divider { height:1px; background:#3f4248; margin:.7rem 0; }
+.discord-status { color:#b5bac1; font-size:.78rem; margin-bottom:.7rem; }
+.discord-select { background:#1e1f22; border:1px solid #3f4248; border-radius:4px; padding:.55rem .75rem; color:#b5bac1; font-size:.85rem; display:flex; justify-content:space-between; align-items:center; }
+.discord-options { display:grid; gap:.2rem; margin-top:.35rem; }
+.discord-option { display:flex; gap:.45rem; align-items:baseline; font-size:.78rem; color:#dbdee1; padding:.25rem .4rem; border-radius:4px; background:rgba(255,255,255,.03); }
+.discord-option small { color:#949ba4; font-size:.7rem; }
+.discord-footer { color:#949ba4; font-size:.72rem; margin-top:.8rem; padding-top:.5rem; border-top:1px solid #3f4248; }
+.discord-btn { background: #667eea; color: #fff; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; }
 
 /* Stats */
 .tk-metric-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:.75rem; }
@@ -314,7 +358,10 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
 
 /* Ticket type cards */
 .tk-type-card { background:rgba(255,255,255,.04); border:1px solid var(--border-light); border-radius:8px; padding:.55rem .65rem; display:grid; gap:.38rem; }
-.tk-type-card-top { display:grid; grid-template-columns:1fr 88px 26px; gap:.4rem; align-items:center; }
+.tk-type-card-top { display:grid; grid-template-columns:44px 1fr 88px 26px; gap:.4rem; align-items:center; }
+.tk-type-card-top .tk-type-emoji { text-align:center; }
+.tk-type-card-routing { display:grid; grid-template-columns:1fr 1fr; gap:.4rem; }
+.tk-type-card-routing select { font-size:.72rem; padding:.32rem .4rem; border-radius:5px; border:1px solid var(--border-light); background:var(--bg-tertiary); color:var(--text-secondary); width:100%; min-width:0; }
 .tk-type-card-top input[type="text"] { font-size:.85rem; padding:.38rem .55rem; border-radius:5px; border:1px solid var(--border-light); background:var(--bg-tertiary); color:var(--text-primary); width:100%; }
 .tk-type-card-top select { font-size:.78rem; padding:.38rem .4rem; border-radius:5px; border:1px solid var(--border-light); background:var(--bg-tertiary); color:var(--text-primary); }
 .tk-type-card-desc input[type="text"] { font-size:.78rem; padding:.35rem .55rem; border-radius:5px; border:1px solid var(--border-light); background:var(--bg-tertiary); color:var(--text-secondary); width:100%; }
@@ -487,8 +534,9 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
 
             <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--text-secondary);">
                 <input type="checkbox" name="enableTicketTypes" <?php echo !empty($settings['enableTicketTypes']) ? 'checked' : ''; ?>>
-                Use ticket type dropdown + intake form
+                <?= t('tk.menu_toggle') ?>
             </label>
+            <small style="color:var(--text-secondary); font-size:.72rem; margin-top:-.3rem;"><?= t('tk.menu_toggle_hint') ?></small>
 
             <button type="submit" id="ticketsSaveBtn" class="btn-icon" style="margin-top:0.5rem; justify-content:center; background:var(--primary); color:#fff; border:none; padding:0.7rem;"><span class="i">💾</span> Save Settings</button>
         </div>
@@ -499,18 +547,75 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
             
             <div class="tk-field">
                 <label><?= t('tk.panel_title') ?></label>
-                <input type="text" name="panelTitle" id="tkTitle" value="<?php echo esc($settings['panelTitle'] ?? 'Need help?'); ?>">
+                <input type="text" name="panelTitle" id="tkTitle" value="<?php echo esc($settings['panelTitle'] ?? 'Discord Ticket System'); ?>">
             </div>
 
             <div class="tk-field">
                 <label><?= t('tk.panel_desc') ?></label>
-                <textarea name="panelDescription" id="tkDesc" style="min-height:100px;"><?php echo esc($settings['panelDescription'] ?? 'Open a private support ticket and the team will help you.'); ?></textarea>
+                <textarea name="panelDescription" id="tkDesc" style="min-height:100px;"><?php echo esc($settings['panelDescription'] ?? 'Du brauchst Hilfe? Wähle unten eine Kategorie aus und unser Team kümmert sich um dein Anliegen.'); ?></textarea>
+            </div>
+
+            <div class="tk-field">
+                <label><?= t('tk.placeholder') ?></label>
+                <input type="text" name="panelPlaceholder" id="tkPlaceholder" value="<?php echo esc($panelPlaceholder); ?>">
+                <small><?= t('tk.placeholder_hint') ?></small>
             </div>
 
             <div class="tk-field">
                 <label><?= t('tk.button_label') ?></label>
-                <input type="text" name="panelButtonLabel" id="tkBtn" value="<?php echo esc($settings['panelButtonLabel'] ?? 'Open Ticket'); ?>">
+                <input type="text" name="panelButtonLabel" id="tkBtn" value="<?php echo esc($settings['panelButtonLabel'] ?? 'Ticket öffnen'); ?>">
+                <small><?= t('tk.button_hint') ?></small>
             </div>
+
+            <div class="tk-section-title"><?= t('tk.branding') ?></div>
+            <div class="tk-field">
+                <label><?= t('tk.banner') ?></label>
+                <input type="text" name="panelBannerUrl" id="tkBanner" value="<?php echo esc($panelBannerUrl); ?>" placeholder="<?php echo esc($defaultBannerUrl); ?>">
+                <div style="display:flex; gap:.4rem; margin-top:.35rem;">
+                    <button type="button" id="tkUseDefaultBanner" data-url="<?php echo esc($defaultBannerUrl); ?>" class="btn-icon" style="font-size:.72rem; padding:.3rem .6rem; background:rgba(102,126,234,.14); border-color:rgba(102,126,234,.35); color:#c7d2fe;"><?= t('tk.banner_default') ?></button>
+                    <button type="button" id="tkClearBanner" class="btn-icon" style="font-size:.72rem; padding:.3rem .6rem;"><?= t('tk.banner_clear') ?></button>
+                </div>
+                <small><?= t('tk.banner_hint') ?></small>
+            </div>
+
+            <div class="tk-field">
+                <label><?= t('tk.accent') ?></label>
+                <div style="display:flex; gap:.5rem; align-items:center;">
+                    <input type="color" name="panelColor" id="tkColor" value="<?php echo esc($panelColor); ?>" style="width:46px; height:34px; padding:2px; background:var(--bg-tertiary); border:1px solid var(--border-light); border-radius:5px;">
+                    <input type="text" id="tkColorText" value="<?php echo esc($panelColor); ?>" style="flex:1;" readonly>
+                </div>
+            </div>
+
+            <div class="tk-field">
+                <label><?= t('tk.brand_name') ?></label>
+                <input type="text" name="panelBrandName" id="tkBrand" value="<?php echo esc($panelBrandName); ?>">
+                <small><?= t('tk.brand_hint') ?></small>
+            </div>
+
+            <div class="tk-field">
+                <label><?= t('tk.footer') ?></label>
+                <input type="text" name="panelFooterText" id="tkFooter" value="<?php echo esc($panelFooterText); ?>">
+                <small><?= t('tk.footer_hint') ?></small>
+            </div>
+
+            <div class="tk-section-title"><?= t('tk.live_status') ?></div>
+            <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--text-secondary);">
+                <input type="checkbox" name="panelShowLiveStatus" <?php echo $panelShowLiveStatus ? 'checked' : ''; ?>>
+                <?= t('tk.live_show') ?>
+            </label>
+            <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--text-secondary);">
+                <input type="checkbox" name="panelShowStaffOnline" <?php echo $panelShowStaffOnline ? 'checked' : ''; ?>>
+                <?= t('tk.live_staff') ?><?php if (!empty($liveStatus['staffTracked'])): ?> <span style="font-size:.72rem;">(<?php echo (int)($liveStatus['staffOnline'] ?? 0); ?>/<?php echo (int)($liveStatus['staffTotal'] ?? 0); ?>)</span><?php endif; ?>
+            </label>
+            <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--text-secondary);">
+                <input type="checkbox" name="panelShowQueue" <?php echo $panelShowQueue ? 'checked' : ''; ?>>
+                <?= t('tk.live_queue') ?>
+            </label>
+            <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--text-secondary);">
+                <input type="checkbox" name="panelShowRating" <?php echo $panelShowRating ? 'checked' : ''; ?>>
+                <?= t('tk.live_rating') ?>
+            </label>
+            <small style="color:var(--text-secondary); font-size:.72rem;"><?= t('tk.live_hint') ?></small>
 
             <div class="tk-section-title"><?= t('tk.panel_info') ?></div>
             <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--text-secondary);">
@@ -540,21 +645,36 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
                 <?php foreach ($ticketTypes as $type): ?>
                     <div class="tk-type-card">
                         <div class="tk-type-card-top">
-                            <input type="text" name="typeLabels[]" value="<?php echo esc($type['label'] ?? ''); ?>" placeholder="Type label">
+                            <input type="text" name="typeEmojis[]" class="tk-type-emoji" value="<?php echo esc($type['emoji'] ?? ''); ?>" placeholder="🎫">
+                            <input type="text" name="typeLabels[]" value="<?php echo esc($type['label'] ?? ''); ?>" placeholder="<?= t('tk.cat_label_ph') ?>">
                             <select name="typePriorities[]">
                                 <?php foreach ($priorityLabels as $value => $label): ?>
                                     <option value="<?php echo esc($value); ?>" <?php echo ($type['priority'] ?? 'normal') === $value ? 'selected' : ''; ?>><?php echo esc($label); ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <button type="button" class="tk-type-remove" title="Entfernen">&times;</button>
+                            <button type="button" class="tk-type-remove" title="<?= t('tk.banner_clear') ?>">&times;</button>
                         </div>
                         <div class="tk-type-card-desc">
-                            <input type="text" name="typeDescriptions[]" value="<?php echo esc($type['description'] ?? ''); ?>" placeholder="Short description (optional)">
+                            <input type="text" name="typeDescriptions[]" value="<?php echo esc($type['description'] ?? ''); ?>" placeholder="<?= t('tk.cat_desc_ph') ?>">
+                        </div>
+                        <div class="tk-type-card-routing">
+                            <select name="typeCategories[]">
+                                <option value=""><?= t('tk.cat_default_cat') ?></option>
+                                <?php foreach ($categories as $category): ?>
+                                    <option value="<?php echo esc($category['id']); ?>" <?php echo ($type['categoryId'] ?? '') === $category['id'] ? 'selected' : ''; ?>><?php echo esc($category['name']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <select name="typeStaffRoles[]">
+                                <option value=""><?= t('tk.cat_default_team') ?></option>
+                                <?php foreach ($roles as $role): ?>
+                                    <option value="<?php echo esc($role['id']); ?>" <?php echo ($type['staffRoleId'] ?? '') === $role['id'] ? 'selected' : ''; ?>>@<?php echo esc($role['name']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                     </div>
                 <?php endforeach; ?>
             </div>
-            <button type="button" id="tkAddType" class="btn-icon" style="font-size:.8rem; padding:.4rem .75rem; background:rgba(88,101,242,.12); border-color:rgba(88,101,242,.3); color:#c7d2fe; margin-top:.2rem;"><span class="i">+</span> Type hinzufügen</button>
+            <button type="button" id="tkAddType" class="btn-icon" style="font-size:.8rem; padding:.4rem .75rem; background:rgba(102,126,234,.14); border-color:rgba(102,126,234,.35); color:#c7d2fe; margin-top:.2rem;"><span class="i">+</span> <?= t('tk.cat_add') ?></button>
             <small style="color:var(--text-secondary); font-size:.72rem;"><?= t('tk.types_hint') ?></small>
 
             <div class="tk-section-title"><?= t('tk.deployment') ?></div>
@@ -600,10 +720,17 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
         <!-- COLUMN 3: PREVIEW -->
         <div class="tk-card">
             <h2><span class="i">👁️</span> <?= t('tk.live_preview') ?></h2>
-            <div class="discord-preview">
+            <div class="discord-preview" id="pPreview">
+                <div id="pBrand" class="discord-brand"></div>
                 <div id="pTitle" class="discord-title"></div>
                 <div id="pDesc" class="discord-desc"></div>
-                <div class="discord-btn">📩 <span id="pBtn"></span></div>
+                <img id="pBanner" class="discord-banner" alt="" hidden>
+                <div id="pDivider" class="discord-divider"></div>
+                <div id="pStatus" class="discord-status"></div>
+                <div id="pSelect" class="discord-select"><span id="pPlaceholder"></span><span>⌄</span></div>
+                <div id="pOptions" class="discord-options"></div>
+                <div id="pButtonWrap" class="discord-btn" hidden>🎫 <span id="pBtn"></span></div>
+                <div id="pFooter" class="discord-footer"></div>
             </div>
 
             <div class="tk-section-title"><?= t('tk.instructions') ?></div>
@@ -801,15 +928,114 @@ function escapeHtml(str) {
         .replace(/'/g, '&#039;');
 }
 
+const PREVIEW_LIVE_STATUS = <?php echo json_encode([
+    'staffOnline' => (int)($liveStatus['staffOnline'] ?? 0),
+    'staffTracked' => (bool)($liveStatus['staffTracked'] ?? false),
+    'open' => (int)($ticketStats['open'] ?? 0),
+    'overdue' => (int)($ticketStats['overdueOpen'] ?? 0),
+    'ratingAvg' => (float)($ticketStats['feedback']['average'] ?? 0),
+    'ratingCount' => (int)($ticketStats['feedback']['count'] ?? 0),
+    'staffLabel' => t('tk.live_staff'),
+]); ?>;
+
+function previewQueueLabel() {
+    if (PREVIEW_LIVE_STATUS.overdue > 0) return PREVIEW_LIVE_STATUS.overdue + ' überfällig';
+    if (PREVIEW_LIVE_STATUS.open === 0) return 'Queue frei';
+    return PREVIEW_LIVE_STATUS.open === 1 ? '1 offenes Ticket' : PREVIEW_LIVE_STATUS.open + ' offene Tickets';
+}
+
+function previewStatusLine() {
+    if (!document.querySelector('[name="panelShowLiveStatus"]')?.checked) return '';
+    const parts = [];
+    if (document.querySelector('[name="panelShowStaffOnline"]')?.checked && PREVIEW_LIVE_STATUS.staffTracked) {
+        parts.push(PREVIEW_LIVE_STATUS.staffOnline + ' ' + PREVIEW_LIVE_STATUS.staffLabel);
+    }
+    if (document.querySelector('[name="panelShowQueue"]')?.checked) parts.push(previewQueueLabel());
+    if (document.querySelector('[name="panelShowRating"]')?.checked && PREVIEW_LIVE_STATUS.ratingCount > 0) {
+        parts.push(PREVIEW_LIVE_STATUS.ratingAvg.toFixed(1) + '★ (' + PREVIEW_LIVE_STATUS.ratingCount + ')');
+    }
+    if (!parts.length) return '';
+    const indicator = PREVIEW_LIVE_STATUS.staffTracked && PREVIEW_LIVE_STATUS.staffOnline === 0 ? '🟠' : '🟢';
+    return indicator + ' ' + parts.join(' • ');
+}
+
 function updatePreview() {
+    // Ohne gewaehlten Server wird das Formular nicht gerendert.
+    if (!document.getElementById('pPreview') || !document.getElementById('tkTitle')) return;
+
+    const color = document.getElementById('tkColor')?.value || '#667eea';
+    const useCategories = document.querySelector('[name="enableTicketTypes"]')?.checked;
+    const banner = (document.getElementById('tkBanner')?.value || '').trim();
+
+    document.getElementById('pPreview').style.borderLeftColor = color;
+    document.getElementById('pBrand').textContent = (document.getElementById('tkBrand')?.value || 'Eselbande') + ' • online';
     document.getElementById('pTitle').textContent = document.getElementById('tkTitle').value;
     document.getElementById('pDesc').textContent = document.getElementById('tkDesc').value;
+    document.getElementById('pPlaceholder').textContent = document.getElementById('tkPlaceholder')?.value || 'Choose a category ...';
     document.getElementById('pBtn').textContent = document.getElementById('tkBtn').value;
+    document.getElementById('pFooter').textContent = (document.getElementById('tkFooter')?.value || 'eselbande.com')
+        + ' • ' + new Date().toLocaleString('de-DE', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    const bannerEl = document.getElementById('pBanner');
+    if (/^https?:\/\//i.test(banner)) {
+        bannerEl.src = banner;
+        bannerEl.hidden = false;
+    } else {
+        bannerEl.hidden = true;
+    }
+
+    const status = previewStatusLine();
+    document.getElementById('pStatus').textContent = status;
+    document.getElementById('pStatus').hidden = !status;
+    document.getElementById('pDivider').hidden = !status;
+
+    document.getElementById('pSelect').hidden = !useCategories;
+    document.getElementById('pOptions').hidden = !useCategories;
+    document.getElementById('pButtonWrap').hidden = !!useCategories;
+
+    const options = document.getElementById('pOptions');
+    options.innerHTML = '';
+    if (useCategories) {
+        document.querySelectorAll('#tkTypeContainer .tk-type-card').forEach(card => {
+            const label = card.querySelector('[name="typeLabels[]"]')?.value.trim();
+            if (!label) return;
+            const emoji = card.querySelector('[name="typeEmojis[]"]')?.value.trim() || '';
+            const desc = card.querySelector('[name="typeDescriptions[]"]')?.value.trim() || '';
+            const row = document.createElement('div');
+            row.className = 'discord-option';
+            const name = document.createElement('span');
+            name.textContent = (emoji ? emoji + ' ' : '') + label;
+            row.appendChild(name);
+            if (desc) {
+                const small = document.createElement('small');
+                small.textContent = desc;
+                row.appendChild(small);
+            }
+            options.appendChild(row);
+        });
+    }
 }
-document.querySelectorAll('input, textarea').forEach(el => {
-    el.addEventListener('input', updatePreview);
-});
+
+document.addEventListener('input', updatePreview);
+document.addEventListener('change', updatePreview);
 document.addEventListener('DOMContentLoaded', updatePreview);
+
+document.getElementById('tkColor')?.addEventListener('input', event => {
+    const text = document.getElementById('tkColorText');
+    if (text) text.value = event.target.value;
+});
+
+document.getElementById('tkUseDefaultBanner')?.addEventListener('click', event => {
+    const input = document.getElementById('tkBanner');
+    input.value = event.currentTarget.dataset.url || '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+});
+
+document.getElementById('tkClearBanner')?.addEventListener('click', () => {
+    const input = document.getElementById('tkBanner');
+    input.value = '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+});
 
 (function() {
     const form = document.getElementById('ticketsForm');
@@ -1007,11 +1233,30 @@ document.addEventListener('DOMContentLoaded', updatePreview);
     });
 })();
 
-// Dynamic ticket types
+// Dynamic ticket categories
 (function() {
     const container = document.getElementById('tkTypeContainer');
     const addBtn = document.getElementById('tkAddType');
     if (!container || !addBtn) return;
+
+    const MAX_CATEGORIES = 25;
+    const CAT_MAX_LABEL = <?php echo json_encode(t('tk.cat_max'), JSON_UNESCAPED_UNICODE); ?>;
+    const discordCategories = <?php echo json_encode($categories, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+    const staffRoles = <?php echo json_encode($roles, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+
+    function makeSelect(name, placeholder, items, prefix) {
+        const sel = document.createElement('select');
+        sel.name = name;
+        const empty = document.createElement('option');
+        empty.value = ''; empty.textContent = placeholder;
+        sel.appendChild(empty);
+        items.forEach(item => {
+            const o = document.createElement('option');
+            o.value = item.id; o.textContent = (prefix || '') + item.name;
+            sel.appendChild(o);
+        });
+        return sel;
+    }
 
     function makeRow(label, description, priority) {
         const card = document.createElement('div');
@@ -1020,8 +1265,11 @@ document.addEventListener('DOMContentLoaded', updatePreview);
         const top = document.createElement('div');
         top.className = 'tk-type-card-top';
 
+        const emoji = document.createElement('input');
+        emoji.type = 'text'; emoji.name = 'typeEmojis[]'; emoji.className = 'tk-type-emoji'; emoji.placeholder = '🎫';
+
         const i1 = document.createElement('input');
-        i1.type = 'text'; i1.name = 'typeLabels[]'; i1.value = label || ''; i1.placeholder = 'Type label';
+        i1.type = 'text'; i1.name = 'typeLabels[]'; i1.value = label || ''; i1.placeholder = <?php echo json_encode(t('tk.cat_label_ph'), JSON_UNESCAPED_UNICODE); ?>;
 
         const sel = document.createElement('select');
         sel.name = 'typePriorities[]';
@@ -1039,15 +1287,22 @@ document.addEventListener('DOMContentLoaded', updatePreview);
             document.getElementById('ticketsForm')?.dispatchEvent(new Event('input'));
         });
 
-        top.append(i1, sel, btn);
+        top.append(emoji, i1, sel, btn);
 
         const desc = document.createElement('div');
         desc.className = 'tk-type-card-desc';
         const i2 = document.createElement('input');
-        i2.type = 'text'; i2.name = 'typeDescriptions[]'; i2.value = description || ''; i2.placeholder = 'Short description (optional)';
+        i2.type = 'text'; i2.name = 'typeDescriptions[]'; i2.value = description || ''; i2.placeholder = <?php echo json_encode(t('tk.cat_desc_ph'), JSON_UNESCAPED_UNICODE); ?>;
         desc.appendChild(i2);
 
-        card.append(top, desc);
+        const routing = document.createElement('div');
+        routing.className = 'tk-type-card-routing';
+        routing.append(
+            makeSelect('typeCategories[]', <?php echo json_encode(t('tk.cat_default_cat'), JSON_UNESCAPED_UNICODE); ?>, discordCategories, ''),
+            makeSelect('typeStaffRoles[]', <?php echo json_encode(t('tk.cat_default_team'), JSON_UNESCAPED_UNICODE); ?>, staffRoles, '@')
+        );
+
+        card.append(top, desc, routing);
         return card;
     }
 
@@ -1059,9 +1314,9 @@ document.addEventListener('DOMContentLoaded', updatePreview);
     });
 
     addBtn.addEventListener('click', () => {
-        if (container.querySelectorAll('.tk-type-card').length >= 5) {
+        if (container.querySelectorAll('.tk-type-card').length >= MAX_CATEGORIES) {
             const orig = addBtn.innerHTML;
-            addBtn.textContent = 'Max. 5 Types!';
+            addBtn.textContent = CAT_MAX_LABEL;
             setTimeout(() => { addBtn.innerHTML = orig; }, 1500);
             return;
         }

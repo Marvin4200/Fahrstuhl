@@ -73,6 +73,7 @@ const { createVoiceUsageTracker } = require("./utils/voiceUsageTracker");
 const { createVoiceRewardBridge } = require("./utils/voiceRewardBridge");
 const levelingManager = require("./utils/levelingManager");
 const ticketManager = require("./utils/ticketManager");
+const { findTicketCategory } = require("./utils/ticketPanel");
 const socialNotifier = require("./utils/socialNotifier");
 const freeGamesNotifier = require("./utils/freeGamesNotifier");
 const { sendServerLog } = require("./utils/serverLogger");
@@ -1059,10 +1060,13 @@ async function openTicketForInteraction(interaction, reason = "Opened from ticke
     const ownerId = interaction.user?.id || null;
     const beforeTicketIds = new Set(findTicketChannelsByOwner(interaction.guild, ownerId).map((channel) => channel.id));
 
+    const options = typeof reason === "object" && reason !== null ? reason : { reason };
     const result = await ticketManager.openTicket(interaction, config, {
-        reason: typeof reason === "object" ? reason.reason : reason,
-        priority: typeof reason === "object" ? reason.priority : (config.tickets?.defaultPriority || "normal"),
-        typeLabel: typeof reason === "object" ? reason.typeLabel : "Support",
+        reason: options.reason,
+        priority: options.priority || config.tickets?.defaultPriority || "normal",
+        typeLabel: options.typeLabel || "Support",
+        categoryId: options.categoryId || null,
+        staffRoleId: options.staffRoleId || null,
     });
 
     const createdChannel = findTicketChannelsByOwner(interaction.guild, ownerId)
@@ -2674,11 +2678,12 @@ client.on("interactionCreate", async (interaction) => {
                 return;
             }
             const typeKey = interaction.customId.split(":")[2] || "support";
-            const types = Array.isArray(config.tickets?.ticketTypes) ? config.tickets.ticketTypes : [];
-            const selectedType = types.find(type => type.key === typeKey) || {
+            const selectedType = findTicketCategory(config.tickets || {}, typeKey) || {
                 label: "Support",
                 priority: config.tickets?.defaultPriority || "normal",
                 description: "General support request",
+                categoryId: null,
+                staffRoleId: null,
             };
             const reason = interaction.fields.getTextInputValue("reason");
             const extra = interaction.fields.getTextInputValue("extra") || "";
@@ -2686,6 +2691,8 @@ client.on("interactionCreate", async (interaction) => {
                 reason: extra ? `${reason}\n\nExtra: ${extra}` : reason,
                 priority: selectedType.priority || config.tickets?.defaultPriority || "normal",
                 typeLabel: selectedType.label || "Support",
+                categoryId: selectedType.categoryId || null,
+                staffRoleId: selectedType.staffRoleId || null,
             });
             return;
         }
@@ -2928,8 +2935,7 @@ client.on("interactionCreate", async (interaction) => {
                     return;
                 }
                 const typeKey = interaction.values?.[0] || "support";
-                const types = Array.isArray(config.tickets?.ticketTypes) ? config.tickets.ticketTypes : [];
-                const selectedType = types.find(type => type.key === typeKey) || {
+                const selectedType = findTicketCategory(config.tickets || {}, typeKey) || {
                     key: "support",
                     label: "Support",
                     priority: config.tickets?.defaultPriority || "normal",

@@ -1451,18 +1451,20 @@ client.once(Events.ClientReady, async () => {
     }, 1800000); // Every 30 minutes
     activeIntervals.push(autoModMapsCleanup);
 
-    const scheduledDiscordBackups = setInterval(async () => {
-        try {
-            const { processScheduledBackups } = require('./utils/serverBackup');
-            const result = await processScheduledBackups(client, getGuildConfig, console);
-            if (result?.processed > 0) {
-                console.log(`🗂️ Scheduled discord backups checked: processed=${result.processed}, started=${result.started}, failed=${result.failed}`);
+    if (!MIGRATED_TO_ESELMODERATOR) {
+        const scheduledDiscordBackups = setInterval(async () => {
+            try {
+                const { processScheduledBackups } = require('./utils/serverBackup');
+                const result = await processScheduledBackups(client, getGuildConfig, console);
+                if (result?.processed > 0) {
+                    console.log(`🗂️ Scheduled discord backups checked: processed=${result.processed}, started=${result.started}, failed=${result.failed}`);
+                }
+            } catch (err) {
+                console.error('❌ Scheduled discord backup runner failed:', err.message);
             }
-        } catch (err) {
-            console.error('❌ Scheduled discord backup runner failed:', err.message);
-        }
-    }, 60000); // every minute
-    activeIntervals.push(scheduledDiscordBackups);
+        }, 60000); // every minute
+        activeIntervals.push(scheduledDiscordBackups);
+    }
 
     // Ticket panels: refresh the "Staff online / Queue / Rating" line every 5 minutes so it
     // stays accurate even without a ticket open/close event (e.g. staff coming online).

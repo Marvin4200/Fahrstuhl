@@ -3267,6 +3267,7 @@ async function handleInteraction(interaction, dependencies) {
         }
 
         if (interaction.commandName === "serverbackup") {
+            if (MIGRATED_TO_ESELMODERATOR) { return safeReply(interaction, migrationRedirectMessage("Server-Backup (/serverbackup)")); }
             const member = interaction.member;
             const isAdmin = member?.permissions?.has(require("discord.js").PermissionsBitField.Flags.Administrator);
             if (!isAdmin && interaction.user.id !== OWNER_ID) {

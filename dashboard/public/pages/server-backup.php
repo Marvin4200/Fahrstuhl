@@ -312,6 +312,7 @@ function fmtTs($ms) {
 <meta http-equiv="refresh" content="<?php echo (int)$autoRefresh; ?>">
 <?php endif; ?>
 <?php include '../includes/sidebar.php'; ?>
+<?php include '../includes/eselmoderator-notice.php'; ?>
 
 <style>
 .alert { padding:12px 15px; border-radius:8px; border-left:4px solid; margin-bottom:20px; }

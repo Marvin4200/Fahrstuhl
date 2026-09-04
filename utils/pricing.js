@@ -107,14 +107,6 @@ const TIERS = {
 
 const CURRENCY = process.env.PRICING_CURRENCY || 'EUR';
 
-/** Where the "buy" buttons point. Set STRIPE_LINK_* to real Stripe Payment Links. */
-const CHECKOUT_URLS = {
-    basicMonthly:  process.env.STRIPE_LINK_BASIC_MONTHLY  || null,
-    basicLifetime: process.env.STRIPE_LINK_BASIC_LIFETIME || null,
-    proMonthly:    process.env.STRIPE_LINK_PRO_MONTHLY    || null,
-    proLifetime:   process.env.STRIPE_LINK_PRO_LIFETIME   || null,
-};
-
 const SUPPORT_INVITE = process.env.SUPPORT_INVITE_URL || 'https://discord.gg/zfzDHKcWDx';
 const PRICING_PAGE_URL = process.env.PRICING_PAGE_URL || 'https://eselbande.com/fahrstuhl/pages/premium-info.php';
 
@@ -196,7 +188,6 @@ module.exports = {
     nextTierFor,
     cheapestTierFor,
     CURRENCY,
-    CHECKOUT_URLS,
     SUPPORT_INVITE,
     PRICING_PAGE_URL,
     tierFor,

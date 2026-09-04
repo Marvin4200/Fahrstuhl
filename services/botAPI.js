@@ -1074,17 +1074,7 @@ class BotAPIServer {
     }
 
     setupMiddleware() {
-        // Stripe webhook signatures are computed over the RAW bytes, so stash them
-        // before express.json() discards the buffer. Only for that one path —
-        // keeping every 6mb request body in memory twice would be wasteful.
-        this.app.use(express.json({
-            limit: '6mb',
-            verify: (req, _res, buf) => {
-                if (req.originalUrl && req.originalUrl.startsWith('/stripe/webhook')) {
-                    req.rawBody = Buffer.from(buf);
-                }
-            },
-        }));
+        this.app.use(express.json({ limit: '6mb' }));
         
         // CORS für Dashboard
         const corsOrigin = process.env.CORS_ORIGIN || process.env.DASHBOARD_URL || 'http://localhost:3001';
@@ -1099,9 +1089,7 @@ class BotAPIServer {
 
         // Auth Middleware for dashboard/internal API access.
         this.app.use((req, res, next) => {
-            // /stripe/webhook is authenticated by its Stripe signature, not by the
-            // dashboard bearer token — Stripe has no way to send that token.
-            if (req.path === '/health' || req.path === '/topgg/webhook' || req.path === '/guild/team' || req.path === '/stripe/webhook') return next();
+            if (req.path === '/health' || req.path === '/topgg/webhook' || req.path === '/guild/team') return next();
 
             const expectedToken = process.env.BOT_API_TOKEN;
             const remote = req.ip || req.socket?.remoteAddress || '';
@@ -1143,9 +1131,7 @@ class BotAPIServer {
 
         this.app.use((req, res, next) => {
             const shouldAudit = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)
-                && req.path !== '/topgg/webhook'
-                // Stripe payloads carry customer email/address — not audit-log material.
-                && req.path !== '/stripe/webhook';
+                && req.path !== '/topgg/webhook';
 
             if (!shouldAudit) return next();
 
@@ -5847,8 +5833,8 @@ class BotAPIServer {
                 const { userId, daysValid = 30, tier = 'basic' } = req.body;
                 if (!userId) return res.status(400).json({ error: 'userId required' });
                 if (!['basic', 'pro'].includes(tier)) return res.status(400).json({ error: 'tier must be basic or pro' });
-                // 36500 ceiling, matching stripeManager.LIFETIME_DAYS — a lifetime
-                // grant issued from the dashboard must not silently become 10 years.
+                // 36500 ceiling: a lifetime grant issued from the dashboard must not
+                // silently become 10 years.
                 const days = Math.max(1, Math.min(36500, Number(daysValid) || 30));
                 // 'set' = absolute term (admin "activate for N days");
                 // 'extend' (default) = top up whatever time is left.
@@ -5992,116 +5978,6 @@ class BotAPIServer {
             } catch (error) {
                 console.error('Failed to get guild premium status:', error);
                 res.status(500).json(APIResponse.error(error.message, 'GUILD_PREMIUM_FAILED'));
-            }
-        });
-
-        // ── Stripe checkout webhook ───────────────────────────────────────────
-        // Authenticated by Stripe's signature (see the auth middleware exemption),
-        // NOT by the dashboard bearer token.
-        this.app.post('/stripe/webhook', async (req, res) => {
-            const stripeManager = require('../utils/stripeManager');
-
-            try {
-                const secret = process.env.STRIPE_WEBHOOK_SECRET;
-                if (!secret) {
-                    console.warn('[Stripe] Webhook hit but STRIPE_WEBHOOK_SECRET is not set — ignoring.');
-                    return res.status(503).json(APIResponse.error('Stripe is not configured', 'STRIPE_NOT_CONFIGURED'));
-                }
-
-                const signature = req.get('stripe-signature');
-                const verdict = stripeManager.verifySignature(req.rawBody, signature, secret);
-                if (!verdict.valid) {
-                    console.warn(`[Stripe] Rejected webhook: ${verdict.reason}`);
-                    return res.status(400).json(APIResponse.error('Invalid signature', 'STRIPE_BAD_SIGNATURE', 400));
-                }
-
-                // Body is already parsed by express.json(); rawBody was only needed
-                // for the signature.
-                const event = req.body;
-
-                const result = await stripeManager.handleEvent(event, {
-                    // Idempotency guards: activation extends remaining time, so a
-                    // Stripe retry of an already-applied event must not grant a
-                    // second term or book the revenue twice.
-                    wasProcessed: async (eventId) => {
-                        const premiumManager = require('../utils/premiumManager');
-                        return premiumManager.wasEventProcessed(eventId);
-                    },
-                    markProcessed: async (eventId) => {
-                        const premiumManager = require('../utils/premiumManager');
-                        return premiumManager.markEventProcessed(eventId, 'stripe');
-                    },
-                    activatePremium: async (userId, days, tier) => {
-                        const premiumManager = require('../utils/premiumManager');
-                        // 'extend' so a renewal tops up whatever time is left.
-                        return premiumManager.activatePremium(userId, days, tier, 'extend');
-                    },
-                    onActivated: async (userId, purchase) => {
-                        try {
-                            const { EmbedBuilder } = require('discord.js');
-                            const PRICING = require('../utils/pricing');
-                            const user = await this.client.users.fetch(userId).catch(() => null);
-                            if (!user) return;
-
-                            const tierDef = purchase.tier === 'pro' ? PRICING.TIERS.pro : PRICING.TIERS.basic;
-                            const isLifetime = purchase.days >= stripeManager.LIFETIME_DAYS;
-                            const premiumManager = require('../utils/premiumManager');
-                            const info = await premiumManager.getUserInfo(userId).catch(() => null);
-
-                            const embed = new EmbedBuilder()
-                                .setColor(purchase.tier === 'pro' ? 0xFFD700 : 0x4CAF50)
-                                .setTitle(`${tierDef.emoji} ${tierDef.label} ist aktiv!`)
-                                .setDescription('Danke für deinen Kauf — dein Plan wurde sofort freigeschaltet.')
-                                .addFields(
-                                    { name: 'Plan', value: `${tierDef.emoji} ${tierDef.label}`, inline: true },
-                                    {
-                                        name: 'Laufzeit',
-                                        value: isLifetime
-                                            ? '♾️ Lifetime'
-                                            : (info && info.expires_at
-                                                ? `bis <t:${Math.floor(new Date(info.expires_at).getTime() / 1000)}:D>`
-                                                : `${purchase.days} Tage`),
-                                        inline: true,
-                                    },
-                                    { name: 'Cooldown', value: PRICING.formatDuration(tierDef.cooldownMs), inline: true }
-                                )
-                                .setTimestamp();
-
-                            await user.send({ embeds: [embed] }).catch(() => {});
-                        } catch (dmError) {
-                            console.error('[Stripe] Failed to DM buyer:', dmError.message);
-                        }
-                    },
-                });
-
-                if (result.handled) {
-                    console.log(`[Stripe] ✅ ${result.tier} (${result.days}d) ${result.renewal ? 'renewed' : 'activated'} for ${result.userId}`);
-                    try {
-                        const session = event?.data?.object || {};
-                        monetizationStore.addRevenue({
-                            userId: result.userId,
-                            username: session.customer_details?.name || '',
-                            amount: (session.amount_total || 0) / 100,
-                            currency: session.currency || 'eur',
-                            source: 'stripe',
-                            tier: result.tier,
-                            note: `Stripe checkout · ${result.days} Tage`,
-                            createdBy: 'stripe-webhook',
-                        });
-                    } catch (revError) {
-                        console.error('[Stripe] Failed to record revenue:', revError.message);
-                    }
-                } else {
-                    console.log(`[Stripe] Event not actioned: ${result.reason}`);
-                }
-
-                // Always 200 on a verified event — a non-2xx makes Stripe retry,
-                // and retrying an event we deliberately ignored achieves nothing.
-                res.json(APIResponse.success(result, 'Webhook processed', 'STRIPE_WEBHOOK_OK'));
-            } catch (error) {
-                console.error('[Stripe] Webhook handler error:', error);
-                // 500 here IS worth retrying — activation may have genuinely failed.
-                res.status(500).json(APIResponse.error(error.message, 'STRIPE_WEBHOOK_FAILED'));
             }
         });
 

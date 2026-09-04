@@ -163,6 +163,7 @@ function moderationFilterQuery($guildId, $page, $typeFilter, $userIdFilter, $mod
 ?>
 <?php include '../includes/header.php'; ?>
 <?php include '../includes/sidebar.php'; ?>
+<?php include '../includes/eselmoderator-notice.php'; ?>
 
 <style>
 .mod-hero { display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,360px); gap:1rem; align-items:stretch; margin-bottom:1rem; }

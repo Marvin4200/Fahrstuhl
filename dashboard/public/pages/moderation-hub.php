@@ -17,6 +17,7 @@ if (isAdmin()) {
 ?>
 <?php include '../includes/header.php'; ?>
 <?php include '../includes/sidebar.php'; ?>
+<?php include '../includes/eselmoderator-notice.php'; ?>
 
 <div class="page-header">
     <div class="page-header-row">

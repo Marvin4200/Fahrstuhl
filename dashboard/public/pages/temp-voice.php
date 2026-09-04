@@ -82,6 +82,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
 
 <?php include '../includes/header.php'; ?>
 <?php include '../includes/sidebar.php'; ?>
+<?php include '../includes/eselmoderator-notice.php'; ?>
 
 <style>
 .tv-shell { display:grid; grid-template-columns:minmax(0, 1fr) 320px; gap:1rem; align-items:start; }

@@ -203,6 +203,7 @@ $totalPages = max(1, (int)($leaderboardRaw['data']['totalPages'] ?? ceil($totalM
 
 <?php include '../includes/header.php'; ?>
 <?php include '../includes/sidebar.php'; ?>
+<?php include '../includes/eselmoderator-notice.php'; ?>
 
 <style>
 .lvl-compact { display: grid; grid-template-columns: 320px 1fr 280px; gap: 1.25rem; align-items: start; margin-bottom: 1.5rem; }

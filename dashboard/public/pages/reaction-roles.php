@@ -175,6 +175,7 @@ $panelMessageId = $settings['messageId'] ?? ($settings['lastPanelMessageId'] ?? 
 
 <?php include '../includes/header.php'; ?>
 <?php include '../includes/sidebar.php'; ?>
+<?php include '../includes/eselmoderator-notice.php'; ?>
 
 <style>
 .rr-compact { display: grid; grid-template-columns: 240px 1fr 320px; gap: 1.25rem; align-items: start; }

@@ -247,6 +247,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
 
 <?php include '../includes/header.php'; ?>
 <?php include '../includes/sidebar.php'; ?>
+<?php include '../includes/eselmoderator-notice.php'; ?>
 
 <style>
 .wlc-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(420px, 1fr)); gap:1rem; align-items:start; }

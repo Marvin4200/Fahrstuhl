@@ -168,6 +168,7 @@ $atTermsLimit  = $maxTerms >= 0 && $currentTerms >= $maxTerms;
 
 <?php include '../includes/header.php'; ?>
 <?php include '../includes/sidebar.php'; ?>
+<?php include '../includes/eselmoderator-notice.php'; ?>
 
 <style>
 .am-compact { display: grid; grid-template-columns: 1fr 340px 280px; gap: 1.25rem; align-items: start; }

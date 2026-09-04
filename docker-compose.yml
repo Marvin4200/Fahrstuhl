@@ -642,7 +642,7 @@ services:
       NODE_OPTIONS: "--max-old-space-size=256"
       FAHRSTUHL_API_BASE: http://fahrstuhl-docker:3002
     ports:
-      - "127.0.0.1:3120:3000"
+      - "127.0.0.1:3117:3000"
     volumes:
       - ../shop/shop.db:/app/shop.db
       - ../shop/shop.db-wal:/app/shop.db-wal

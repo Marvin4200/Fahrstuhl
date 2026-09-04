@@ -622,6 +622,40 @@ services:
     networks:
       - marvin_internal
 
+  shop:
+    build:
+      context: ../shop
+      dockerfile: Dockerfile
+    container_name: shop-phase1
+    restart: unless-stopped
+    depends_on:
+      fahrstuhl-docker:
+        condition: service_healthy
+    mem_limit: 512m
+    mem_reservation: 160m
+    env_file:
+      - path: ../shop/.env.local
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NODE_OPTIONS: "--max-old-space-size=256"
+      FAHRSTUHL_API_BASE: http://fahrstuhl-docker:3002
+    ports:
+      - "127.0.0.1:3120:3000"
+    volumes:
+      - ../shop/shop.db:/app/shop.db
+      - ../shop/shop.db-wal:/app/shop.db-wal
+      - ../shop/shop.db-shm:/app/shop.db-shm
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - marvin_internal
+
 volumes:
   admin_dashboard_data:
   redis_data:

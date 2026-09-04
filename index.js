@@ -59,6 +59,7 @@ const {
     flushGlobalStats
 } = require("./utils/config");
 const { getDbStatus } = require("./utils/db");
+const { MIGRATED_TO_ESELMODERATOR, migrationRedirectMessage } = require("./utils/eselModeratorMigration");
 const { commands, handleInteraction } = require("./commands/index");
 const { createLogger } = require("./services/logger");
 const { createTrollManager } = require("./services/trolls");
@@ -385,6 +386,7 @@ async function handleTempVoiceUpdate(oldState, newState) {
     const guild = newState.guild || oldState.guild;
     const member = newState.member || oldState.member;
     if (!guild || !member || member.user?.bot) return;
+    if (MIGRATED_TO_ESELMODERATOR) return; // Temp-Voice ist zu EselModerator umgezogen.
 
     const oldChannel = oldState.channel;
     const newChannel = newState.channel;
@@ -1479,6 +1481,7 @@ client.once(Events.ClientReady, async () => {
 
     // Voice XP: award XP to eligible voice channel members every 60 seconds
     const voiceXpInterval = setInterval(async () => {
+        if (MIGRATED_TO_ESELMODERATOR) return; // Leveling ist zu EselModerator umgezogen.
         for (const [guildId, guild] of client.guilds.cache) {
             try {
                 const config = getGuildConfig(guildId);
@@ -1848,6 +1851,7 @@ function idsFieldValue(parts = []) {
 
 
 client.on("guildMemberAdd", async (member) => {
+    if (MIGRATED_TO_ESELMODERATOR) return; // Welcome ist zu EselModerator umgezogen.
     sendConfiguredWelcome(member, "join").catch(error => {
         console.warn(`⚠️ Welcome message failed in ${member.guild.name}: ${error.message}`);
     });
@@ -1893,6 +1897,7 @@ client.on("guildMemberAdd", async (member) => {
 });
 
 client.on("guildMemberRemove", async (member) => {
+    if (MIGRATED_TO_ESELMODERATOR) return; // Goodbye ist zu EselModerator umgezogen.
     sendConfiguredWelcome(member, "leave").catch(error => {
         console.warn(`⚠️ Goodbye message failed in ${member.guild.name}: ${error.message}`);
     });
@@ -2372,6 +2377,7 @@ client.on("messageCreate", async (message) => {
     try {
         if (!message.guild || message.author?.bot) return;
         const config = getGuildConfig(message.guild.id);
+        if (MIGRATED_TO_ESELMODERATOR) return; // AutoMod + Leveling sind zu EselModerator umgezogen.
 
         const automodEnabled = moduleEnabled(config, "automod", false);
         if (automodEnabled) {
@@ -2568,6 +2574,7 @@ client.on("interactionCreate", async (interaction) => {
         }
 
         if (interaction.isModalSubmit?.() && interaction.customId === "ticket:close_reason") {
+            if (MIGRATED_TO_ESELMODERATOR) { await safeReply(interaction, migrationRedirectMessage("Tickets")); return; }
             if (!interaction.guild) return;
             const config = getGuildConfig(interaction.guild.id);
             if (!moduleEnabled(config, "tickets", false)) {
@@ -2601,6 +2608,7 @@ client.on("interactionCreate", async (interaction) => {
         }
 
         if (interaction.isModalSubmit?.() && interaction.customId.startsWith("ticket:intake:")) {
+            if (MIGRATED_TO_ESELMODERATOR) { await safeReply(interaction, migrationRedirectMessage("Tickets")); return; }
             if (!interaction.guild) return;
             const config = getGuildConfig(interaction.guild.id);
             if (!moduleEnabled(config, "tickets", false)) {
@@ -2704,12 +2712,14 @@ client.on("interactionCreate", async (interaction) => {
             }
 
             if (interaction.customId.startsWith("ticket:feedback:")) {
+            if (MIGRATED_TO_ESELMODERATOR) { await safeReply(interaction, migrationRedirectMessage("Tickets")); return; }
                 const parts = interaction.customId.split(":");
                 await ticketManager.recordTicketFeedback(interaction, parts[2], parts[3]);
                 return;
             }
 
             if (interaction.customId.startsWith("ticket:") && interaction.customId !== "ticket:type") {
+            if (MIGRATED_TO_ESELMODERATOR) { await safeReply(interaction, migrationRedirectMessage("Tickets")); return; }
                 if (!interaction.guild) {
                     await safeReply(interaction, {
                         content: "Tickets only work inside a server.",
@@ -2852,6 +2862,7 @@ client.on("interactionCreate", async (interaction) => {
             }
 
             if (interaction.isStringSelectMenu?.() && interaction.customId === "ticket:type") {
+            if (MIGRATED_TO_ESELMODERATOR) { await safeReply(interaction, migrationRedirectMessage("Tickets")); return; }
                 if (!interaction.guild) {
                     await safeReply(interaction, {
                         content: "Tickets only work inside a server.",
@@ -2900,6 +2911,7 @@ client.on("interactionCreate", async (interaction) => {
             }
 
             if (interaction.customId.startsWith('rr:')) {
+                if (MIGRATED_TO_ESELMODERATOR) { await safeReply(interaction, migrationRedirectMessage("Reaction Roles")); return; }
                 if (!interaction.guild) {
                     await safeReply(interaction, {
                         content: 'Reaction roles only work inside a server.',
@@ -2973,6 +2985,7 @@ client.on("interactionCreate", async (interaction) => {
             }
 
             if (interaction.customId.startsWith('rrs:') && interaction.isStringSelectMenu?.()) {
+                if (MIGRATED_TO_ESELMODERATOR) { await safeReply(interaction, migrationRedirectMessage("Reaction Roles")); return; }
                 if (!interaction.guild) {
                     await safeReply(interaction, {
                         content: 'Reaction roles only work inside a server.',

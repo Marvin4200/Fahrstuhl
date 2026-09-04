@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, ContextMenuCommandBuilder, ApplicationCommandType, EmbedBuilder, MessageFlags, PermissionsBitField, AttachmentBuilder } = require("discord.js");
+const { MIGRATED_TO_ESELMODERATOR, migrationRedirectMessage } = require("../utils/eselModeratorMigration");
 const { COLORS, EMOJIS, FOOTERS, createLoadingEmbed, deferWithLoading } = require("../utils/designSystem");
 const { sendServerLog } = require("../utils/serverLogger");
 const ticketManager = require("../utils/ticketManager");
@@ -2175,6 +2176,7 @@ async function handleInteraction(interaction, dependencies) {
         }
 
         if (interaction.commandName === "rank") {
+            if (MIGRATED_TO_ESELMODERATOR) { return safeReply(interaction, migrationRedirectMessage("Leveling (/rank)")); }
             const config = getGuildConfig(interaction.guildId);
             const enabled = parseBoolean(config.modules?.leveling, false);
             if (!enabled) {
@@ -2206,6 +2208,7 @@ async function handleInteraction(interaction, dependencies) {
         }
 
         if (interaction.commandName === "leaderboard") {
+            if (MIGRATED_TO_ESELMODERATOR) { return safeReply(interaction, migrationRedirectMessage("Leveling (/leaderboard)")); }
             const config = getGuildConfig(interaction.guildId);
             const enabled = parseBoolean(config.modules?.leveling, false);
             if (!enabled) {
@@ -2237,6 +2240,7 @@ async function handleInteraction(interaction, dependencies) {
         }
 
         if (interaction.commandName === "leveling") {
+            if (MIGRATED_TO_ESELMODERATOR) { return safeReply(interaction, migrationRedirectMessage("Leveling-Verwaltung (/leveling)")); }
             const config = getGuildConfig(interaction.guildId);
             const enabled = parseBoolean(config.modules?.leveling, false);
             if (!enabled) {
@@ -2283,6 +2287,7 @@ async function handleInteraction(interaction, dependencies) {
         }
 
         if (interaction.commandName === "ticket") {
+            if (MIGRATED_TO_ESELMODERATOR) { return safeReply(interaction, migrationRedirectMessage("Tickets (/ticket)")); }
             const config = getGuildConfig(interaction.guildId);
             const enabled = parseBoolean(config.modules?.tickets, false);
             if (!enabled) {
@@ -2334,6 +2339,7 @@ async function handleInteraction(interaction, dependencies) {
         }
 
         if (interaction.commandName === "mod") {
+            if (MIGRATED_TO_ESELMODERATOR) { return safeReply(interaction, migrationRedirectMessage("Moderation (/mod)")); }
             const config = getGuildConfig(interaction.guildId);
             const enabled = parseBoolean(config.modules?.moderation, true);
             if (!enabled) {
@@ -3148,6 +3154,7 @@ async function handleInteraction(interaction, dependencies) {
         }
 
         if (interaction.commandName === "voice") {
+            if (MIGRATED_TO_ESELMODERATOR) { return safeReply(interaction, migrationRedirectMessage("Temp-Voice-Kontrolle (/voice)")); }
             const sub = interaction.options.getSubcommand();
             const { tempVoiceChannels } = dependencies;
             const member = interaction.member;

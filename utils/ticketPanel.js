@@ -139,6 +139,22 @@ function resolveTicketPanelDesign(settings = {}) {
     };
 }
 
+// A guild can have several deployed panel messages (one per channel, up to its plan's
+// ticketPanels limit). `settings.panels` is the current shape; a guild whose panel predates
+// this array still has the old singular panelChannelId/panelMessageId fields, so those are
+// read as a one-item array here rather than requiring every caller to migrate the stored config.
+function normalizeTicketPanels(settings = {}) {
+    if (Array.isArray(settings.panels)) {
+        return settings.panels
+            .filter(panel => panel && panel.channelId && panel.messageId)
+            .map(panel => ({ channelId: String(panel.channelId), messageId: String(panel.messageId) }));
+    }
+    if (settings.panelChannelId && settings.panelMessageId) {
+        return [{ channelId: String(settings.panelChannelId), messageId: String(settings.panelMessageId) }];
+    }
+    return [];
+}
+
 function collectStaffRoleIds(settings = {}) {
     const roleIds = new Set();
     if (settings.staffRoleId) roleIds.add(String(settings.staffRoleId));
@@ -298,6 +314,7 @@ module.exports = {
     countStaffOnline,
     findTicketCategory,
     normalizeTicketPanelInfo,
+    normalizeTicketPanels,
     normalizeTicketSlaMinutes,
     normalizeTicketTypes,
     parsePanelColor,

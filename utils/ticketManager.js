@@ -9,7 +9,7 @@ const {
 } = require("discord.js");
 const { sendServerLog } = require("./serverLogger");
 const ticketStore = require("./ticketStore");
-const { buildTicketPanel, resolveTicketPanelDesign } = require("./ticketPanel");
+const { buildTicketPanel, normalizeTicketPanels, resolveTicketPanelDesign } = require("./ticketPanel");
 const { parseBoolean } = require("./valueParsers");
 
 const PRIORITIES = {
@@ -331,21 +331,26 @@ async function updateTicketControlsMessage(channel, info, settings = {}) {
     } catch {}
 }
 
-// Keeps the deployed panel's "Staff online / Queue / Rating" line current. Called after every
+// Keeps every deployed panel's "Staff online / Queue / Rating" line current. Called after every
 // open/close (immediate feedback) and on an interval (utils/ticketPanel.js's staff-online count
-// otherwise only reflects reality at the moment the dashboard last redeployed the panel).
+// otherwise only reflects reality at the moment the dashboard last redeployed a panel). A guild
+// can have several panels (one per channel, up to its plan's limit); all of them share the same
+// settings, so one freshly-built embed/components payload is reused for each.
 async function refreshTicketPanel(guild, config) {
     const settings = config?.tickets || {};
-    if (!settings.panelChannelId || !settings.panelMessageId || !guild) return;
+    const panels = normalizeTicketPanels(settings);
+    if (!panels.length || !guild) return;
     try {
-        const channel = guild.channels.cache.get(settings.panelChannelId)
-            || await guild.channels.fetch(settings.panelChannelId).catch(() => null);
-        if (!channel?.isTextBased?.()) return;
-        const message = await channel.messages.fetch(settings.panelMessageId).catch(() => null);
-        if (!message) return;
         const ticketStats = await ticketStore.getTicketStats(guild.id, { slaMinutes: settings.slaMinutes });
         const panel = buildTicketPanel({ guild, settings, ticketStats });
-        await message.edit(panel).catch(() => {});
+        for (const { channelId, messageId } of panels) {
+            const channel = guild.channels.cache.get(channelId)
+                || await guild.channels.fetch(channelId).catch(() => null);
+            if (!channel?.isTextBased?.()) continue;
+            const message = await channel.messages.fetch(messageId).catch(() => null);
+            if (!message) continue;
+            await message.edit(panel).catch(() => {});
+        }
     } catch {
         // Best-effort — a panel refresh must never break the ticket flow that triggered it.
     }

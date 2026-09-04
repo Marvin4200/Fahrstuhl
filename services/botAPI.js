@@ -33,6 +33,7 @@ const {
     colorToHex,
     countStaffOnline,
     normalizeTicketPanelInfo,
+    normalizeTicketPanels,
     normalizeTicketSlaMinutes,
     normalizeTicketTypes,
     resolveTicketPanelDesign,
@@ -3884,8 +3885,12 @@ class BotAPIServer {
                         panelShowStaffOnline: panelDesign.showStaffOnline,
                         panelShowQueue: panelDesign.showQueue,
                         panelShowRating: panelDesign.showRating,
-                        panelChannelId: tickets.panelChannelId || null,
-                        panelMessageId: tickets.panelMessageId || null,
+                        panels: normalizeTicketPanels(tickets).map(panel => ({
+                            channelId: panel.channelId,
+                            messageId: panel.messageId,
+                            channelName: channels.find(c => c.id === panel.channelId)?.name || null,
+                            url: `https://discord.com/channels/${guild.id}/${panel.channelId}/${panel.messageId}`,
+                        })),
                         ticketPanelInfo,
                     },
                     liveStatus: {
@@ -3944,16 +3949,16 @@ class BotAPIServer {
                 };
                 setGuildConfig(guild.id, { tickets });
 
-                if (tickets.panelChannelId && tickets.panelMessageId) {
-                    const panelChannel = guild.channels.cache.get(tickets.panelChannelId)
-                        || await guild.channels.fetch(tickets.panelChannelId).catch(() => null);
-                    if (panelChannel?.isTextBased?.()) {
-                        const panelMessage = await panelChannel.messages.fetch(tickets.panelMessageId).catch(() => null);
-                        if (panelMessage) {
-                            const panelStats = await ticketStore.getTicketStats(guild.id, { slaMinutes: tickets.slaMinutes });
-                            const panel = buildTicketPanel({ guild, settings: tickets, ticketStats: panelStats });
-                            await panelMessage.edit(panel).catch(() => {});
-                        }
+                const deployedPanels = normalizeTicketPanels(tickets);
+                if (deployedPanels.length) {
+                    const panelStats = await ticketStore.getTicketStats(guild.id, { slaMinutes: tickets.slaMinutes });
+                    const panel = buildTicketPanel({ guild, settings: tickets, ticketStats: panelStats });
+                    for (const { channelId, messageId } of deployedPanels) {
+                        const panelChannel = guild.channels.cache.get(channelId)
+                            || await guild.channels.fetch(channelId).catch(() => null);
+                        if (!panelChannel?.isTextBased?.()) continue;
+                        const panelMessage = await panelChannel.messages.fetch(messageId).catch(() => null);
+                        if (panelMessage) await panelMessage.edit(panel).catch(() => {});
                     }
                 }
 
@@ -4015,18 +4020,21 @@ class BotAPIServer {
                 const panelStats = await ticketStore.getTicketStats(guild.id, { slaMinutes: settings.slaMinutes });
                 const panel = buildTicketPanel({ guild, settings, ticketStats: panelStats });
 
-                const existingPanelMessageId = config.tickets?.panelMessageId;
-                const existingPanelChannelId = config.tickets?.panelChannelId;
-                const panelCount = existingPanelMessageId ? 1 : 0;
-                const isNewPanelDeployment = !existingPanelMessageId || existingPanelChannelId !== channel.id;
-                if (limits.ticketPanels >= 0 && isNewPanelDeployment && panelCount >= limits.ticketPanels) {
-                    return res.status(403).json({ success: false, error: 'Feature limit reached', code: 'LIMIT_REACHED', limitKey: 'ticketPanels', limit: limits.ticketPanels, current: panelCount, upgrade: true });
+                // A guild can have several deployed panels (one per channel) up to its
+                // plan's ticketPanels limit; re-deploying to a channel that already has one
+                // edits that panel in place instead of counting as a new deployment.
+                const existingPanels = normalizeTicketPanels(config.tickets);
+                const existingPanelIndex = existingPanels.findIndex(p => p.channelId === channel.id);
+                const isNewPanelDeployment = existingPanelIndex === -1;
+                if (limits.ticketPanels >= 0 && isNewPanelDeployment && existingPanels.length >= limits.ticketPanels) {
+                    return res.status(403).json({ success: false, error: 'Feature limit reached', code: 'LIMIT_REACHED', limitKey: 'ticketPanels', limit: limits.ticketPanels, current: existingPanels.length, upgrade: true });
                 }
 
-                // Try to edit existing panel message instead of always posting a new one
+                // Try to edit the existing panel message in this channel instead of always
+                // posting a new one.
                 let message = null;
-                if (existingPanelMessageId && existingPanelChannelId === channel.id) {
-                    const existingMsg = await channel.messages.fetch(existingPanelMessageId).catch(() => null);
+                if (!isNewPanelDeployment) {
+                    const existingMsg = await channel.messages.fetch(existingPanels[existingPanelIndex].messageId).catch(() => null);
                     if (existingMsg) {
                         message = await existingMsg.edit(panel).catch(() => null);
                     }
@@ -4035,11 +4043,19 @@ class BotAPIServer {
                     message = await channel.send(panel);
                 }
 
+                const updatedPanels = [...existingPanels];
+                if (isNewPanelDeployment) {
+                    updatedPanels.push({ channelId: channel.id, messageId: message.id });
+                } else {
+                    updatedPanels[existingPanelIndex] = { channelId: channel.id, messageId: message.id };
+                }
+
                 setGuildConfig(guild.id, {
                     tickets: {
                         ...settings,
-                        panelChannelId: channel.id,
-                        panelMessageId: message.id,
+                        panels: updatedPanels,
+                        panelChannelId: null,
+                        panelMessageId: null,
                     },
                 });
 
@@ -4051,6 +4067,45 @@ class BotAPIServer {
                 }, 'Ticket panel sent', 'TICKET_PANEL_SENT'));
             } catch (error) {
                 res.status(500).json(APIResponse.error(error.message, 'TICKET_PANEL_SEND_FAILED'));
+            }
+        });
+
+        this.app.post('/guilds/:guildId/tickets/panel/remove', async (req, res) => {
+            try {
+                const guild = this.client.guilds.cache.get(req.params.guildId);
+                if (!guild) return res.status(404).json(APIResponse.notFound('Guild not found'));
+                const access = await this.getDashboardGuildAccess(req, guild.id);
+                if (!access.allowed) return res.status(403).json(APIResponse.forbidden('No access to manage ticket panels'));
+
+                const channelId = String(req.body?.channelId || '').trim();
+                const { getGuildConfig, setGuildConfig } = require('../utils/config');
+                const config = getGuildConfig(guild.id);
+                const existingPanels = normalizeTicketPanels(config.tickets);
+                const target = existingPanels.find(p => p.channelId === channelId);
+                if (!target) {
+                    return res.status(404).json(APIResponse.notFound('Kein Panel in diesem Kanal gefunden'));
+                }
+
+                const channel = guild.channels.cache.get(target.channelId)
+                    || await guild.channels.fetch(target.channelId).catch(() => null);
+                if (channel?.isTextBased?.()) {
+                    const message = await channel.messages.fetch(target.messageId).catch(() => null);
+                    if (message) await message.delete().catch(() => {});
+                }
+
+                const remainingPanels = existingPanels.filter(p => p.channelId !== channelId);
+                setGuildConfig(guild.id, {
+                    tickets: {
+                        ...(config.tickets || {}),
+                        panels: remainingPanels,
+                        panelChannelId: null,
+                        panelMessageId: null,
+                    },
+                });
+
+                res.json(APIResponse.success({ guildId: guild.id, channelId, remaining: remainingPanels.length }, 'Ticket panel removed', 'TICKET_PANEL_REMOVED'));
+            } catch (error) {
+                res.status(500).json(APIResponse.error(error.message, 'TICKET_PANEL_REMOVE_FAILED'));
             }
         });
 

@@ -150,6 +150,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
         // Non-AJAX fallback: set regular $message
         $message = $panelMessage;
         $messageType = $panelMessageType;
+    } elseif ($action === 'remove_panel') {
+        $result = api('/guilds/' . urlencode($guildId) . '/tickets/panel/remove', 'POST', [
+            'channelId' => $_POST['removeChannelId'] ?? '',
+        ], 20);
+        $removeSuccess = ($result['data']['success'] ?? false) === true;
+        $removeMessage = $removeSuccess
+            ? 'Panel entfernt.'
+            : ($result['data']['message'] ?? 'Panel konnte nicht entfernt werden.');
+        if ($isAjaxRequest) {
+            $sendJson([
+                'success' => $removeSuccess,
+                'message' => $removeMessage,
+            ], $removeSuccess ? 200 : 400);
+        }
+        $message = $removeMessage;
+        $messageType = $removeSuccess ? 'success' : 'error';
     } elseif ($action === 'test_ticket') {
         $result = api('/guilds/' . urlencode($guildId) . '/tickets/test', 'POST', [
             'reason' => $_POST['testTicketReason'] ?? '',
@@ -261,7 +277,8 @@ $panelInfoShowLastUpdated = !empty($ticketPanelInfo['showLastUpdated']);
 
 $premRaw = $guildId ? getAPI('/guilds/' . urlencode($guildId) . '/premium', 5) : null;
 $maxTicketPanels = (int)(($premRaw['data']['featureLimits']['ticketPanels'] ?? 1));
-$ticketPanelCount = !empty($settings['panelMessageId']) ? 1 : 0;
+$deployedPanels = is_array($settings['panels'] ?? null) ? $settings['panels'] : [];
+$ticketPanelCount = count($deployedPanels);
 $atTicketPanelLimit = $maxTicketPanels >= 0 && $ticketPanelCount >= $maxTicketPanels;
 
 function formatTicketAge($minutes) {
@@ -686,35 +703,43 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
                 <label><?= t('tk.target_channel') ?></label>
                 <select name="panelChannelId">
                     <option value=""><?= t('tk.select_channel') ?></option>
+                    <?php $deployedChannelIds = array_column($deployedPanels, 'channelId'); ?>
                     <?php foreach ($channels as $channel): ?>
-                        <option value="<?php echo esc($channel['id']); ?>" <?php echo ($settings['panelChannelId'] ?? '') === $channel['id'] ? 'selected' : ''; ?>>#<?php echo esc($channel['name']); ?></option>
+                        <option value="<?php echo esc($channel['id']); ?>">#<?php echo esc($channel['name']); ?><?php echo in_array($channel['id'], $deployedChannelIds, true) ? ' (Panel aktiv)' : ''; ?></option>
                     <?php endforeach; ?>
                 </select>
+                <small style="color:var(--text-secondary); font-size:.72rem;">Ein Kanal mit bereits aktivem Panel wird beim Senden aktualisiert statt doppelt gepostet.</small>
             </div>
-            <?php if (!empty($settings['panelMessageId']) && !empty($settings['panelChannelId'])): ?>
-            <div class="tk-note" style="background:rgba(87,242,135,.08); border-color:rgba(87,242,135,.25); color:#51cf66;">
-                ✅ Panel aktiv in <strong>#<?php echo esc(array_column($channels, 'name', 'id')[$settings['panelChannelId']] ?? $settings['panelChannelId']); ?></strong> &mdash;
-                <a href="https://discord.com/channels/<?php echo urlencode($guildId); ?>/<?php echo urlencode($settings['panelChannelId']); ?>/<?php echo urlencode($settings['panelMessageId']); ?>" target="_blank" style="color:#51cf66;">Zur Nachricht →</a>
-                <br><small><?= t('tk.resend_hint') ?></small>
+            <?php if (count($deployedPanels) > 0): ?>
+            <div class="tk-note" style="background:rgba(87,242,135,.08); border-color:rgba(87,242,135,.25); color:#51cf66; display:flex; flex-direction:column; gap:.5rem;">
+                <?php foreach ($deployedPanels as $panel): ?>
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:.5rem; flex-wrap:wrap;">
+                    <span>✅ <strong>#<?php echo esc($panel['channelName'] ?? $panel['channelId']); ?></strong> &mdash;
+                        <a href="<?php echo esc($panel['url']); ?>" target="_blank" style="color:#51cf66;">Zur Nachricht →</a>
+                    </span>
+                    <button type="button" class="tk-panel-remove-btn" data-channel-id="<?php echo esc($panel['channelId']); ?>" style="background:rgba(237,66,69,.14); border:1px solid rgba(237,66,69,.35); color:#ff8787; border-radius:6px; padding:.25rem .6rem; font-size:.72rem; cursor:pointer;">Entfernen</button>
+                </div>
+                <?php endforeach; ?>
+                <small><?= t('tk.resend_hint') ?></small>
             </div>
             <?php else: ?>
             <div class="tk-note">
                 ⚠️ Noch kein Panel gesendet. Wähle einen Kanal und klicke auf "Send Panel to Discord".
             </div>
             <?php endif; ?>
-            <?php if ($atTicketPanelLimit && empty($settings['panelMessageId'])): ?>
+            <div id="tkPanelRemoveResult" class="tk-test-result" style="display:none;"></div>
+            <?php if ($atTicketPanelLimit): ?>
             <div class="upgrade-limit-card">
                 <div class="ulc-icon">🚫</div>
                 <div class="ulc-body">
                     <div class="ulc-title"><?= t('tk.panel_limit') ?></div>
-                    <div class="ulc-hint">💎 Premium ermöglicht bis zu 3 Panels, Pro unbegrenzt viele Ticket-Panels.</div>
+                    <div class="ulc-hint">💎 Premium ermöglicht bis zu 3 Panels, Pro unbegrenzt viele Ticket-Panels. Ein bereits aktiver Kanal laesst sich weiterhin aktualisieren.</div>
                 </div>
                 <a href="server-plans.php<?php echo $guildId ? '?guildId=' . urlencode($guildId) : ''; ?>" class="ulc-cta">Jetzt upgraden</a>
             </div>
-            <?php else: ?>
+            <?php endif; ?>
             <button type="button" id="tkSendPanelBtn" class="btn-icon" style="justify-content:center; background:#5865f2; color:#fff; border:none; padding:0.7rem;"><span class="i">🚀</span> Send Panel to Discord</button>
             <div id="tkPanelResult" class="tk-test-result" style="margin-top:0.5rem;"></div>
-            <?php endif; ?>
         </div>
 
         <!-- COLUMN 3: PREVIEW -->
@@ -1223,6 +1248,8 @@ document.getElementById('tkClearBanner')?.addEventListener('click', () => {
             const isSafeUrl = typeof json.url === 'string' && /^https:\/\//i.test(json.url);
             const link = isSafeUrl ? ` <a href="${escapeHtml(json.url)}" target="_blank" rel="noopener" style="color:inherit;">→ Zur Nachricht</a>` : '';
             panelResult.innerHTML = `✅ Panel erfolgreich gesendet!${link}`;
+            // Reload so the deployed-panels list (rendered server-side) picks up the new/updated entry.
+            setTimeout(() => window.location.reload(), 900);
         } catch (error) {
             panelResult.className = 'tk-test-result error';
             panelResult.textContent = '❌ ' + (error.message || 'Panel konnte nicht gesendet werden.');
@@ -1230,6 +1257,45 @@ document.getElementById('tkClearBanner')?.addEventListener('click', () => {
             sendPanelBtn.disabled = false;
             sendPanelBtn.innerHTML = '<span class="i">🚀</span> Send Panel to Discord';
         }
+    });
+
+    const panelRemoveResult = document.getElementById('tkPanelRemoveResult');
+    document.querySelectorAll('.tk-panel-remove-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            const channelId = btn.dataset.channelId || '';
+            if (!channelId || !panelRemoveResult) return;
+            btn.disabled = true;
+            panelRemoveResult.style.display = 'block';
+            panelRemoveResult.className = 'tk-test-result info';
+            panelRemoveResult.textContent = 'Panel wird entfernt...';
+
+            try {
+                const data = new FormData();
+                data.set('action', 'remove_panel');
+                data.set('removeChannelId', channelId);
+                data.set('csrf_token', document.querySelector('input[name="csrf_token"]')?.value || '');
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: data,
+                    credentials: 'same-origin'
+                });
+                const json = await response.json().catch(() => ({ success: false, message: 'Ungueltige Serverantwort.' }));
+                if (!json.success) {
+                    throw new Error(json.message || 'Panel konnte nicht entfernt werden.');
+                }
+                panelRemoveResult.className = 'tk-test-result success';
+                panelRemoveResult.textContent = '✅ ' + (json.message || 'Panel entfernt.');
+                setTimeout(() => window.location.reload(), 700);
+            } catch (error) {
+                btn.disabled = false;
+                panelRemoveResult.className = 'tk-test-result error';
+                panelRemoveResult.textContent = '❌ ' + (error.message || 'Panel konnte nicht entfernt werden.');
+            }
+        });
     });
 })();
 

@@ -110,11 +110,11 @@ $githubUrl  = 'https://github.com/Marvin4200/Fahrstuhl';
         <div style="display:flex; flex-direction:column; gap:10px;">
             <div>
                 <div style="color:#aaa; font-size:0.8em; margin-bottom:var(--sp-1);">🔒 Privacy Policy</div>
-                <a href="<?= BASE_URL ?>/pages/privacy.php" style="color:#5865F2; font-size:0.9em;"><?php echo esc($_SERVER['HTTP_HOST'] ?? 'your-domain.com'); ?>/pages/privacy.php</a>
+                <a href="https://eselbande.com/privacy/" style="color:#5865F2; font-size:0.9em;">eselbande.com/privacy/</a>
             </div>
             <div>
                 <div style="color:#aaa; font-size:0.8em; margin-bottom:var(--sp-1);">📜 Terms of Service</div>
-                <a href="<?= BASE_URL ?>/pages/terms.php" style="color:#5865F2; font-size:0.9em;"><?php echo esc($_SERVER['HTTP_HOST'] ?? 'your-domain.com'); ?>/pages/terms.php</a>
+                <a href="https://eselbande.com/terms/" style="color:#5865F2; font-size:0.9em;">eselbande.com/terms/</a>
             </div>
             <div>
                 <div style="color:#aaa; font-size:0.8em; margin-bottom:var(--sp-1);">➕ Invite Link</div>

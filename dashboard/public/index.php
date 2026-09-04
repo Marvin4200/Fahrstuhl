@@ -831,8 +831,8 @@ $supportUrl = 'https://discord.gg/zfzDHKcWDx';
     <footer>
         <span>Fahrstuhl Bot © 2026</span>
         <span>
-            <a href="<?= BASE_URL ?>/pages/privacy.php">Privacy</a>
-            <a href="<?= BASE_URL ?>/pages/terms.php">Terms</a>
+            <a href="https://eselbande.com/privacy/">Privacy</a>
+            <a href="https://eselbande.com/terms/">Terms</a>
             <a href="<?= BASE_URL ?>/pages/stats.php">Public Stats</a>
         </span>
     </footer>

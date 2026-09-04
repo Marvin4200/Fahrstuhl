@@ -9,7 +9,7 @@ const {
 } = require("discord.js");
 const { sendServerLog } = require("./serverLogger");
 const ticketStore = require("./ticketStore");
-const { resolveTicketPanelDesign } = require("./ticketPanel");
+const { buildTicketPanel, resolveTicketPanelDesign } = require("./ticketPanel");
 const { parseBoolean } = require("./valueParsers");
 
 const PRIORITIES = {
@@ -306,6 +306,7 @@ async function openTicket(interaction, config, options = {}) {
             { name: "Reason", value: reason, inline: false },
         ],
     }).catch(() => {});
+    refreshTicketPanel(interaction.guild, config).catch(() => {});
 
     return interaction.reply({
         content: `Ticket created: <#${channel.id}>`,
@@ -328,6 +329,26 @@ async function updateTicketControlsMessage(channel, info, settings = {}) {
             }),
         }).catch(() => {});
     } catch {}
+}
+
+// Keeps the deployed panel's "Staff online / Queue / Rating" line current. Called after every
+// open/close (immediate feedback) and on an interval (utils/ticketPanel.js's staff-online count
+// otherwise only reflects reality at the moment the dashboard last redeployed the panel).
+async function refreshTicketPanel(guild, config) {
+    const settings = config?.tickets || {};
+    if (!settings.panelChannelId || !settings.panelMessageId || !guild) return;
+    try {
+        const channel = guild.channels.cache.get(settings.panelChannelId)
+            || await guild.channels.fetch(settings.panelChannelId).catch(() => null);
+        if (!channel?.isTextBased?.()) return;
+        const message = await channel.messages.fetch(settings.panelMessageId).catch(() => null);
+        if (!message) return;
+        const ticketStats = await ticketStore.getTicketStats(guild.id, { slaMinutes: settings.slaMinutes });
+        const panel = buildTicketPanel({ guild, settings, ticketStats });
+        await message.edit(panel).catch(() => {});
+    } catch {
+        // Best-effort — a panel refresh must never break the ticket flow that triggered it.
+    }
 }
 
 async function claimTicket(interaction, config) {
@@ -653,6 +674,7 @@ async function closeTicket(interaction, config, options = {}) {
         });
     }
 
+    refreshTicketPanel(interaction.guild, config).catch(() => {});
     await sendTicketFeedbackRequest(interaction, info, finalCloseReason);
 
     sendServerLog(interaction.guild, config, "tickets", {
@@ -710,6 +732,7 @@ module.exports = {
     openTicket,
     parseTicketTopic,
     recordTicketFeedback,
+    refreshTicketPanel,
     removeTicketUser,
     setTicketPriority,
     setTicketStatus,

@@ -1462,6 +1462,21 @@ client.once(Events.ClientReady, async () => {
     }, 60000); // every minute
     activeIntervals.push(scheduledDiscordBackups);
 
+    // Ticket panels: refresh the "Staff online / Queue / Rating" line every 5 minutes so it
+    // stays accurate even without a ticket open/close event (e.g. staff coming online).
+    const ticketPanelRefresh = setInterval(async () => {
+        for (const [guildId, guild] of client.guilds.cache) {
+            try {
+                const config = getGuildConfig(guildId);
+                if (!config.tickets?.panelChannelId || !config.tickets?.panelMessageId) continue;
+                await ticketManager.refreshTicketPanel(guild, config);
+            } catch (err) {
+                console.error(`Ticket panel refresh failed for guild ${guildId}:`, err.message);
+            }
+        }
+    }, 5 * 60 * 1000);
+    activeIntervals.push(ticketPanelRefresh);
+
     // Voice XP: award XP to eligible voice channel members every 60 seconds
     const voiceXpInterval = setInterval(async () => {
         for (const [guildId, guild] of client.guilds.cache) {
@@ -1544,90 +1559,8 @@ client.once(Events.ClientReady, async () => {
     updatePresence();
     activeIntervals.push(setInterval(updatePresence, TIMINGS.PRESENCE_UPDATE_INTERVAL));
 
-    try {
-        const setupResult = await setupLogChannels();
-        const devGuild = setupResult?.devGuild || null;
-        if (devGuild) {
-            let statsChannelId = null;
-            const updateGlobalStatsChannel = async () => {
-                const stats = getGlobalStats();
-                const channelName = `📉-stats-trolls-${stats.totalTrolls || 0}`;
-                const logCategoryId = getLogCategoryId();
-
-                // Find ALL stats channels in the category
-                const allStatsChannels = devGuild.channels.cache.filter(c =>
-                    c.parentId === logCategoryId && c.name.startsWith("📉-stats-trolls-")
-                );
-
-                // If we already know the ID of our stats channel, try to use it
-                let statsChannel = null;
-                if (statsChannelId) {
-                    statsChannel = devGuild.channels.cache.get(statsChannelId);
-                    if (!statsChannel || !statsChannel.name.startsWith("📉-stats-trolls-")) {
-                        statsChannelId = null;
-                    }
-                }
-
-                // If we don't have a valid one yet, use the first one found
-                if (!statsChannel && allStatsChannels.size > 0) {
-                    statsChannel = allStatsChannels.first();
-                    statsChannelId = statsChannel.id;
-                }
-
-                // Delete any extra stats channels (keep only one)
-                for (const [, channel] of allStatsChannels) {
-                    if (channel.id !== statsChannel?.id) {
-                        try {
-                            await channel.delete("Fahrstuhl cleanup: duplicate stats channel");
-                            console.log(`🧹 Deleted duplicate stats channel: ${channel.name}`);
-                        } catch (err) {
-                            console.warn(`⚠️ Failed to delete duplicate stats channel: ${err.message}`);
-                        }
-                    }
-                }
-
-                // Create the channel only if none exists
-                if (!statsChannel) {
-                    try {
-                        statsChannel = await devGuild.channels.create({
-                            name: channelName,
-                            type: 0,
-                            ...(logCategoryId ? { parent: logCategoryId } : {}),
-                            permissionOverwrites: [
-                                {
-                                    id: devGuild.roles.everyone.id,
-                                    deny: [PermissionsBitField.Flags.SendMessages]
-                                }
-                            ]
-                        });
-                        statsChannelId = statsChannel.id;
-                        console.log(`✅ Created stats channel: ${channelName}`);
-                    } catch (error) {
-                        console.warn(`⚠️ Stats channel create failed in ${devGuild.name}: ${error.message}`);
-                        return;
-                    }
-                }
-
-                // Update channel name if stats changed
-                if (statsChannel && statsChannel.name !== channelName) {
-                    try {
-                        await statsChannel.setName(channelName);
-                        console.log(`✏️ Renamed stats channel to: ${channelName}`);
-                    } catch (err) {
-                        console.warn(`⚠️ Failed to rename stats channel: ${err.message}`);
-                    }
-                }
-            };
-            await updateGlobalStatsChannel();
-            activeIntervals.push(setInterval(updateGlobalStatsChannel, TIMINGS.STATS_UPDATE_INTERVAL));
-
-            console.log("✅ Log system ready!");
-        } else {
-            console.error("❌ Unique Bots server not found!");
-        }
-    } catch (err) {
-        console.error("❌ Error setting up log channels:", err);
-    }
+    // Interner Ops-Log-Kanal (fahrstuhl-logs auf dem Dev-Server) wurde entfernt.
+    // logToMaster ist jetzt ein No-Op, siehe services/logger.js.
 
     backupManager.start();
     await voiceUsageTracker.start(client);

@@ -695,6 +695,28 @@ services:
     networks:
       - marvin_internal
 
+
+  eselmoderator-dashboard:
+    build:
+      context: ../eselmoderator-dashboard
+      dockerfile: Dockerfile
+    container_name: eselmoderator-dashboard-phase1
+    restart: unless-stopped
+    mem_limit: 128m
+    mem_reservation: 32m
+    depends_on:
+      eselmoderator:
+        condition: service_healthy
+    env_file:
+      - path: ../eselmoderator-dashboard/.env
+        required: false
+    ports:
+      - "127.0.0.1:3182:8081"
+    volumes:
+      - ../eselmoderator-dashboard/data:/app/data
+    networks:
+      - marvin_internal
+
 volumes:
   admin_dashboard_data:
   redis_data:

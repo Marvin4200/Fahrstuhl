@@ -290,7 +290,7 @@ function planLimit(int $val): string {
         <?php if ($guildTier === 'basic'): ?>
             <span class="sp-cta disabled" style="font-size:1rem;">✓ Dein aktueller Plan</span>
         <?php else: ?>
-            <a href="<?= esc(pricingCheckoutUrl('basic', 'monthly', getUser()['id'] ?? null)) ?>" rel="noopener" class="sp-cta primary-gold" style="font-size:1rem; padding:.85rem 1rem;">💎 Premium holen</a>
+            <a href="https://discord.gg/zfzDHKcWDx" target="_blank" rel="noopener" class="sp-cta primary-gold" style="font-size:1rem; padding:.85rem 1rem;">💎 Premium anfragen</a>
         <?php endif; ?>
     </div>
 

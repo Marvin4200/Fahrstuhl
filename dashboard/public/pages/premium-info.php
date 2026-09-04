@@ -246,11 +246,11 @@ function premiumBuyUrl($tierKey, $interval, $isLoggedIn, $userId, $loginUrl) {
     <?php if ($hasCheckout): ?>
     <div class="faq-item">
         <div class="q">Wie kaufe ich Premium?</div>
-        <div class="a">Oben auf den Plan klicken, mit Discord anmelden und bezahlen. Die Freischaltung passiert automatisch, direkt nach der Zahlung — du bekommst eine DM vom Bot.</div>
+        <div class="a">Über <a href="https://shop.eselbande.com" target="_blank" rel="noopener">shop.eselbande.com</a> — dort mit Discord anmelden und bezahlen. Die Freischaltung passiert automatisch, direkt nach der Zahlung — du bekommst eine DM vom Bot.</div>
     </div>
     <div class="faq-item">
         <div class="q">Welche Zahlungsmethoden gibt es?</div>
-        <div class="a">Kreditkarte, PayPal, Apple&nbsp;Pay, Google&nbsp;Pay und Klarna — je nachdem, was in deinem Land verfügbar ist. Die Zahlung läuft über Stripe, wir sehen deine Zahlungsdaten nie.</div>
+        <div class="a">Kreditkarte, PayPal, Apple&nbsp;Pay und weitere — je nachdem, was in deinem Land verfügbar ist. Die Zahlung läuft über Paddle als unseren Merchant of Record, wir sehen deine Zahlungsdaten nie.</div>
     </div>
     <?php else: ?>
     <div class="faq-item">

@@ -78,13 +78,16 @@ if (!defined('PRICING_LOADED')) {
         ],
     ];
 
-    // Stripe Payment Links. Empty => the buy buttons fall back to the support
-    // server, which is exactly how the page behaved before Stripe existed.
+    // Der frueher hier vorgesehene Stripe-Payment-Links-Checkout wurde nie fertig gebaut
+    // (stripeManager.js blieb leer) - Basic/Pro monatlich werden jetzt echt ueber
+    // shop.eselbande.com verkauft (Paddle). Lifetime-Preise gibt es dort nicht, deshalb
+    // bleiben genau diese beiden Slots leer und fallen weiterhin auf den Support-Server
+    // zurueck, statt einen Kauf vorzutaeuschen, den es so nicht gibt.
     $GLOBALS['PRICING_CHECKOUT'] = [
-        'basicMonthly'  => getenv('STRIPE_LINK_BASIC_MONTHLY')  ?: null,
-        'basicLifetime' => getenv('STRIPE_LINK_BASIC_LIFETIME') ?: null,
-        'proMonthly'    => getenv('STRIPE_LINK_PRO_MONTHLY')    ?: null,
-        'proLifetime'   => getenv('STRIPE_LINK_PRO_LIFETIME')   ?: null,
+        'basicMonthly'  => getenv('SHOP_URL') ?: 'https://shop.eselbande.com',
+        'basicLifetime' => null,
+        'proMonthly'    => getenv('SHOP_URL') ?: 'https://shop.eselbande.com',
+        'proLifetime'   => null,
     ];
 
     $GLOBALS['PRICING_SUPPORT_INVITE'] = getenv('SUPPORT_INVITE_URL') ?: 'https://discord.gg/zfzDHKcWDx';
@@ -136,9 +139,11 @@ if (!function_exists('pricingCooldownSaving')) {
 
 if (!function_exists('pricingCheckoutUrl')) {
     /**
-     * Buy link for a tier/interval, with the Discord user id attached as
-     * client_reference_id so the Stripe webhook knows who to activate.
-     * Falls back to the support server when no Payment Link is configured.
+     * Buy link for a tier/interval. Zeigt fuer Basic/Pro monatlich auf shop.eselbande.com,
+     * das seine eigene Discord-Anmeldung hat - $discordUserId wird deshalb nicht mehr als
+     * Query-Parameter angehaengt (das war Stripes client_reference_id-Konvention, fuer den
+     * Shop irrelevant). Faellt fuer Lifetime (im Shop nicht im Angebot) weiterhin auf den
+     * Support-Server zurueck.
      */
     function pricingCheckoutUrl($tierKey, $interval = 'monthly', $discordUserId = null) {
         $map = [
@@ -149,11 +154,6 @@ if (!function_exists('pricingCheckoutUrl')) {
         ];
         $slot = $map["$tierKey:$interval"] ?? null;
         $url = $slot ? ($GLOBALS['PRICING_CHECKOUT'][$slot] ?? null) : null;
-        if (!$url) return $GLOBALS['PRICING_SUPPORT_INVITE'];
-        if ($discordUserId) {
-            $url .= (strpos($url, '?') === false ? '?' : '&')
-                 . 'client_reference_id=' . urlencode($discordUserId);
-        }
-        return $url;
+        return $url ?: $GLOBALS['PRICING_SUPPORT_INVITE'];
     }
 }

@@ -632,6 +632,8 @@ services:
         NEXT_PUBLIC_PADDLE_PRICE_FAHRSTUHL_BASIC: ${NEXT_PUBLIC_PADDLE_PRICE_FAHRSTUHL_BASIC}
         NEXT_PUBLIC_PADDLE_PRICE_FAHRSTUHL_PRO: ${NEXT_PUBLIC_PADDLE_PRICE_FAHRSTUHL_PRO}
         NEXT_PUBLIC_PADDLE_PRICE_ESELBUILDER: ${NEXT_PUBLIC_PADDLE_PRICE_ESELBUILDER}
+        NEXT_PUBLIC_PADDLE_PRICE_ESELMODERATOR_BASIC: ${NEXT_PUBLIC_PADDLE_PRICE_ESELMODERATOR_BASIC}
+        NEXT_PUBLIC_PADDLE_PRICE_ESELMODERATOR_PRO: ${NEXT_PUBLIC_PADDLE_PRICE_ESELMODERATOR_PRO}
     container_name: shop-phase1
     restart: unless-stopped
     depends_on:
@@ -659,6 +661,37 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+    networks:
+      - marvin_internal
+
+  eselmoderator:
+    build:
+      context: ../eselmoderator
+      dockerfile: Dockerfile
+    container_name: eselmoderator-phase1
+    restart: unless-stopped
+    mem_limit: 256m
+    mem_reservation: 128m
+    env_file:
+      - path: ../eselmoderator/.env
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+      MYSQL_HOST: host.docker.internal
+      NODE_OPTIONS: "--max-old-space-size=192"
+    ports:
+      - "127.0.0.1:3118:3003"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ../eselmoderator/data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
     networks:
       - marvin_internal
 

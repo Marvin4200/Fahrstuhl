@@ -95,6 +95,7 @@ $atFeedLimit    = !$socialBlocked && $maxFeeds >= 0 && $activeFeedCount >= $maxF
 
 <?php include '../includes/header.php'; ?>
 <?php include '../includes/sidebar.php'; ?>
+<?php include '../includes/eselmoderator-notice.php'; ?>
 
 <style>
 .social-head { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-bottom:1rem; }

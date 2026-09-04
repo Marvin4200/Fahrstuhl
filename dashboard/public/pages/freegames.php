@@ -39,6 +39,7 @@ function fg_selected($a, $b)  { return (string)$a === (string)$b ? 'selected' : 
 
 <?php include '../includes/header.php'; ?>
 <?php include '../includes/sidebar.php'; ?>
+<?php include '../includes/eselmoderator-notice.php'; ?>
 
 <style>
 .fg-shell { display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:1rem; align-items:start; }

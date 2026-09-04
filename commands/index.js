@@ -3353,6 +3353,7 @@ async function handleInteraction(interaction, dependencies) {
 
         // ===== /freegames =====
         if (interaction.commandName === "freegames") {
+            if (MIGRATED_TO_ESELMODERATOR) { return safeReply(interaction, migrationRedirectMessage("Freegames (/freegames)")); }
             const sub = interaction.options.getSubcommand();
             const { normalizeFreeGamesConfig } = require("../utils/freeGamesNotifier");
             const freeGamesNotifier = require("../utils/freeGamesNotifier");

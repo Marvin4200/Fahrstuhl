@@ -1569,8 +1569,10 @@ client.once(Events.ClientReady, async () => {
     await voiceUsageTracker.start(client);
     voiceRewardBridge = createVoiceRewardBridge({ client, logToMaster });
     voiceRewardBridge.start();
-    socialNotifier.start(client);
-    freeGamesNotifier.start(client);
+    if (!MIGRATED_TO_ESELMODERATOR) {
+        socialNotifier.start(client);
+        freeGamesNotifier.start(client);
+    }
 
     await logToMaster({
         title: "🚀 Bot Status",

@@ -626,6 +626,9 @@ services:
     build:
       context: ../shop
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_PADDLE_CLIENT_TOKEN: ${NEXT_PUBLIC_PADDLE_CLIENT_TOKEN}
+        NEXT_PUBLIC_PADDLE_ENVIRONMENT: ${NEXT_PUBLIC_PADDLE_ENVIRONMENT:-sandbox}
     container_name: shop-phase1
     restart: unless-stopped
     depends_on:

@@ -2007,6 +2007,10 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
     const member = newState.member || oldState.member;
     if (!guild || !member || oldState.channelId === newState.channelId) return;
 
+    // Voice-Logging ist zu EselModerator umgezogen -- ohne diese Sperre haette jeder Server mit
+    // noch konfiguriertem Fahrstuhl-Log-Kanal die Meldung doppelt bekommen (einmal hier, einmal
+    // von EselModerator selbst).
+    if (MIGRATED_TO_ESELMODERATOR) return;
     const config = logConfig(guild);
     const action = !oldState.channelId ? "joined voice" : (!newState.channelId ? "left voice" : "moved voice");
     sendServerLog(guild, config, "voiceState", {
@@ -2036,13 +2040,17 @@ client.on("guildBanAdd", async (ban) => {
         { name: "IDs", value: idsFieldValue([`User: \`${ban.user.id}\``, `Guild: \`${ban.guild.id}\``]), inline: false },
     ];
     if (executor) fields.splice(1, 0, { name: "Executor", value: executor, inline: true });
-    sendServerLog(ban.guild, config, "memberBan", {
-        title: "Member Banned",
-        description: `${ban.user} was banned.`,
-        color: 0xED4245,
-        thumbnail: ban.user.displayAvatarURL({ size: 128 }),
-        fields,
-    }).catch(() => {});
+    // Server-Logging ist zu EselModerator umgezogen -- die eigene Aktivitaets-Anzeige
+    // (emitActivityEvent) darunter ist Fahrstuhls interne Sache und bleibt unberuehrt.
+    if (!MIGRATED_TO_ESELMODERATOR) {
+        sendServerLog(ban.guild, config, "memberBan", {
+            title: "Member Banned",
+            description: `${ban.user} was banned.`,
+            color: 0xED4245,
+            thumbnail: ban.user.displayAvatarURL({ size: 128 }),
+            fields,
+        }).catch(() => {});
+    }
 
     emitActivityEvent(ban.guild.id, {
         id: `moderation:ban:${ban.user.id}:${Date.now()}`,
@@ -2063,13 +2071,15 @@ client.on("guildBanRemove", async (ban) => {
     const executor = await fetchAuditExecutor(ban.guild, AuditLogEvent.MemberBanRemove);
     const fields = [{ name: "User", value: `${ban.user.username}\n\`${ban.user.id}\``, inline: true }];
     if (executor) fields.push({ name: "Unbanned By", value: executor, inline: true });
-    sendServerLog(ban.guild, config, "memberUnban", {
-        title: "Member Unbanned",
-        description: `${ban.user} was unbanned.`,
-        color: 0x51cf66,
-        thumbnail: ban.user.displayAvatarURL({ size: 128 }),
-        fields,
-    }).catch(() => {});
+    if (!MIGRATED_TO_ESELMODERATOR) {
+        sendServerLog(ban.guild, config, "memberUnban", {
+            title: "Member Unbanned",
+            description: `${ban.user} was unbanned.`,
+            color: 0x51cf66,
+            thumbnail: ban.user.displayAvatarURL({ size: 128 }),
+            fields,
+        }).catch(() => {});
+    }
 
     await logToMaster({
         title: "😇 User Unbanned",
@@ -2144,6 +2154,7 @@ client.on("emojiDelete", async (emoji) => {
 });
 
 client.on("roleCreate", async (role) => {
+    if (MIGRATED_TO_ESELMODERATOR) return; // Server-Logging ist zu EselModerator umgezogen.
     const config = logConfig(role.guild);
     const executor = await fetchAuditExecutor(role.guild, AuditLogEvent.RoleCreate);
     const fields = [
@@ -2160,6 +2171,7 @@ client.on("roleCreate", async (role) => {
 });
 
 client.on("roleDelete", async (role) => {
+    if (MIGRATED_TO_ESELMODERATOR) return; // Server-Logging ist zu EselModerator umgezogen.
     const config = logConfig(role.guild);
     const roleDeleteEntry = await fetchAuditEntry(role.guild, AuditLogEvent.RoleDelete, {
         targetId: role.id,
@@ -2183,6 +2195,7 @@ client.on("roleDelete", async (role) => {
 });
 
 client.on("roleUpdate", async (oldRole, newRole) => {
+    if (MIGRATED_TO_ESELMODERATOR) return; // Server-Logging ist zu EselModerator umgezogen.
     const changes = [];
     if (oldRole.name !== newRole.name) changes.push(`Name: **${oldRole.name}** -> **${newRole.name}**`);
     if (oldRole.hexColor !== newRole.hexColor) changes.push(`Color: \`${oldRole.hexColor}\` -> \`${newRole.hexColor}\``);
@@ -2206,6 +2219,7 @@ client.on("roleUpdate", async (oldRole, newRole) => {
 
 client.on("channelCreate", async (channel) => {
     if (!channel.guild) return;
+    if (MIGRATED_TO_ESELMODERATOR) return; // Server-Logging ist zu EselModerator umgezogen.
     const config = logConfig(channel.guild);
     const executor = await fetchAuditExecutor(channel.guild, AuditLogEvent.ChannelCreate);
     const fields = [
@@ -2223,6 +2237,7 @@ client.on("channelCreate", async (channel) => {
 
 client.on("channelDelete", async (channel) => {
     if (!channel.guild) return;
+    if (MIGRATED_TO_ESELMODERATOR) return; // Server-Logging ist zu EselModerator umgezogen.
     const config = logConfig(channel.guild);
     const channelDeleteEntry = await fetchAuditEntry(channel.guild, AuditLogEvent.ChannelDelete, {
         targetId: channel.id,
@@ -2247,6 +2262,7 @@ client.on("channelDelete", async (channel) => {
 
 client.on("channelUpdate", async (oldChannel, newChannel) => {
     if (!newChannel.guild) return;
+    if (MIGRATED_TO_ESELMODERATOR) return; // Server-Logging ist zu EselModerator umgezogen.
     const changes = [];
     if (oldChannel.name !== newChannel.name) changes.push(`Name: **${oldChannel.name}** -> **${newChannel.name}**`);
     if ((oldChannel.topic || "") !== (newChannel.topic || "")) changes.push(`Topic: ${clipLogValue(oldChannel.topic || "None", 180)} -> ${clipLogValue(newChannel.topic || "None", 180)}`);
@@ -2271,7 +2287,7 @@ client.on("channelUpdate", async (oldChannel, newChannel) => {
 });
 
 client.on("inviteCreate", async (invite) => {
-    if (invite.guild) {
+    if (invite.guild && !MIGRATED_TO_ESELMODERATOR) {
         const config = logConfig(invite.guild);
         sendServerLog(invite.guild, config, "inviteCreate", {
             title: "Invite Created",
@@ -2299,7 +2315,7 @@ client.on("inviteCreate", async (invite) => {
 });
 
 client.on("inviteDelete", async (invite) => {
-    if (invite.guild) {
+    if (invite.guild && !MIGRATED_TO_ESELMODERATOR) {
         const config = logConfig(invite.guild);
         sendServerLog(invite.guild, config, "inviteDelete", {
             title: "Invite Deleted",
@@ -2331,6 +2347,7 @@ client.on("error", async (error) => {
 client.on("messageDelete", async (message) => {
     if (message.partial || !message.guild) return;
     if (message.author?.bot) return;
+    if (MIGRATED_TO_ESELMODERATOR) return; // Server-Logging ist zu EselModerator umgezogen.
 
     const config = getGuildConfig(message.guild.id);
     const messageDeleteEntry = await fetchAuditEntry(message.guild, AuditLogEvent.MessageDelete, {
@@ -2360,6 +2377,7 @@ client.on("messageUpdate", async (oldMessage, newMessage) => {
     if (oldMessage.partial || newMessage.partial || !oldMessage.guild) return;
     if (oldMessage.author?.bot) return;
     if (oldMessage.content === newMessage.content) return;
+    if (MIGRATED_TO_ESELMODERATOR) return; // Server-Logging ist zu EselModerator umgezogen.
 
     const config = getGuildConfig(oldMessage.guild.id);
     sendServerLog(oldMessage.guild, config, "messageUpdate", {

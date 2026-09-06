@@ -142,13 +142,14 @@ $adminGroups = [
     ],
     [
       'title' => 'Server',
-      'description' => 'Guilds, members and moderation',
+      'description' => 'Guilds and members',
       'items' => [
         ['page' => 'guilds', 'icon' => '🏰', 'label' => 'Server', 'description' => 'Alle Guilds', 'aliases' => ['guild-detail']],
         ['page' => 'members-hub', 'icon' => '👥', 'label' => 'Mitglieder', 'description' => 'Profile und Stats', 'aliases' => ['users', 'user-detail', 'voice-time']],
-        ['page' => 'moderation-hub', 'icon' => '🛡️', 'label' => 'Moderation', 'description' => 'Cases, AutoMod, Blacklist und Logs', 'aliases' => ['moderation', 'automod', 'logging', 'blacklist', 'audit']],
-        ['page' => 'tickets', 'icon' => '🎫', 'label' => 'Tickets', 'description' => 'Panels und Workflows'],
-        ['page' => 'server-backup', 'icon' => '💾', 'label' => 'Discord-Server sichern', 'description' => 'Guild-Backup und Restore'],
+        // Moderation/Tickets/Server-Backup sind zu EselModerator umgezogen -- siehe Kommentar bei
+        // $userGroups weiter unten. Die Seiten bleiben fuer alte Bookmarks/Support-Zwecke
+        // erreichbar, nur nicht mehr als eigene Nav-Eintraege.
+        ['page' => 'moderation-hub', 'icon' => '🤖', 'label' => 'Zu EselModerator umgezogen', 'description' => 'Moderation, Tickets, Server-Backup', 'aliases' => ['moderation', 'automod', 'logging', 'blacklist', 'audit', 'tickets', 'server-backup']],
       ],
     ],
     [
@@ -192,23 +193,16 @@ $userGroups = [
       ],
     ],
     [
-      'title' => 'Features',
-      'description' => 'Community features',
+      // Welcome/Leveling/Reaction-Roles/Social/Freegames/Temp-Voice/Moderation/Tickets sind ALLE
+      // zu EselModerator umgezogen (siehe includes/eselmoderator-notice.php) -- Fahrstuhl reagiert
+      // darauf nicht mehr. Die Seiten existieren technisch weiter (direkte Links/Bookmarks landen
+      // dort noch und zeigen den Umzugs-Hinweis), sind aber bewusst NICHT mehr einzeln in der
+      // Navigation aufgefuehrt, um keine tote Funktionsflaeche vorzugaukeln. Ein Klick hier fuehrt
+      // direkt zum Umzugs-Hinweis auf der Moderation-Hub-Seite.
+      'title' => 'Moderation & Community',
+      'description' => 'Umgezogen zu EselModerator',
       'items' => [
-        ['page' => 'welcome', 'icon' => '👋', 'label' => 'Welcome', 'description' => 'Begrüßung und Verifizierung'],
-        ['page' => 'leveling', 'icon' => '📈', 'label' => 'Leveling', 'description' => 'XP und Rewards'],
-        ['page' => 'reaction-roles', 'icon' => '🎭', 'label' => 'Reaction Roles', 'description' => 'Rollen zum Selbstvergeben'],
-        ['page' => 'social', 'icon' => '📣', 'label' => 'Social Alerts', 'description' => 'YouTube, Twitch und RSS'],
-        ['page' => 'freegames', 'icon' => '🎮', 'label' => 'Free Games', 'description' => 'Benachrichtigungen zu Gratis-Spielen'],
-        ['page' => 'temp-voice', 'icon' => '🔊', 'label' => 'Temp Voice', 'description' => 'Dynamische Sprachkanäle'],
-      ],
-    ],
-    [
-      'title' => 'Moderation & Support',
-      'description' => 'Moderation and tickets',
-      'items' => [
-        ['page' => 'moderation-hub', 'icon' => '🛡️', 'label' => 'Moderation', 'description' => 'Cases, AutoMod und Logs', 'aliases' => ['moderation', 'automod', 'logging']],
-        ['page' => 'tickets', 'icon' => '🎫', 'label' => 'Tickets', 'description' => 'Panels und Workflows'],
+        ['page' => 'moderation-hub', 'icon' => '🤖', 'label' => 'Zu EselModerator umgezogen', 'description' => 'Moderation, Tickets, Welcome, Leveling, Reaction Roles, Social, Temp Voice', 'aliases' => ['moderation', 'automod', 'logging', 'tickets', 'welcome', 'leveling', 'reaction-roles', 'social', 'freegames', 'temp-voice']],
       ],
     ],
     [

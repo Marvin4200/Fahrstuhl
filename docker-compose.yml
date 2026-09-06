@@ -145,6 +145,34 @@ services:
     networks:
       - marvin_internal
 
+  # Winziger, isolierter Dienst mit alleinigem Docker-Socket-Zugriff -- siehe
+  # docker-control/index.js's Kommentar fuer die Begruendung (Blast-Radius-Trennung von
+  # admin-dashboard). Kein Ports-Mapping nach aussen, nur intern ueber marvin_internal erreichbar.
+  docker-control:
+    build:
+      context: ../docker-control
+      dockerfile: Dockerfile
+    container_name: docker-control-phase1
+    restart: unless-stopped
+    mem_limit: 96m
+    mem_reservation: 24m
+    env_file:
+      - path: ../docker-control/.env
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: 3031
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3031/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - marvin_internal
+
   admin-dashboard:
     build:
       context: ../admin-dashboard
@@ -156,6 +184,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      docker-control:
+        condition: service_healthy
     env_file:
       - path: ../admin-dashboard/.env
         required: false
@@ -164,11 +194,17 @@ services:
       PORT: 3021
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       LOG_INGEST_TOKEN: ${LOG_INGEST_TOKEN}
+      DOCKER_CONTROL_BASE: http://docker-control:3031
+      FAHRSTUHL_API_BASE: http://fahrstuhl-docker:3002
+      ESELMODERATOR_API_BASE: http://eselmoderator:3003
     ports:
       - "127.0.0.1:3121:3021"
     volumes:
       - ../filehoster/stats:/app/stats:ro
       - admin_dashboard_data:/app/data
+      - ../shop/shop.db:/app/shop-readonly/shop.db:ro
+      - ../shop/shop.db-wal:/app/shop-readonly/shop.db-wal:ro
+      - ../shop/shop.db-shm:/app/shop-readonly/shop.db-shm:ro
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3021/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s

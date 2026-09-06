@@ -118,6 +118,8 @@ foreach ($channels as $channel) {
 <?php include '../includes/header.php'; ?>
 <?php include '../includes/sidebar.php'; ?>
 
+<?php include '../includes/eselmoderator-notice.php'; ?>
+
 <style>
 .lg-compact { display: grid; grid-template-columns: 320px 1fr 280px; gap: 1.25rem; align-items: start; }
 .lg-card { background: var(--panel); border: 1px solid var(--border-light); border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 0.8rem; }
